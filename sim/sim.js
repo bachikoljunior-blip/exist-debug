@@ -2660,11 +2660,17 @@ function upgradeCost(sim, u) {
   // さらに割増額は「解放時点の毎秒生産×sec」で**凍結**する(再計算で cps に追従させると、貯金が cps 成長に追いつけない
   //   方針(堅実割引型=貯めない)が恒久的に買えず全解放不能になる=実測S13が21→8周回)。凍結した固定額に向けて貯めるので
   //   必ずいつかは買える=足止め(数十秒の遅延)であって恒久の壁ではない。
+  // 割増の額は「解放時点の所持クッキー + sec×毎秒生産」で凍結する(2026-07-24 第2版)。旧版は sec×生産だけで、
+  // 大量に貯める方針(S5研究貯蓄型)は手持ちが生産の何十倍もあり sec×生産を即払える=遅延が出ずΔ24〜27秒に張り付いた。
+  // 「今の手持ちを超えて あと sec 秒ぶん稼がないと買えない」額にすれば、貯める/貯めない いずれの方針でも手持ちに関係なく
+  // 必ず≥sec秒の遅延になる(=解放から初号機まで≥30秒)。凍結ゆえ必ず到達=足止めでなく貯金。
   if (owned === 0 && !sim.everUpgrade[u.id] && UPGRADE_UNLOCK_SKILLS[u.id]) {
     const sec = (P.upCost && P.upCost.firstUnitSec) || 0;
     if (sec > 0) {
       if (!sim._premTarget) sim._premTarget = {};
-      if (sim._premTarget[u.id] == null && sim._lastProd && sim._lastProd.cps > 0) sim._premTarget[u.id] = q5cost(sec * sim._lastProd.cps);
+      if (sim._premTarget[u.id] == null && sim._lastProd && sim._lastProd.cps > 0) {
+        sim._premTarget[u.id] = q5cost((sim.run.cookies || 0) + sec * sim._lastProd.cps);
+      }
       if (sim._premTarget[u.id] != null) cost = Math.max(cost, sim._premTarget[u.id]);
     }
   }
@@ -2742,14 +2748,25 @@ function prestigeUnlockedFn(sim) {
 // 解放が自然に空く(コストによる足止めではなく「所持数の進行ゲート」。貯めない方針も貯める方針も同じ台数で律速される)。
 function visibleUpgrades(sim) {
   const rc = (P.upCost && P.upCost.revealCount) || 1;
+  const eqGap = (P.upCost && P.upCost.eqRevealLayers) || 0; // ㉚: 次段解放に要する「現段購入からのノルマ層 進行」
+  const r = sim.run;
   let hi = -1, hiReady = -1;
   UPGRADES.forEach((u, i) => {
-    const c = sim.run.upgrades[u.id] || 0;
+    const c = r.upgrades[u.id] || 0;
     if (c > 0) hi = Math.max(hi, i);
     if (c >= rc) hiReady = Math.max(hiReady, i);
   });
   // 次段が並ぶのは現最高「所持段」が revealCount 台に達してから。未達なら現最高所持段まで(次段はまだ)。
-  const limit = Math.min(UPGRADES.length - 1, Math.max(1, hiReady + 1, hi));
+  let limit = Math.min(UPGRADES.length - 1, Math.max(1, hiReady + 1, hi));
+  // 進行ゲート(2026-07-24 第2版・㉚の核心): クッキー潤沢な方針(研究貯蓄型)は revealCount 台も一瞬で買うため、
+  // 台数ゲートだけでは次段が数秒で連続解放して団子になる。「現段を初購入したノルマ層から eqRevealLayers 層 進む」まで
+  // 次段を並べない=ノルマ層は誰でも時間をかけて登る(クッキーで飛ばせない)ので、貯める方針でも解放間隔が実時間で空く。
+  // 進行ゲートは「スキルで解放する後半設備(moon以降)」の次段だけに効かせる。序盤設備(finger〜portal)は
+  // 遅い方針が早く欲しい&団子は起きないので律速しない=全解放の遅延(=未達)を避ける。団子はmoon以降で起きる。
+  if (eqGap > 0 && hi >= 0 && limit > hi && UPGRADE_UNLOCK_SKILLS[UPGRADES[limit].id]) {
+    const baseMax = r._eqFirstMax && r._eqFirstMax[UPGRADES[hi].id];
+    if (baseMax != null && (r.maxStage || 0) < baseMax + eqGap) limit = hi; // 層 未進行なら次段はまだ出さない
+  }
   return UPGRADES.filter((u, i) => i <= limit && upgradeUnlocked(sim, u));
 }
 
@@ -3552,8 +3569,10 @@ function tryBuyUpgrade(sim, u, budgetRatio) {
   const br = isPremiumFirst ? Math.max(budgetRatio, 0.92) : budgetRatio;
   if (cost > sim.run.cookies * br) return false;
   if (cost > sim.run.cookies) return false;
+  const wasZero = !(sim.run.upgrades[u.id] > 0);
   sim.run.cookies -= cost;
   sim.run.upgrades[u.id]++;
+  if (wasZero) (sim.run._eqFirstMax || (sim.run._eqFirstMax = {}))[u.id] = sim.run.maxStage || 0; // ㉚: 次段の進行ゲート基点(この段を初購入したノルマ層)
   sim.lifeEquip = (sim.lifeEquip || 0) + 1; // ㉚(2026-07-24): 通算設備購入数(設備熟練の解放を周回跨ぎで分散)
   sim.run._lastUpBuyT = sim.t; // 装備C型「設備購入直後」用
   // 星屑パフェ: 効果中に購入した設備はその周回中、生産×1.25(成長ゲート型)
