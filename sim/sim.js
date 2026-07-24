@@ -2649,9 +2649,18 @@ function upgradeCost(sim, u) {
   // 「現在の毎秒生産の firstUnitSec 秒ぶん」に底上げし、解放から初号機購入まで必ず≥30秒 貯めさせる(=価格による
   // ペーシング。待ちタイマーではない)。収入連動なので終盤(収入が巨大)でも一定秒数を保証する(固定割増だと効かない)。
   // 2号機以降は通常コスト。設備コスト自体は元々式ベース(固定表ではない)なので、収入連動でも「固定コスト」議論の対象外。
-  if (owned === 0 && UPGRADE_UNLOCK_SKILLS[u.id]) {
+  // 生涯初購入のみ割増(2026-07-24修正): 解放イベント(㉚)は生涯初購入のみ発火するので、ペーシングもそこだけでよい。
+  // 毎周回の初号機(owned===0)に課すと再購入のたびに重税=進行が遅れて周回数/全解放が悪化するため、!everUpgrade で限定。
+  // さらに割増額は「解放時点の毎秒生産×sec」で**凍結**する(再計算で cps に追従させると、貯金が cps 成長に追いつけない
+  //   方針(堅実割引型=貯めない)が恒久的に買えず全解放不能になる=実測S13が21→8周回)。凍結した固定額に向けて貯めるので
+  //   必ずいつかは買える=足止め(数十秒の遅延)であって恒久の壁ではない。
+  if (owned === 0 && !sim.everUpgrade[u.id] && UPGRADE_UNLOCK_SKILLS[u.id]) {
     const sec = (P.upCost && P.upCost.firstUnitSec) || 0;
-    if (sec > 0 && sim._lastProd && sim._lastProd.cps > 0) cost = Math.max(cost, q5cost(sec * sim._lastProd.cps));
+    if (sec > 0) {
+      if (!sim._premTarget) sim._premTarget = {};
+      if (sim._premTarget[u.id] == null && sim._lastProd && sim._lastProd.cps > 0) sim._premTarget[u.id] = q5cost(sec * sim._lastProd.cps);
+      if (sim._premTarget[u.id] != null) cost = Math.max(cost, sim._premTarget[u.id]);
+    }
   }
   return cost;
 }
@@ -3492,6 +3501,14 @@ function unlockGateOk(sim) {
   if (!gap) return true;
   return sim.lastUnlockT == null || sim.t >= sim.lastUnlockT + gap;
 }
+// 生涯初購入のペーシング(㉚): 解放時点の毎秒生産×sec で割増額を**凍結**し、その固定額に貯めさせる=解放から
+// 初購入まで≥数十秒あく(足止めではなく貯金。凍結ゆえ必ずいつか買える)。設備の初号機と同じ発想を研究段階にも適用。
+function firstBuyPace(sim, key, cost, sec) {
+  if (!sec) return cost;
+  if (!sim._premTarget) sim._premTarget = {};
+  if (sim._premTarget[key] == null && sim._lastProd && sim._lastProd.cps > 0) sim._premTarget[key] = q5cost(sec * sim._lastProd.cps);
+  return sim._premTarget[key] != null ? Math.max(cost, sim._premTarget[key]) : cost;
+}
 function pushUnlock(sim, kind, id, n) {
   sim.lastUnlockT = sim.t;
   const ev = { t: sim.t, kind, id };
@@ -3501,7 +3518,12 @@ function pushUnlock(sim, kind, id, n) {
 function tryBuyUpgrade(sim, u, budgetRatio) {
   if (!sim.everUpgrade[u.id] && !unlockGateOk(sim)) return false;
   const cost = upgradeCost(sim, u);
-  if (cost > sim.run.cookies * budgetRatio) return false;
+  // 生涯初のスキル解放設備は初号機割増(㉚ペーシング)がかかる。予算規律(cookies×budgetRatio)で弾くと
+  // 割増ぶんを貯めきれない周回の短い方針が恒久的に買えず全解放不能になる(実測: S13が21→8周回)。
+  // 割増対象の生涯初購入だけは予算規律を緩め、所持クッキーの範囲で貯まり次第買える(=足止めではなく貯金)ようにする。
+  const isPremiumFirst = !sim.everUpgrade[u.id] && UPGRADE_UNLOCK_SKILLS[u.id] && P.upCost && P.upCost.firstUnitSec > 0;
+  const br = isPremiumFirst ? Math.max(budgetRatio, 0.92) : budgetRatio;
+  if (cost > sim.run.cookies * br) return false;
   if (cost > sim.run.cookies) return false;
   sim.run.cookies -= cost;
   sim.run.upgrades[u.id]++;
@@ -3552,8 +3574,11 @@ function tryBuyResearch(sim, id, budgetRatio) {
   // 無効化(disableResearch)でも購入行動は同じ: 効果だけがゼロになる
   const def = RESEARCH.find(x => x.id === id);
   if (!def || !researchUnlocked(sim, def)) return false;
-  const cost = researchCostOf(sim, id);
-  if (cost > r.cookies * budgetRatio) return false;
+  let cost = researchCostOf(sim, id);
+  const resSec = (P.upCost && P.upCost.firstBuySecRes) || 0;
+  if (resSec > 0 && !sim.everResearch[id]) cost = firstBuyPace(sim, 'res:' + id, cost, resSec);
+  const br = (resSec > 0 && !sim.everResearch[id]) ? Math.max(budgetRatio, 0.92) : budgetRatio;
+  if (cost > r.cookies * br) return false;
   r.cookies -= cost;
   r.research[id] = true;
   r._lastResBuyT = sim.t; // 装備C型「研究購入直後」用
@@ -3571,8 +3596,12 @@ function tryBuyResearchStage(sim, id, stage, budgetRatio) {
   if (!sim.everStage[id + ':' + stage] && !unlockGateOk(sim)) return false;
   // 無効化(disableStage)でも購入行動は同じ: 効果だけがゼロになる
   if (!researchStageUnlocked(sim, id, stage)) return false;
-  const cost = researchStageCostOf(sim, id, stage);
-  if (cost > r.cookies * budgetRatio) return false;
+  let cost = researchStageCostOf(sim, id, stage);
+  // 研究段階の生涯初購入も初号機と同様にペーシング(㉚): 後半フロンティアで段2/段3が数秒間隔で連続解放する団子を経済で分散。
+  const stSec = (P.upCost && P.upCost.firstBuySecStage) || 0;
+  if (stSec > 0 && !sim.everStage[id + ':' + stage]) cost = firstBuyPace(sim, 'stage:' + id + ':' + stage, cost, stSec);
+  const br = (stSec > 0 && !sim.everStage[id + ':' + stage]) ? Math.max(budgetRatio, 0.92) : budgetRatio;
+  if (cost > r.cookies * br) return false;
   r.cookies -= cost;
   if (stage === 2) r.research2[id] = true; else r.research3[id] = true;
   // ⑬測定用(2026-07-16・opt-in): タイミング機能段2の取得直後のスナップを保存=機能が「活性」な地点から

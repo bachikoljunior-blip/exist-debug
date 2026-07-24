@@ -416,7 +416,7 @@ module.exports = {
   // ---- アップグレードコスト式 ----  cost = coef * base^basePow * growth^(owned*ownPow)
   // 2026-07-06 第8次: 新帯域(周回25〜90分)へ向けownPow 0.25→0.27(再登坂・開拓の全体減速)、
   // 膝4300/1.0→900/0.55(深部の周回短縮を抑制。㉒単調増加と⑦後半帯域用)
-  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, firstUnitSec: 40 },
+  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, firstUnitSec: 120, firstBuySecRes: 0, firstBuySecStage: 0 },
 
   // ---- 個別強化(報酬) ----
   upPerk: { base: 0.22, slope: 0.010, floor: 0.055 },
