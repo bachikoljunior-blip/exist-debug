@@ -9,6 +9,7 @@ const b64=n=>'data:image/jpeg;base64,'+fs.readFileSync(DIR+'/'+n+'.jpg').toStrin
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const kind=op=>{
   if(/ボス/.test(op))return['ボス','boss'];
+  if(/会心/.test(op))return['会心','crit'];
   if(/実績/.test(op))return['実績','ach'];
   if(/クエスト|ステージ/.test(op))return['ステージ','stg'];
   if(/転生/.test(op))return['転生','p'];
@@ -83,7 +84,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .tag{font-size:11px;font-weight:800;letter-spacing:.02em;border-radius:7px;padding:2px 8px;color:#fff;line-height:1.5}
 .t-o{background:#8a7a5c}.t-t{background:#c77f2b}.t-b{background:#4f7d5a}.t-m{background:#b04a3a}
 .t-w{background:#9a6cae}.t-g{background:#c9a227;color:#2a2210}.t-r{background:#3f7391}.t-p{background:#7a4fae}
-.t-s{background:#2f8a7a}.t-e{background:#6d6a8c}.t-idle{background:#6b7a86}.t-stg{background:#c0562e}.t-boss{background:#b3132e}.t-ach{background:#b8860b}
+.t-s{background:#2f8a7a}.t-e{background:#6d6a8c}.t-idle{background:#6b7a86}.t-stg{background:#c0562e}.t-boss{background:#b3132e}.t-ach{background:#b8860b}.t-crit{background:#d4a017;color:#2a2210}
 .step{font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700}
 .time{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:800;color:var(--accent);
   background:var(--accent-soft);border-radius:999px;padding:3px 11px;font-size:12.5px}

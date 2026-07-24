@@ -83,6 +83,16 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     if(s.unlocked&&s.gain>0){ break; } // 初転生の条件が立ったら周回ループへ
   }
 
+  // 会心の一撃を1つ捕捉=タップの"気持ちよさ"(面白さF1)を実況に写す。指先の型が要る・一過性なのでフロートが出た瞬間を撮る。
+  await p.evaluate(()=>{ try{ if(!state.research.fingerTechnique && state.cookies.gte(D(2500))) buyResearch('fingerTechnique'); }catch(e){} });
+  { let caught=false;
+    for(let t=0; t<220 && !caught; t++){
+      const crit=await p.evaluate(()=>{ const fa=document.getElementById('floatArea'); if(fa)fa.innerHTML=''; tapCookie(); return document.querySelectorAll('.critFloat').length>0; });
+      if(crit){ await p.clock.runFor(120); await rec('会心の一撃！(タップの手応え)',1); caught=true; }
+    }
+    if(!caught) console.log('   (crit not caught in 220 taps)');
+  }
+
   // offline式で放置生産→設備/研究を建て直し。runCookiesを厚く積む(=討伐窓を延ばし転生回数を減らす=実プレイヤの立ち回り)。
   const BANK_TARGET=Number(process.env.BANK_TARGET||1e18);
   const bankRun=async(target)=>p.evaluate((target)=>{
