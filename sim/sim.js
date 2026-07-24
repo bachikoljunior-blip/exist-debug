@@ -2067,43 +2067,63 @@ const MILESTONE_RESEARCH = (() => {
   const list = [];
   const add = (id, trig, fx, costSec) => list.push({ id, trig, fx, costSec });
   // --- 実績系(第0回から) ---
-  // 設備の熟練 I〜IV: 10/40/120/300台で その設備の生産×1.5(クリック設備はタップ×1.35)
-  const eqTiers = [[10, 150], [40, 450], [120, 1200], [300, 3000]];
+  // 設備の熟練(再設計 2026-07-24): 旧・設備別×4段=64本は「設備を一気に買うバースト」で解放イベントが
+  //   団子になり㉚(解放間隔≥30秒)の主因だった(実測: 64本除外で㉚67%→85%)。効果(個別設備の熟練倍率)の
+  //   総和は変えず、**総設備数の階段**でまとめて効くNT段の累積研究に再編する。総設備数は通常設備の購入と
+  //   同じく経済律速で滑らかに増えるため、各段の解放は自然に≥30秒間隔になる(=通常設備の解放がペーシングOKな理由と同じ)。
+  const totalEquip = sim => { let s = 0; const up = sim.run.upgrades; for (const u2 of UPGRADES) s += up[u2.id] || 0; return s; };
+  const eqFx = [];
   for (const u of UPGRADES) {
-    eqTiers.forEach(([n, cs], ti) => {
-      // 効果多様化(2026-07-15): 倍率だけでなく自設備数連動/他設備数連動を混ぜる
+    for (let ti = 0; ti < 4; ti++) {
       let fx;
-      if (u.type === 'click') fx = ti % 2 === 0 ? { click: 1.35 } : { critAdd: 0.02 };       // 会心確率も
+      if (u.type === 'click') fx = ti % 2 === 0 ? { click: 1.35 } : { critAdd: 0.02 };       // クリック設備: 倍率と会心確率を交互
       else if (ti === 0) fx = { own: { [u.id]: 0.004 } };                                     // I: 自設備数連動(台数で伸びる)
       else if (ti === 1) fx = { up: { [u.id]: 1.4 } };                                        // II: 倍率
       else if (ti === 2) fx = { sup: [u.id, 'grandma', 0.0015] };                             // III: 他設備数連動(おばあちゃん台数で支援)
       else fx = { up: { [u.id]: 1.5 } };                                                      // IV: 倍率
-      add('ms_' + u.id + '_t' + (ti + 1), sim => (sim.run.upgrades[u.id] || 0) >= n, fx, cs);
-    });
+      eqFx.push({ ti, fx });
+    }
+  }
+  eqFx.sort((a, b) => a.ti - b.ti); // 深い段(高倍率)ほど後の累積段=通算設備数が増えてから効く
+  // 通算設備購入数(sim.lifeEquip)の階段。周回内の総設備数だと成熟周回で1400→6500を数秒で駆け抜けて団子化するため、
+  // 周回跨ぎで滑らかに増える通算値に変更(=討伐/金/タップ実績と同じ発想)。閾値は最も設備の少ない方針(通算〜190k)でも全段到達。
+  const eqThresholds = [400, 1500, 5000, 15000, 40000, 85000, 140000, 190000];
+  const eqCostSec = [120, 300, 700, 1600, 3600, 8000, 17000, 36000];
+  const NT = eqThresholds.length;
+  const perTier = Math.ceil(eqFx.length / NT);
+  for (let k = 0; k < NT; k++) {
+    const batch = eqFx.slice(k * perTier, (k + 1) * perTier).map(e => e.fx);
+    if (!batch.length) continue;
+    list.push({ id: 'ms_eqmastery_t' + (k + 1), trig: sim => (sim.lifeEquip || 0) >= eqThresholds[k], fxList: batch, costSec: eqCostSec[k] });
   }
   // 工場の早期強化 3段(2026-07-11 ユーザー指示「工場の段1研究が高いので、実績研究でその前にいくつか
   // 工場強化できるものを入れて」): 組立ライン網(段1)が買える前の3/6/8台で工場生産を先行強化。安価(即買い帯)
   const facEarly = [[3, 40, 1.35], [6, 80, 1.4], [8, 120, 1.45]];
   facEarly.forEach(([n, cs, m], i) => add('ms_factory_e' + (i + 1), sim => (sim.run.upgrades.factory || 0) >= n, { up: { factory: m } }, cs));
-  // 討伐実績 8段(周回内): 効果はダメージ/出現/滞在/HP/ドロップのローテ
-  const killTiers = [[10, 100, { hunt: 1.3 }], [25, 200, { spawn: 0.85 }], [50, 400, { stay: 1.2 }], [100, 800, { hunt: 1.3 }],
-    [200, 1600, { hp: 0.75 }], [400, 3000, { dropAdd: 1 }], [800, 4500, { hunt: 1.3 }], [1600, 6000, { stay: 1.2 }]];
-  killTiers.forEach(([n, cs, fx], i) => add('ms_kills_k' + (i + 1), sim => (sim.run.msKills || 0) >= n, fx, cs));
-  // 金クッキー実績 6段(周回内)
-  const goldTiers = [[5, 100], [15, 300], [40, 750], [100, 2000], [250, 4000], [600, 7500]];
-  goldTiers.forEach(([n, cs], i) => add('ms_golden_g' + (i + 1), sim => (sim.run.msGoldens || 0) >= n, { golden: 1.3 }, cs));
-  // タップ実績 6段(周回内)
-  const tapTiers = [[300, 75], [1000, 200], [3000, 600], [8000, 1500], [20000, 3500], [50000, 7500]];
-  tapTiers.forEach(([n, cs], i) => add('ms_taps_p' + (i + 1), sim => (sim.run.msTaps || 0) >= n, i % 2 === 0 ? { click: 1.4 } : { critAdd: 0.03 }, cs)); // 倍率と会心確率を交互
+  // 討伐実績 8段(通算・2026-07-24 ㉚再編): 旧・周回内カウント(10〜1600)は毎周回 冒頭で即達成→解放が団子だった。
+  //   通算討伐数(sim.lifeKills)の階段に変更=達成が周回を跨いで滑らかに分散(=eqmasteryと同じ発想)。閾値は最も
+  //   討伐の少ない方針でも全段到達する範囲(通算40k〜)に収め、効果(総和)は不変=成長は維持。効果はダメージ/出現/滞在/HP/ドロップのローテ。
+  const killTiers = [[400, 100, { hunt: 1.3 }], [1000, 200, { spawn: 0.85 }], [2500, 400, { stay: 1.2 }], [5000, 800, { hunt: 1.3 }],
+    [9000, 1600, { hp: 0.75 }], [15000, 3000, { dropAdd: 1 }], [24000, 4500, { hunt: 1.3 }], [38000, 6000, { stay: 1.2 }]];
+  killTiers.forEach(([n, cs, fx], i) => add('ms_kills_k' + (i + 1), sim => (sim.lifeKills || 0) >= n, fx, cs));
+  // 金クッキー実績 6段(通算)
+  const goldTiers = [[40, 100], [150, 300], [450, 750], [1200, 2000], [3000, 4000], [8000, 7500]];
+  goldTiers.forEach(([n, cs], i) => add('ms_golden_g' + (i + 1), sim => (sim.lifeGoldens || 0) >= n, { golden: 1.3 }, cs));
+  // タップ実績 6段(通算)
+  const tapTiers = [[1000, 75], [4000, 200], [12000, 600], [30000, 1500], [65000, 3500], [130000, 7500]];
+  tapTiers.forEach(([n, cs], i) => add('ms_taps_p' + (i + 1), sim => (sim.lifeTaps || 0) >= n, i % 2 === 0 ? { click: 1.4 } : { critAdd: 0.03 }, cs)); // 倍率と会心確率を交互
   
   // ノルマ層実績 6段(周回内)
   const stageTiers = [[5, 150], [15, 450], [30, 1000], [60, 2000], [100, 4000], [150, 7500]];
   const stageAdd = [80, 4000, 260000, 2.2e7, 3e9, 6e11]; // 加算は層が深いほど大きい固定生産(効果多様化)
   stageTiers.forEach(([n, cs], i) => add('ms_stage_s' + (i + 1), sim => (sim.run.maxStage || 0) >= n, i % 2 === 0 ? { all: 1.15 } : { cpsAdd: stageAdd[i] }, cs)); // 倍率と加算を交互
   
-  // 転生実績 4段(通算)
-  const prTiers = [[2, 300], [5, 600], [10, 1500], [20, 3000]];
-  prTiers.forEach(([n, cs], i) => add('ms_prestige_r' + (i + 1), sim => (sim.prestigeRuns || 0) >= n, { all: 1.2 }, cs));
+  // 熟達実績 4段(通算・2026-07-24 ㉚再編): 旧・通算転生数(prestigeRuns)トリガは転生の瞬間=スキル束の直後に必ず
+  //   解放が並び㉚の団子源だった。通算討伐数(lifeKills=戦闘中に滑らかに増える周回中盤の量)に付け替え、解放が
+  //   転生境界(スキル)から切り離されて周回中盤に分散する。効果(全生産×1.2×4段)は不変=成長維持。閾値は最も
+  //   討伐の少ない方針でも全段到達する範囲(通算〜40k)。
+  const prTiers = [[4000, 300], [12000, 600], [25000, 1500], [40000, 3000]];
+  prTiers.forEach(([n, cs], i) => add('ms_prestige_r' + (i + 1), sim => (sim.lifeKills || 0) >= n, { all: 1.2 }, cs));
   // スキル解放研究のコストは全て二倍以上違う(2026-07-16 ユーザー指示):
   // 固定コスト=スキルの深さ(はしごコスト順位)で6ティアに割った比3の階段。隣接ティアは常に≥2倍差。
   // 応用(msk_)=そのスキルのティア、奥義(msk2_)=1段上(=同一スキルでも応用<奥義を常に満たす)。
@@ -2126,7 +2146,25 @@ function msCostOf(sim, m, prod) {
   // 焼き込み表(ms_costs.json)を優先。表に無いidだけ動的式(表生成にも使う)。収入連動の床は使わない。
   const costSec = m.costSec != null ? m.costSec : ((P.msResearch && P.msResearch.costSec != null) ? P.msResearch.costSec : 30);
   const fixed = P.msResearch && P.msResearch.costTable && P.msResearch.costTable[m.id];
-  return fixed != null ? fixed : (m.cost != null ? m.cost : Math.max(100, (prod ? prod.cps : 0) * costSec)); // コストはゲーム内固定(表優先)
+  const mul = (P.msResearch && P.msResearch.costMul) || 1; // ㉚チューニング用の一時ノブ(焼き込み前の探索)
+  const base = fixed != null ? fixed : (m.cost != null ? m.cost : Math.max(100, (prod ? prod.cps : 0) * costSec)); // コストはゲーム内固定(表優先)
+  return base * mul;
+}
+function applyMsFx(r, fx) {
+  if (fx.up) for (const k in fx.up) r.ms.up[k] = (r.ms.up[k] || 1) * fx.up[k];
+  if (fx.click) r.ms.click *= fx.click;
+  if (fx.cps) r.ms.cps = (r.ms.cps || 1) * fx.cps;
+  if (fx.all) r.ms.all *= fx.all;
+  if (fx.golden) r.ms.golden *= fx.golden;
+  if (fx.hunt) r.ms.hunt *= fx.hunt;
+  if (fx.dropAdd) r.ms.dropAdd += fx.dropAdd;
+  if (fx.spawn) r.ms.spawn = (r.ms.spawn || 1) * fx.spawn;
+  if (fx.stay) r.ms.stay = (r.ms.stay || 1) * fx.stay;
+  if (fx.hp) r.ms.hp = (r.ms.hp || 1) * fx.hp;
+  if (fx.cpsAdd) r.ms.cpsAdd = (r.ms.cpsAdd || 0) + fx.cpsAdd;
+  if (fx.own) for (const k in fx.own) r.ms.own[k] = (r.ms.own[k] || 0) + fx.own[k];
+  if (fx.sup) { const [up, src, rate] = fx.sup; (r.ms.sup[up] = r.ms.sup[up] || []).push([src, rate]); }
+  if (fx.critAdd) r.ms.critAdd = (r.ms.critAdd || 0) + fx.critAdd;
 }
 function applyMs(sim, m, cost) {
   const r = sim.run;
@@ -2135,20 +2173,9 @@ function applyMs(sim, m, cost) {
   else r.ms.bought[m.id] = true;
   if (!sim.msCostLog) sim.msCostLog = {};
   if (!sim.msCostLog[m.id]) sim.msCostLog[m.id] = cost; // 初回購入時の支払額(固定コスト表の生成用)
-  if (m.fx.up) for (const k in m.fx.up) r.ms.up[k] = (r.ms.up[k] || 1) * m.fx.up[k];
-  if (m.fx.click) r.ms.click *= m.fx.click;
-  if (m.fx.cps) r.ms.cps = (r.ms.cps || 1) * m.fx.cps;
-  if (m.fx.all) r.ms.all *= m.fx.all;
-  if (m.fx.golden) r.ms.golden *= m.fx.golden;
-  if (m.fx.hunt) r.ms.hunt *= m.fx.hunt;
-  if (m.fx.dropAdd) r.ms.dropAdd += m.fx.dropAdd;
-  if (m.fx.spawn) r.ms.spawn = (r.ms.spawn || 1) * m.fx.spawn;
-  if (m.fx.stay) r.ms.stay = (r.ms.stay || 1) * m.fx.stay;
-  if (m.fx.hp) r.ms.hp = (r.ms.hp || 1) * m.fx.hp;
-  if (m.fx.cpsAdd) r.ms.cpsAdd = (r.ms.cpsAdd || 0) + m.fx.cpsAdd;
-  if (m.fx.own) for (const k in m.fx.own) r.ms.own[k] = (r.ms.own[k] || 0) + m.fx.own[k];
-  if (m.fx.sup) { const [up, src, rate] = m.fx.sup; (r.ms.sup[up] = r.ms.sup[up] || []).push([src, rate]); }
-  if (m.fx.critAdd) r.ms.critAdd = (r.ms.critAdd || 0) + m.fx.critAdd;
+  // 設備熟練(ms_eqmastery_*)は総設備数の階段で旧64本ぶんの効果を「まとめて」適用=fxList
+  if (m.fxList) for (const fx of m.fxList) applyMsFx(r, fx);
+  else applyMsFx(r, m.fx);
   if (!sim.everMs) sim.everMs = {};
   if (!sim.everMs[m.id]) { sim.everMs[m.id] = true; pushUnlock(sim, 'research', m.id); } // 実績研究も解放イベント(㉚対象・≥30秒)
 }
@@ -2616,8 +2643,17 @@ function upgradeCost(sim, u) {
   const e = owned <= knee ? owned * P.upCost.ownPow : knee * P.upCost.ownPow + (owned - knee) * (P.upCost.ownPow2 || P.upCost.ownPow);
   // まとめ買い割増: (1+perBuy)^熱量。時間経過で元に戻る(=壁ができない)
   const surge = Math.pow(1 + (P.upSurge ? P.upSurge.perBuy : 0), surgeHeat(sim, u.id));
-  // 丸め規則: 設備コストは有効数字3桁=5の倍数+小数切り捨て(表示も内部値もこの値)
-  return q5cost(P.upCost.coef * Math.pow(u.base, P.upCost.basePow) * Math.pow(u.growth, e) * surge * disc);
+  let cost = q5cost(P.upCost.coef * Math.pow(u.base, P.upCost.basePow) * Math.pow(u.growth, e) * surge * disc);
+  // 新設備の初号機ペーシング(2026-07-24 ㉚): スキルで解放される設備(UPGRADE_UNLOCK_SKILLS)は、解放スキルを
+  // 取った直後に初号機を即買い(数秒)して「スキル→設備」が連続解放=㉚基底の最大の団子源だった。初号機のコストを
+  // 「現在の毎秒生産の firstUnitSec 秒ぶん」に底上げし、解放から初号機購入まで必ず≥30秒 貯めさせる(=価格による
+  // ペーシング。待ちタイマーではない)。収入連動なので終盤(収入が巨大)でも一定秒数を保証する(固定割増だと効かない)。
+  // 2号機以降は通常コスト。設備コスト自体は元々式ベース(固定表ではない)なので、収入連動でも「固定コスト」議論の対象外。
+  if (owned === 0 && UPGRADE_UNLOCK_SKILLS[u.id]) {
+    const sec = (P.upCost && P.upCost.firstUnitSec) || 0;
+    if (sec > 0 && sim._lastProd && sim._lastProd.cps > 0) cost = Math.max(cost, q5cost(sec * sim._lastProd.cps));
+  }
+  return cost;
 }
 function researchCostOf(sim, id) {
   const disc = Math.exp(-Math.max(0, skillEffect(sim, 'researchDiscount'))) * (1 - equip2Fx(sim).resDisc); // 新装備: 研究割引系
@@ -2699,6 +2735,7 @@ function earn(sim, amount) {
 
 function collectGolden(sim, prod) {
   sim.run.msGoldens = (sim.run.msGoldens || 0) + 1; // マイルストーン研究(第12次R5): その周回の金取得数
+  sim.lifeGoldens = (sim.lifeGoldens || 0) + 1;      // ㉚(2026-07-24): 通算金取得数(実績研究の解放を周回跨ぎで分散させるため)
   const r = sim.run;
   r.goldenTaken++;
   // 香料調合 段階2: 風味の熟成(前回の金からの経過秒・上限60s で、全生産の短時間バーストが決まる)
@@ -2744,7 +2781,7 @@ function collectGolden(sim, prod) {
     earn(sim, Math.max(100, prod.cps * P.golden.instantCoef, prod.clickEV * clickInstantCoefEff(sim))
       * goldenAmountMultiplier(sim) * goldenEarlyMul(sim) * ((P.ws && wsStageDef(sim).goldenGain) || 1)
       * pE * (P.goldenEcho.amountMul || 1));
-    r.goldenTaken += pE; r.msGoldens = (r.msGoldens || 0) + pE;
+    r.goldenTaken += pE; r.msGoldens = (r.msGoldens || 0) + pE; sim.lifeGoldens = (sim.lifeGoldens || 0) + pE;
   }
 }
 
@@ -2824,6 +2861,7 @@ function defeatMonster(sim, mon) {
   }
   if (!r.quotaFailed) r.quotaMonsterKills += units;
   r.msKills = (r.msKills || 0) + units; // マイルストーン研究(第12次R5): その周回の討伐数
+  sim.lifeKills = (sim.lifeKills || 0) + units; // ㉚(2026-07-24): 通算討伐数(解放を周回跨ぎで分散)
   // 討伐連鎖(第12次D): breakSec以内の連続討伐で+units(こつぶ群れ=3体分)、途切れたら振出し
   if (P.chain) {
     r.chainN = (sim.t - r.chainLastT) <= chainBreakSec(sim) ? r.chainN + units : units;
@@ -3156,6 +3194,7 @@ function advanceTick(sim, strategy) {
       earn(sim, (cpsNow + clickNow * tapsForCookies + directAll) * (P.ws.orders.rewardCookieMul || 0.5) * dt);
     }
     r.msTaps = (r.msTaps || 0) + tapsForCookies * dt; // マイルストーン研究(第12次R5): その周回のタップ数
+    sim.lifeTaps = (sim.lifeTaps || 0) + tapsForCookies * dt; // ㉚(2026-07-24): 通算タップ数(解放を周回跨ぎで分散)
     tryBuyMilestones(sim, prod); // 同: 解放条件を満たした即効研究を自動購入(常に手が届く安さのモデル)
 
     // 銀行クリック配当 段階2: 複利利息。キャップ撤廃: 硬い min(利息, 毎秒生産×2) を
@@ -3466,6 +3505,7 @@ function tryBuyUpgrade(sim, u, budgetRatio) {
   if (cost > sim.run.cookies) return false;
   sim.run.cookies -= cost;
   sim.run.upgrades[u.id]++;
+  sim.lifeEquip = (sim.lifeEquip || 0) + 1; // ㉚(2026-07-24): 通算設備購入数(設備熟練の解放を周回跨ぎで分散)
   sim.run._lastUpBuyT = sim.t; // 装備C型「設備購入直後」用
   // 星屑パフェ: 効果中に購入した設備はその周回中、生産×1.25(成長ゲート型)
   if (sim.run.buffs && (sim.run.buffs.stardustParfait || 0) > sim.t) sim.run.parfaitUps[u.id] = (sim.run.parfaitUps[u.id] || 0) + 1;

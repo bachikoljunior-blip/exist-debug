@@ -148,7 +148,7 @@ module.exports = {
   // 実績研究の固定コスト表(2026-07-11「コストはゲーム内で固定して」): build_ms_costs.js が
   // 10方針100hの測定から各研究の初回購入額(中央値・丸めq5)を焼き込む。無い間は動的フォールバック。
   // massProd=量産体制(2026-07-13 メトロノーム): 繰り返し購入の間隔と倍率(新⑥の床=×1.25^4/3分=×2.44)
-  msResearch: { massProdMul: 1.25, massProdSec: 32, momentumCapSec: 14400, momentumFixedMul: 2, momBuyDiv: 12, momBuyCapExp: 8000,
+  msResearch: { massProdMul: 1.25, massProdSec: 32, momentumCapSec: 14400, momentumFixedMul: 2, momBuyDiv: 12, momBuyCapExp: 8000, costMul: 8,
     costTable: (function () { try { return require('./ms_costs.json'); } catch (e) { return null; } })() },
 
   // ㉚解放間隔(2026-07-22 ユーザー指示「ゲート解放無くして、ゲーム調整で解放間隔30秒以上」):
@@ -416,7 +416,7 @@ module.exports = {
   // ---- アップグレードコスト式 ----  cost = coef * base^basePow * growth^(owned*ownPow)
   // 2026-07-06 第8次: 新帯域(周回25〜90分)へ向けownPow 0.25→0.27(再登坂・開拓の全体減速)、
   // 膝4300/1.0→900/0.55(深部の周回短縮を抑制。㉒単調増加と⑦後半帯域用)
-  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72 },
+  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, firstUnitSec: 40 },
 
   // ---- 個別強化(報酬) ----
   upPerk: { base: 0.22, slope: 0.010, floor: 0.055 },
