@@ -2679,11 +2679,23 @@ function researchCostOf(sim, id) {
 function resStage2(sim, id) { return !!sim.run.research2[id] && sim.opt.disableStage !== id + ':2' && sim._md !== 'stage:' + id + ':2' && !(sim._mdSet && sim._mdSet.has('stage:' + id + ':2')); }
 function resStage3(sim, id) { return !!sim.run.research3[id] && sim.opt.disableStage !== id + ':3' && sim._md !== 'stage:' + id + ':3' && !(sim._mdSet && sim._mdSet.has('stage:' + id + ':3')); }
 // 段階カードの表示条件: 前段階を購入済み かつ 対応スキルを取得済み
+// ㉚(2026-07-24): 研究段階(段2/段3)の解放を「前段からのノルマ層 進行」で律速する。段2/段3は同じスキルで複数が
+// 一斉解放(例: upgrade_singularity が portalGlobalFold:2・blackHoleCompression:2・galaxyAssembly:3 を同時開放)して
+// 後半フロンティアの団子(㉚未達の主因)になっていた。段2は基礎研究購入時の最高層から stageGapLayers 層 進んでから、
+// 段3は段2購入時の最高層からさらに stageGapLayers 層 進んでから解禁=同一スキルでも到達層が違うタイミングで1つずつ出る。
+// 相対ゲートなので必ず到達可能(進行し続ける限り遅かれ早かれ解禁)=全解放を壊さない。効果は従来通り(解放時期だけ分散)。
 function researchStageUnlocked(sim, id, stage) {
   const r = sim.run;
   if (!r.research[id]) return false;
-  if (stage === 2) return !!sim.skills[RES_STAGE2[id]];
-  return !!r.research2[id] && !!sim.skills[RES_STAGE3[id]];
+  const gap = (P.upCost && P.upCost.stageGapLayers) || 0;
+  if (stage === 2) {
+    if (!sim.skills[RES_STAGE2[id]]) return false;
+    if (gap > 0 && r._resBaseMax && r._resBaseMax[id] != null && (r.maxStage || 0) < r._resBaseMax[id] + gap) return false;
+    return true;
+  }
+  if (!r.research2[id] || !sim.skills[RES_STAGE3[id]]) return false;
+  if (gap > 0 && r._resS2Max && r._resS2Max[id] != null && (r.maxStage || 0) < r._resS2Max[id] + gap) return false;
+  return true;
 }
 // 段階コスト: 段1コスト×倍率。研究ごとの個別倍率(resStageCostEach: 値段割りD'用)があれば優先、
 // なければ共通倍率(resStageCost)。researchDiscountは段1と同様に効く
@@ -3597,6 +3609,7 @@ function tryBuyResearch(sim, id, budgetRatio) {
   r.cookies -= cost;
   r.research[id] = true;
   r._lastResBuyT = sim.t; // 装備C型「研究購入直後」用
+  (r._resBaseMax || (r._resBaseMax = {}))[id] = r.maxStage || 0; // ㉚: 段2解放の相対進行ゲート基点
   if (sim.firstResearchBuy[id] === undefined) sim.firstResearchBuy[id] = sim.t;
   if (!sim.everResearch[id]) {
     sim.everResearch[id] = true;
@@ -3618,7 +3631,8 @@ function tryBuyResearchStage(sim, id, stage, budgetRatio) {
   const br = (stSec > 0 && !sim.everStage[id + ':' + stage]) ? Math.max(budgetRatio, 0.92) : budgetRatio;
   if (cost > r.cookies * br) return false;
   r.cookies -= cost;
-  if (stage === 2) r.research2[id] = true; else r.research3[id] = true;
+  if (stage === 2) { r.research2[id] = true; (r._resS2Max || (r._resS2Max = {}))[id] = r.maxStage || 0; } // ㉚: 段3解放の相対進行ゲート基点
+  else r.research3[id] = true;
   // ⑬測定用(2026-07-16・opt-in): タイミング機能段2の取得直後のスナップを保存=機能が「活性」な地点から
   // 短窓で最適/放置を枝分かれできる(周回頭からだと段2未取得で1.000・周回全体だと複利発散)。measurement専用=経済不変。
   // 延長狩り(portalNetwork)だけは購入時でなく「取得後の最初の討伐時」にsnapする(下のdefeatMonster側):
