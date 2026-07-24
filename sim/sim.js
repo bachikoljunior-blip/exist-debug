@@ -7,13 +7,13 @@ const P = require('./params.js');
 const UPGRADES = [
   { id: 'finger', type: 'click', value: 1, base: 0.0506, growth: 1.32 },
   { id: 'grandma', type: 'cps', value: 1, base: 0.9, growth: 1.30 }, // base=0.9(2026-07-15 ユーザー「ゲーム内で買える初回価格を1000に」=1100×0.9^0.6→q5cost=1000。旧base1000は初回69000だった。1台目生産1のまま・強化は所持数スケール)
-  { id: 'oven', type: 'cps', value: 8, base: 390, growth: 1.35 },
-  { id: 'factory', type: 'cps', value: 45, base: 2600, growth: 1.37 },
+  { id: 'oven', type: 'cps', value: 8, base: 520, growth: 1.35 }, // base 390→520 ゲーム同期(批判監査F6・parity修復。ゲーム=ground truth)
+  { id: 'factory', type: 'cps', value: 45, base: 7200, growth: 1.37 }, // base 2600→7200 ゲーム同期(F6)
   // 第12次R3: 初台ボーナス(presence)が第0回の中位チェーン(工場→銀行→香料棚→異世界炉)を加速し
   // S9/S10のT2第0回が中央値0.43/0.44に潰れたため、銀行/香料棚/異世界炉の初期コストを×3(丸めq5)。
   // ×1/×2/×3/×5の掃引で×3のみ10方針全部が帯[0.5,1]内(S9 0.59/S10 0.78/最大S3 0.96)。
   { id: 'bank', type: 'cps', value: 260, base: 54000, growth: 1.39 },
-  { id: 'spiceRack', type: 'cps', value: 780, base: 180000, growth: 1.40 },
+  { id: 'spiceRack', type: 'cps', value: 780, base: 215000, growth: 1.40 }, // base 180000→215000 ゲーム同期(F6)
   { id: 'portal', type: 'cps', value: 1600, base: 780000, growth: 1.41 },
   { id: 'moonBakery', type: 'cps', value: 9800, base: 12500000, growth: 1.43 },
   { id: 'timeOven', type: 'cps', value: 65000, base: 180000000, growth: 1.45 },
