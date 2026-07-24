@@ -1369,6 +1369,12 @@ function hasSkillEffect(sim, type, target) {
   return v;
 }
 function upgradeUnlocked(sim, u) {
+  // ㉚(2026-07-24 再設計): 設備の「スキル解放ゲート」を撤去。スキルで解放していたため「解放スキル取得→直後にその設備を
+  // 購入」が連続解放(㉚基底の最大の団子源)になっていた。設備は visibleUpgrades の階層ゲート(前段を所持したら次段が
+  // 店に並ぶ)+コスト進行で自然に解放される(=finger/grandma…と同じくコスト律速で≥30秒間隔)。解放スキル(upgrade_*)は
+  // 成長効果(skillBranchFx の cps×1.3 ほか)として残るのでスキルツリー・全解放・㉜の構造は不変。設備解放とスキル取得の
+  // タイミングが切り離され、隣接団子が消える。
+  if (P.upCost && P.upCost.decoupleUnlockSkills) return true;
   const need = UPGRADE_UNLOCK_SKILLS[u.id];
   return !need || hasSkill(sim, need);
 }
@@ -2719,10 +2725,19 @@ function prestigeUnlockedFn(sim) {
 }
 
 // 可視アップグレード(店に並ぶもの)
+// ㉚(2026-07-24): 次段の解放は「現最高段を revealCount 台 所持」してから(旧=1台で即次段)。クッキー潤沢な方針が
+// 段を数秒で駆け上がって設備解放が団子になるのを防ぐ=次段に進むには現段をある程度 育てる必要があり、その育成時間ぶん
+// 解放が自然に空く(コストによる足止めではなく「所持数の進行ゲート」。貯めない方針も貯める方針も同じ台数で律速される)。
 function visibleUpgrades(sim) {
-  let hi = -1;
-  UPGRADES.forEach((u, i) => { if (sim.run.upgrades[u.id] > 0) hi = Math.max(hi, i); });
-  const limit = Math.min(UPGRADES.length - 1, Math.max(1, hi + 1));
+  const rc = (P.upCost && P.upCost.revealCount) || 1;
+  let hi = -1, hiReady = -1;
+  UPGRADES.forEach((u, i) => {
+    const c = sim.run.upgrades[u.id] || 0;
+    if (c > 0) hi = Math.max(hi, i);
+    if (c >= rc) hiReady = Math.max(hiReady, i);
+  });
+  // 次段が並ぶのは現最高「所持段」が revealCount 台に達してから。未達なら現最高所持段まで(次段はまだ)。
+  const limit = Math.min(UPGRADES.length - 1, Math.max(1, hiReady + 1, hi));
   return UPGRADES.filter((u, i) => i <= limit && upgradeUnlocked(sim, u));
 }
 
