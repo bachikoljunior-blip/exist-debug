@@ -2102,6 +2102,10 @@ const MILESTONE_RESEARCH = (() => {
   const psp = (P.msResearch && P.msResearch.prestigeSpread) || 0;
   const psGate = (i, cond) => (psp > 0 ? (sim => cond(sim) && (sim.prestigeRuns || 0) >= Math.floor(i * psp)) : cond);
   const eqThresholds = [400, 2000, 8000, 30000, 120000]; // 8段→5段に集約(2026-07-24 ㉚): 序盤の解放密度を下げる。効果総和は不変(束が増えるだけ)。しきい値は低め維持=効果は従来どおり早く効く(成長を遅らせない)
+  // 設備熟練のコスト(2026-07-24): 「解放時点の毎秒生産×costSec」。効果は序盤から効かせたい(成長)ので しきい値は低め=
+  // 各段が短い間隔で通算値を跨ぐ。㉚の解放間隔はコストの貯金時間(costSec秒)が律速する必要があり、これは収入連動でないと
+  // 一定秒数にならない(固定額だと終盤は即買い=団子/序盤は買えず=全解放不能。実測でどちらも破綻)。通算しきい値ごとに
+  // 発火スケールが方針間で90桁ばらつくため固定表には焼けない=収入連動(=「毎秒生産の◯秒ぶん」という相対的な固定目標)を採用。
   const eqCostSec = [120, 450, 1400, 4500, 16000];
   const NT = eqThresholds.length;
   const perTier = Math.ceil(eqFx.length / NT);
