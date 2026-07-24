@@ -2101,8 +2101,8 @@ const MILESTONE_RESEARCH = (() => {
   // prestigeSpreadは全方針が到達する範囲(遅い方針でも全段解禁=全解放を壊さない)に収める。
   const psp = (P.msResearch && P.msResearch.prestigeSpread) || 0;
   const psGate = (i, cond) => (psp > 0 ? (sim => cond(sim) && (sim.prestigeRuns || 0) >= Math.floor(i * psp)) : cond);
-  const eqThresholds = [400, 1500, 5000, 15000, 40000, 85000, 140000, 190000];
-  const eqCostSec = [120, 300, 700, 1600, 3600, 8000, 17000, 36000];
+  const eqThresholds = [400, 2000, 8000, 30000, 120000]; // 8段→5段に集約(2026-07-24 ㉚): 序盤の解放密度を下げる。効果総和は不変(束が増えるだけ)。しきい値は低め維持=効果は従来どおり早く効く(成長を遅らせない)
+  const eqCostSec = [120, 450, 1400, 4500, 16000];
   const NT = eqThresholds.length;
   const perTier = Math.ceil(eqFx.length / NT);
   for (let k = 0; k < NT; k++) {
@@ -2123,14 +2123,14 @@ const MILESTONE_RESEARCH = (() => {
   // 金クッキー実績 6段(通算)
   const goldTiers = [[40, 100], [150, 300], [450, 750], [1200, 2000], [3000, 4000], [8000, 7500]];
   goldTiers.forEach(([n, cs], i) => add('ms_golden_g' + (i + 1), psGate(i, sim => (sim.lifeGoldens || 0) >= n), { golden: 1.3 }, cs));
-  // タップ実績 6段(通算)
-  const tapTiers = [[1000, 75], [4000, 200], [12000, 600], [30000, 1500], [65000, 3500], [130000, 7500]];
-  tapTiers.forEach(([n, cs], i) => add('ms_taps_p' + (i + 1), psGate(i, sim => (sim.lifeTaps || 0) >= n), i % 2 === 0 ? { click: 1.4 } : { critAdd: 0.03 }, cs)); // 倍率と会心確率を交互
-  
-  // ノルマ層実績 6段(周回内)
-  const stageTiers = [[5, 150], [15, 450], [30, 1000], [60, 2000], [100, 4000], [150, 7500]];
-  const stageAdd = [80, 4000, 260000, 2.2e7, 3e9, 6e11]; // 加算は層が深いほど大きい固定生産(効果多様化)
-  stageTiers.forEach(([n, cs], i) => add('ms_stage_s' + (i + 1), psGate(i, sim => (sim.run.maxStage || 0) >= n), i % 2 === 0 ? { all: 1.15 } : { cpsAdd: stageAdd[i] }, cs)); // 倍率と加算を交互
+  // タップ実績 4段(通算・2026-07-24 ㉚: 6→4に集約=序盤の解放密度を下げる。効果は倍率/会心を強めて総和維持)
+  const tapTiers = [[1500, 120], [8000, 500], [30000, 1800], [110000, 6000]];
+  tapTiers.forEach(([n, cs], i) => add('ms_taps_p' + (i + 1), psGate(i, sim => (sim.lifeTaps || 0) >= n), i % 2 === 0 ? { click: 1.62 } : { critAdd: 0.045 }, cs)); // 倍率と会心確率を交互
+
+  // ノルマ層実績 4段(2026-07-24 ㉚: 6→4に集約)
+  const stageTiers = [[8, 250], [30, 1200], [80, 3500], [150, 8000]];
+  const stageAdd = [0, 90000, 0, 3e10]; // 奇数段のみ cpsAdd(層が深いほど大きい固定生産)
+  stageTiers.forEach(([n, cs], i) => add('ms_stage_s' + (i + 1), psGate(i, sim => (sim.run.maxStage || 0) >= n), i % 2 === 0 ? { all: 1.24 } : { cpsAdd: stageAdd[i] }, cs)); // 倍率と加算を交互
   
   // 熟達実績 4段(通算・2026-07-24 ㉚再編): 旧・通算転生数(prestigeRuns)トリガは転生の瞬間=スキル束の直後に必ず
   //   解放が並び㉚の団子源だった。通算討伐数(lifeKills=戦闘中に滑らかに増える周回中盤の量)に付け替え、解放が
