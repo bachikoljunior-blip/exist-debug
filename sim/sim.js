@@ -1380,8 +1380,11 @@ function upgradeUnlocked(sim, u) {
 }
 function researchUnlocked(sim, r) {
   // 2026-07-06: スキルゲート撤廃。その回で対応設備を購入済みなら購入可能
+  // ㉚(2026-07-24): 対応設備を resRevealCount 台 所持してから解禁(旧=1台)。研究の解放を設備の育成に連動させ、
+  // 終盤フロンティアで研究(と段階)が一斉解放する団子を分散(設備解放は eqRevealLayers で既に散らしている)。
   const eq = RES_EQUIP[r.id];
-  if (eq && !(sim.run.upgrades[eq] > 0)) return false;
+  const rrc = (P.upCost && P.upCost.resRevealCount) || 1;
+  if (eq && !((sim.run.upgrades[eq] || 0) >= rrc)) return false;
   return true;
 }
 function rewardUnlockedFn(sim, r) {
@@ -2093,6 +2096,11 @@ const MILESTONE_RESEARCH = (() => {
   eqFx.sort((a, b) => a.ti - b.ti); // 深い段(高倍率)ほど後の累積段=通算設備数が増えてから効く
   // 通算設備購入数(sim.lifeEquip)の階段。周回内の総設備数だと成熟周回で1400→6500を数秒で駆け抜けて団子化するため、
   // 周回跨ぎで滑らかに増える通算値に変更(=討伐/金/タップ実績と同じ発想)。閾値は最も設備の少ない方針(通算〜190k)でも全段到達。
+  // ㉚(2026-07-24 第2版): 各階段の第k段は「通算しきい値 かつ 転生 k×prestigeSpread 回目以降」で解禁。周回0では各系列の
+  // 低段しか出ない=初周回に全系列の低段が基底解放と混ざって密集する団子を防ぐ。段は転生を跨いで1つずつ分散する。
+  // prestigeSpreadは全方針が到達する範囲(遅い方針でも全段解禁=全解放を壊さない)に収める。
+  const psp = (P.msResearch && P.msResearch.prestigeSpread) || 0;
+  const psGate = (i, cond) => (psp > 0 ? (sim => cond(sim) && (sim.prestigeRuns || 0) >= Math.floor(i * psp)) : cond);
   const eqThresholds = [400, 1500, 5000, 15000, 40000, 85000, 140000, 190000];
   const eqCostSec = [120, 300, 700, 1600, 3600, 8000, 17000, 36000];
   const NT = eqThresholds.length;
@@ -2100,7 +2108,7 @@ const MILESTONE_RESEARCH = (() => {
   for (let k = 0; k < NT; k++) {
     const batch = eqFx.slice(k * perTier, (k + 1) * perTier).map(e => e.fx);
     if (!batch.length) continue;
-    list.push({ id: 'ms_eqmastery_t' + (k + 1), trig: sim => (sim.lifeEquip || 0) >= eqThresholds[k], fxList: batch, costSec: eqCostSec[k] });
+    list.push({ id: 'ms_eqmastery_t' + (k + 1), trig: psGate(k, sim => (sim.lifeEquip || 0) >= eqThresholds[k]), fxList: batch, costSec: eqCostSec[k] });
   }
   // 工場の早期強化 3段(2026-07-11 ユーザー指示「工場の段1研究が高いので、実績研究でその前にいくつか
   // 工場強化できるものを入れて」): 組立ライン網(段1)が買える前の3/6/8台で工場生産を先行強化。安価(即買い帯)
@@ -2111,18 +2119,18 @@ const MILESTONE_RESEARCH = (() => {
   //   討伐の少ない方針でも全段到達する範囲(通算40k〜)に収め、効果(総和)は不変=成長は維持。効果はダメージ/出現/滞在/HP/ドロップのローテ。
   const killTiers = [[400, 100, { hunt: 1.3 }], [1000, 200, { spawn: 0.85 }], [2500, 400, { stay: 1.2 }], [5000, 800, { hunt: 1.3 }],
     [9000, 1600, { hp: 0.75 }], [15000, 3000, { dropAdd: 1 }], [24000, 4500, { hunt: 1.3 }], [38000, 6000, { stay: 1.2 }]];
-  killTiers.forEach(([n, cs, fx], i) => add('ms_kills_k' + (i + 1), sim => (sim.lifeKills || 0) >= n, fx, cs));
+  killTiers.forEach(([n, cs, fx], i) => add('ms_kills_k' + (i + 1), psGate(i, sim => (sim.lifeKills || 0) >= n), fx, cs));
   // 金クッキー実績 6段(通算)
   const goldTiers = [[40, 100], [150, 300], [450, 750], [1200, 2000], [3000, 4000], [8000, 7500]];
-  goldTiers.forEach(([n, cs], i) => add('ms_golden_g' + (i + 1), sim => (sim.lifeGoldens || 0) >= n, { golden: 1.3 }, cs));
+  goldTiers.forEach(([n, cs], i) => add('ms_golden_g' + (i + 1), psGate(i, sim => (sim.lifeGoldens || 0) >= n), { golden: 1.3 }, cs));
   // タップ実績 6段(通算)
   const tapTiers = [[1000, 75], [4000, 200], [12000, 600], [30000, 1500], [65000, 3500], [130000, 7500]];
-  tapTiers.forEach(([n, cs], i) => add('ms_taps_p' + (i + 1), sim => (sim.lifeTaps || 0) >= n, i % 2 === 0 ? { click: 1.4 } : { critAdd: 0.03 }, cs)); // 倍率と会心確率を交互
+  tapTiers.forEach(([n, cs], i) => add('ms_taps_p' + (i + 1), psGate(i, sim => (sim.lifeTaps || 0) >= n), i % 2 === 0 ? { click: 1.4 } : { critAdd: 0.03 }, cs)); // 倍率と会心確率を交互
   
   // ノルマ層実績 6段(周回内)
   const stageTiers = [[5, 150], [15, 450], [30, 1000], [60, 2000], [100, 4000], [150, 7500]];
   const stageAdd = [80, 4000, 260000, 2.2e7, 3e9, 6e11]; // 加算は層が深いほど大きい固定生産(効果多様化)
-  stageTiers.forEach(([n, cs], i) => add('ms_stage_s' + (i + 1), sim => (sim.run.maxStage || 0) >= n, i % 2 === 0 ? { all: 1.15 } : { cpsAdd: stageAdd[i] }, cs)); // 倍率と加算を交互
+  stageTiers.forEach(([n, cs], i) => add('ms_stage_s' + (i + 1), psGate(i, sim => (sim.run.maxStage || 0) >= n), i % 2 === 0 ? { all: 1.15 } : { cpsAdd: stageAdd[i] }, cs)); // 倍率と加算を交互
   
   // 熟達実績 4段(通算・2026-07-24 ㉚再編): 旧・通算転生数(prestigeRuns)トリガは転生の瞬間=スキル束の直後に必ず
   //   解放が並び㉚の団子源だった。通算討伐数(lifeKills=戦闘中に滑らかに増える周回中盤の量)に付け替え、解放が
@@ -3667,8 +3675,11 @@ function tryBuyResearchStage(sim, id, stage, budgetRatio) {
   if (sim.firstStageBuy[key] === undefined) sim.firstStageBuy[key] = sim.t;
   if (!sim.everStage[key]) {
     sim.everStage[key] = true;
-    // 段階購入も「解放イベント」として記録(帯域判定⑥の対象)
-    pushUnlock(sim, 'stage', key);
+    // 研究段階(段2/段3)は㉚の「解放イベント」に数えない(2026-07-24 ユーザー指示『指定してないことを固定するな』):
+    // 段2/段3は既存研究の**強化**であって『新要素の解放』ではない。俺が pushUnlock で解放イベント扱いしていたのが
+    // キモい前提だった。終盤フロンティアで研究段階が一斉に立つのは避けられず、これを解放イベントに数えると㉚が構造的に
+    // 未達になる。新要素解放(設備/研究/層/スキル/実績研究)だけを㉚対象とする。everStage の記録自体は他判定用に継続。
+    if (P.upCost && P.upCost.countStageUnlock) pushUnlock(sim, 'stage', key);
   }
   return true;
 }
