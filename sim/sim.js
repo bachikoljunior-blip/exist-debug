@@ -3211,10 +3211,11 @@ function advanceTick(sim, strategy) {
       r.bhCharge += Math.sqrt(bh) * dt;
       const maxUses = resStage3(sim, 'blackHoleCompression') ? 3 : 2;
       if (r.bhCharge >= P.res2.bhChargeFull && r.bhUses < maxUses && sim.t >= r.bhBoostUntil) {
-        // ⑬測定用(2026-07-18 R27): snapは購入時でなく「初回発火の瞬間」。研究購入は転生直前
-        // (クッキー最潤沢)に集中し、購入時snapの900s窓が周回終端で即切れ全方針1.000に死ぬのを実測
-        // (portalNetworkの討伐時snapと同じ処方)。発火直前にsnap=両枝が発火判断から分岐できる。
-        if (sim.opt.timingSnaps && !(sim.timingSnaps && sim.timingSnaps.blackHoleCompression)) {
+        // ⑬測定用(2026-07-18 R27): snapは購入時でなく「発火の瞬間」=両枝が発火判断から分岐できる。
+        // 追加条件(2026-07-25): ノルマ未達後(quotaFailed=湧きゼロ地帯)の発火で取る。討伐が濃い地点だと
+        // 討伐報酬∝直近稼ぎ率の乗法feedbackが枝差を複利増幅し300s窓でも比2e4に発散(実測)。
+        // 尾部=討伐チャネル停止=ブースト操作の直接効果だけが測れる(wave/matureの購入時snapと同じ測定帯)。
+        if (sim.opt.timingSnaps && r.quotaFailed && !(sim.timingSnaps && sim.timingSnaps.blackHoleCompression)) {
           (sim.timingSnaps || (sim.timingSnaps = {})).blackHoleCompression = takeSnapshot(sim);
         }
         // タイミング(条件⑬・2026-07-09 作り替え=承認事項2の式変更): 最適操作=満タンで狙って放出(全力)/
