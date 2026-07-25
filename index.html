@@ -11852,10 +11852,12 @@ function failQuota(message) {
   state.quotaFailed = true;
   state.quotaActive = false;
   clearMonsterSpawnTimer();
-  hideMonster(false);
+  // 戦闘中の守護ボスはノルマ終了で消さない(R35b): 挑戦中の一戦を場ごと流すと理不尽なので続行させる
+  const guardianAlive = guardianPendingNow() && (monsters || []).some(m => m && m.typeId === "boss");
+  if (!guardianAlive) hideMonster(false);
   showMessage(message);
   // 守護ボス待機中はノルマ終了後も挑戦を続けられる(R35b): タイマーを再点火
-  if (guardianPendingNow()) scheduleMonster();
+  if (guardianPendingNow() && !guardianAlive) scheduleMonster();
 }
 
 function checkQuotaState() {
