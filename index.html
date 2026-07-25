@@ -17691,16 +17691,21 @@ function buildMonsterRewardChoices(level) {
   const byCat = {};
   for (const c of rawPool) (byCat[c.category] = byCat[c.category] || []).push(c);
   const catKeys = Object.keys(byCat);
+  // 一巡ごとのカテゴリ内オフセット: 決定的なまま同席(どの3枚が並ぶか)を周期ごとに変える。
+  // 固定同席だと「常に強い代替と同席するカードが永遠に選ばれない」飢餓が起きる(実測: goldenBeastMutation n=0)。
+  state.rewardRotN = Math.max(0, Math.floor(Number(state.rewardRotN) || 0));
+  const L = Math.max(1, rawPool.length);
+  const cyc = Math.floor((state.rewardRotN * 3) / L);
   const pool = [];
   for (let i = 0; pool.length < rawPool.length; i++) {
-    for (const cat of catKeys) { if (byCat[cat][i]) pool.push(byCat[cat][i]); }
+    for (const cat of catKeys) { const arr = byCat[cat]; if (arr[i] !== undefined) pool.push(arr[(i + cyc) % arr.length]); }
   }
-  state.rewardRotIdx = Math.max(0, Math.floor(Number(state.rewardRotIdx) || 0));
+  const rotIdx = (state.rewardRotN * 3) % L;
   for (let k = 0; k < pool.length && choices.length < choiceLimit; k++) {
-    const c = pool[(state.rewardRotIdx + k) % pool.length];
+    const c = pool[(rotIdx + k) % pool.length];
     if (!choices.some(x => x.key === c.key)) choices.push(c);
   }
-  state.rewardRotIdx = (state.rewardRotIdx + 3) % Math.max(1, pool.length);
+  state.rewardRotN += 1;
 
   return choices;
 }

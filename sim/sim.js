@@ -2785,15 +2785,20 @@ function buildRewardOffer(sim, level, typeId) {
   const byCat = {};
   for (const c of rawPool) (byCat[c.category] = byCat[c.category] || []).push(c);
   const catKeys = Object.keys(byCat);
+  // 一巡ごとのカテゴリ内オフセット(ゲーム同期): 決定的なまま同席を周期ごとに変える=同席固定の取得飢餓を防ぐ。
+  sim.rotN = Math.max(0, Math.floor(Number(sim.rotN) || 0));
+  const L = Math.max(1, rawPool.length);
+  const cyc = Math.floor((sim.rotN * 3) / L);
   const pool = [];
   for (let i = 0; pool.length < rawPool.length; i++) {
-    for (const cat of catKeys) { if (byCat[cat][i]) pool.push(byCat[cat][i]); }
+    for (const cat of catKeys) { const arr = byCat[cat]; if (arr[i] !== undefined) pool.push(arr[(i + cyc) % arr.length]); }
   }
+  const rotIdx = (sim.rotN * 3) % L;
   for (let k = 0; k < pool.length && offer.length < choiceLimit; k++) {
-    const c = pool[(sim.rotIdx + k) % pool.length];
+    const c = pool[(rotIdx + k) % pool.length];
     if (!offer.some(o => o.kind === c.kind && o.id === c.id)) offer.push(c);
   }
-  sim.rotIdx = (sim.rotIdx + 3) % Math.max(1, pool.length);
+  sim.rotN += 1;
   return offer;
 }
 
