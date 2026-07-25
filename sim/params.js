@@ -314,9 +314,9 @@ module.exports = {
   }),
   // ㉚コストのはしご: 研究の「初回開発費」(生涯初のみ)。再購入(毎周回)は従来の resCost=安い固定価格。
   // 設備の firstUnitCost と同じ構図: 初回開発=特注の大きい目標 / 再購入=開発済みの量産価格。どちらも固定。
-  resFirstCost: { bankClickDividend: 4000000, portalNetwork: 600000000, spiceBlend: 45000000, cpsStrike: 200000000, moonGlobalYeast: 2.10e+39, galaxyAssembly: 9.85e+50, blackHoleCompression: 1.30e+58, quantumProofing: 1.25e+77, antimatterRecipe: 3.20e+81, portalGlobalFold: 6.30e+84 },
+  resFirstCost: { bankClickDividend: 4000000, portalNetwork: 200000000, spiceBlend: 200000000, cpsStrike: 200000000, moonGlobalYeast: 2.10e+39, galaxyAssembly: 1.00e+50, blackHoleCompression: 1.30e+58, quantumProofing: 1.25e+77, antimatterRecipe: 3.00e+82, portalGlobalFold: 1.00e+90 },
   // ㉚コストのはしご: 段階カード(段2/段3)の絶対額固定コスト。解禁はコストのみが律速(スキル/周回/層ゲート全廃)。
-  resStageCostAbs: { 'cpsStrike:2': 140000000000, 'ovenBatch:2': 490000000000000, 'fingerTechnique:2': 2.90e+16, 'spiceBlend:2': 2.25e+17, 'grandmaCrowd:2': 1.35e+19, 'bankClickDividend:2': 8.35e+20, 'factoryNetwork:2': 5.20e+22, 'portalNetwork:2': 3.30e+24, 'cpsStrike:3': 2.15e+26, 'ovenBatch:3': 1.75e+27, 'spiceBlend:3': 1.15e+29, 'fingerTechnique:3': 8.20e+30, 'grandmaCrowd:3': 5.75e+32, 'bankClickDividend:3': 4.20e+34, 'factoryNetwork:3': 3.60e+35, 'portalNetwork:3': 2.70e+37, 'moonGlobalYeast:2': 9.60e+42, 'moonGlobalYeast:3': 1.30e+46, 'galaxyAssembly:2': 2.60e+54, 'blackHoleCompression:2': 3.95e+61, 'galaxyAssembly:3': 8.95e+65, 'blackHoleCompression:3': 9.85e+73, 'quantumProofing:2': 6.80e+79, 'antimatterRecipe:2': 2.80e+84, 'portalGlobalFold:2': 1.75e+88, 'quantumProofing:3': 1.00e+90, 'antimatterRecipe:3': 1.00e+90, 'portalGlobalFold:3': 1.00e+90 },
+  resStageCostAbs: { 'cpsStrike:2': 140000000000, 'ovenBatch:2': 490000000000000, 'fingerTechnique:2': 2.90e+16, 'spiceBlend:2': 2.25e+17, 'grandmaCrowd:2': 1.35e+19, 'bankClickDividend:2': 8.35e+20, 'factoryNetwork:2': 5.20e+22, 'portalNetwork:2': 3.30e+24, 'cpsStrike:3': 2.15e+26, 'ovenBatch:3': 1.75e+27, 'spiceBlend:3': 1.15e+29, 'fingerTechnique:3': 8.20e+30, 'grandmaCrowd:3': 5.75e+32, 'bankClickDividend:3': 4.20e+34, 'factoryNetwork:3': 3.60e+35, 'portalNetwork:3': 2.70e+37, 'moonGlobalYeast:2': 9.60e+42, 'moonGlobalYeast:3': 8.00e+40, 'galaxyAssembly:2': 2.60e+54, 'blackHoleCompression:2': 3.95e+61, 'galaxyAssembly:3': 8.95e+65, 'blackHoleCompression:3': 9.85e+73, 'quantumProofing:2': 3.00e+82, 'antimatterRecipe:2': 1.00e+90, 'portalGlobalFold:2': 1.00e+90, 'quantumProofing:3': 1.00e+90, 'antimatterRecipe:3': 1.00e+90, 'portalGlobalFold:3': 1.00e+90 },
 
   // ---- モンスター報酬効果 ----
   rw: {
@@ -443,7 +443,7 @@ module.exports = {
   // 所有数指数効果(研究own・熟練)の複利ループを台数側で断つ。効果式は無変更(①③⑨のlift帯は不動)。
   // 実測(S1 48h): 周回0-14が+2.3桁/周回で安定・T1帯内・爆発なし(knee2600では run9 で+26桁の再爆発)。
   upCost: { coef: 1100, basePow: 0.60, ownPow: 0.33, knee: 400, ownPow2: 0.60, revealCount: 1, decoupleUnlockSkills: true,
-    firstUnitCost: { grandma: 10000, moonBakery: 2.40e+38, timeOven: 8.70e+43, galaxyFactory: 1.00e+50, blackHoleMixer: 2.60e+57, universeOven: 4.65e+64, godFinger: 1.15e+69, cookieSingularity: 4.80e+72, quantumBakery: 3.35e+76, antimatterOven: 8.25e+80 } },
+    firstUnitCost: { grandma: 10000, moonBakery: 2.40e+38, timeOven: 8.70e+43, galaxyFactory: 1.00e+50, blackHoleMixer: 2.60e+57, universeOven: 4.65e+64, godFinger: 1.15e+69, cookieSingularity: 4.80e+72, quantumBakery: 3.35e+76, antimatterOven: 3.00e+82 } },
 
   // ---- 個別強化(報酬) ----
   upPerk: { base: 0.22, slope: 0.010, floor: 0.055 },
@@ -503,7 +503,7 @@ module.exports = {
   // 注文ボードに固定クエストを常設表示。達成すると次のステージが解放され、次のクエストが表示される。
   // 制限時間なし・内容固定・進捗は周回を跨いで累積。「そのステージを3周回ぐらい」の重さに調整する。
   // クエストN=「フロンティアステージ(=最新解放ステージ)Nで累計討伐 killsNeed[N-1] 体」
-  quest2: { killsNeed: [145, 190, 250, 320, 410] }, // ×1.45(㉚2026-07-25: 狩猟型がクエストを周回1-2で駆け抜けws解放(ステージ/レシピ)がゾーンBの梯子項目と重なる×6を実測。「3周回相当」の重さへ再係留) // ステージ1→2 … 5→6(調整項目・3周回相当を実測で合わせる)
+  quest2: { killsNeed: [175, 190, 250, 350, 410] }, // ×1.45(㉚2026-07-25: 狩猟型がクエストを周回1-2で駆け抜けws解放(ステージ/レシピ)がゾーンBの梯子項目と重なる×6を実測。「3周回相当」の重さへ再係留) // ステージ1→2 … 5→6(調整項目・3周回相当を実測で合わせる)
   equip2: {
     tiers: 6,             // ステージ1〜6に対応(ステージが変わると作れる装備が変わる)
     allMulPerTier: 2.0,   // 装備1個の全生産倍率=この値^ティア(付け替えで前ティア比×2)

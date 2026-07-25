@@ -3452,9 +3452,12 @@ function advanceTick(sim, strategy) {
     // 各バッチ間は進行量で1.1〜2.2桁離れており、モーメント間隔は通常数分(熱い周回で近接する場合は
     // 空バッチ=イベント無しが大半)。
     {
-      const BP = [0.05, 0.35, 1.6, 8, 40]; // 5アンカー(隣接比×4.6-7=0.66-0.85桁): 遅い方針(+0.5-1桁/周回)の帯もカバーし初開発の待ちを最大~0.5桁の進行に短縮(3点では末尾越え項目が1-2周回待ち=S2が100周回化)
+      const BP = [0.05, 0.32, 1.6, 8, 40]; // 5アンカー(隣接比×4.6-7=0.66-0.85桁): 遅い方針(+0.5-1桁/周回)の帯もカバーし初開発の待ちを最大~0.5桁の進行に短縮(3点では末尾越え項目が1-2周回待ち=S2が100周回化)
       const bi = sim.run._devBatchIdx || 0;
-      if (sim._prevRC > 0 && bi < BP.length && sim.run.runCookies >= sim._prevRC * BP[bi]) {
+      // 転生直前(gain≥目標85%)はバッチを発火しない=スキル束の3秒前に開発バッチが落ちるのを防ぐ(S14実測)。
+      // 見送られたアンカーの項目は次周回のアンカー1(前周回の全越え分をカバー)で解放される。
+      const nearPr = (function () { const f = sim._prGainFactor || 1.2; const nx = cheapestNextSkillCostSim(sim); const tg = Math.max(nx != null ? nx : 0, (sim._prTarget || 0) * 1.57) * f; return tg > 0 && prestigeGainOf(sim.run.runCookies) >= tg * 0.85; })();
+      if (sim._prevRC > 0 && bi < BP.length && !nearPr && sim.run.runCookies >= sim._prevRC * BP[bi]) {
         sim.run._devBatchIdx = bi + 1;
         sim._batchTick = sim.t;
         sim._immiT = -1; // キャッシュ破棄(このtickは購入可)
@@ -3671,31 +3674,63 @@ function eagerFirstDevs(sim, prod) {
   // ブラスト帯(財布が複数段を同時に越えている)のクラスタは1回の解放体験に畳まれる。旧実装は
   // continue連鎖(研究→段2→段3)と予算の逐次消化で購入が1〜10秒ずつズレ、Δ1-25sの機関銃を作っていた。
   // 低速帯では財布が各段のコストに達した時にしか買えない=間隔は従来どおり経済(はしご)が作る。
+  let ratio = 0.9;
   for (let pass = 0; pass < 10; pass++) {
     const n0 = sim.unlockEvents.length;
-    eagerFirstDevsPass(sim, prod);
+    eagerFirstDevsPass(sim, prod, ratio);
     if (sim.unlockEvents.length === n0) break;
+    ratio = 1.0; // 2パス目以降: 同tickの追い買いは財布いっぱいまで(0.9刻みの逐次で翌tickへずれるのを防ぐ)
   }
 }
-function eagerFirstDevsPass(sim, prod) {
+// 同額グループ(㉚同時解放束): 保留中の初回開発(研究/段階/設備初号機)で同一価格が2件以上あるものは
+// 「全額そろうまで」どの購入経路でも買わない=そろった瞬間に同tick一括(1モーメント)。逐次購入だと
+// 財布が1件ぶんずつしか越えず、熱い周回で連続アンカーにまたがりΔ2-11sに散る(S4終盤で実測)。
+// 毎tickキャッシュ。方針側の購入経路(buyAllResearch等)もtryBuy*経由でこの保留を通る。
+function heldGroupHas(sim, key) {
+  if (sim._hgT !== sim.t) {
+    sim._hgT = sim.t;
+    sim._hg = null;
+    const byC = {};
+    for (const rdef of RESEARCH) {
+      const id = rdef.id;
+      if (!sim.everResearch[id] && P.resFirstCost && P.resFirstCost[id] != null) (byC[P.resFirstCost[id]] = byC[P.resFirstCost[id]] || []).push('res:' + id);
+      for (const st of [2, 3]) {
+        const k = id + ':' + st;
+        if (!sim.everStage[k] && P.resStageCostAbs && P.resStageCostAbs[k]) (byC[P.resStageCostAbs[k]] = byC[P.resStageCostAbs[k]] || []).push('st:' + k);
+      }
+    }
+    if (P.upCost && P.upCost.firstUnitCost) for (const uid of Object.keys(P.upCost.firstUnitCost)) {
+      if (!sim.everUpgrade[uid]) (byC[P.upCost.firstUnitCost[uid]] = byC[P.upCost.firstUnitCost[uid]] || []).push('up:' + uid);
+    }
+    for (const [c, keys] of Object.entries(byC)) {
+      if (keys.length < 2) continue;
+      if (sim.run.cookies < Number(c) * keys.length * 1.15) {
+        if (!sim._hg) sim._hg = new Set();
+        for (const k of keys) sim._hg.add(k);
+      }
+    }
+  }
+  return sim._hg ? sim._hg.has(key) : false;
+}
+function eagerFirstDevsPass(sim, prod, ratio) {
   for (const u of visibleUpgrades(sim)) {
-    if (!sim.everUpgrade[u.id] && !(sim.run.upgrades[u.id] > 0)) tryBuyUpgrade(sim, u, 0.9);
+    if (!sim.everUpgrade[u.id] && !(sim.run.upgrades[u.id] > 0)) tryBuyUpgrade(sim, u, ratio);
   }
   for (const rdef of RESEARCH) {
     const id = rdef.id;
-    if (!sim.everResearch[id]) { tryBuyResearch(sim, id, 0.9); continue; }
+    if (!sim.everResearch[id]) { tryBuyResearch(sim, id, ratio); continue; }
     // ㉚(2026-07-25 衝突センサスで発見): 段階カードの生涯初開発が残っている研究は、土台(段1/段2)の
     // 今周回の再購入も熱意購入で先に済ませる。さもないと方針の買い控え規律(例: grandmaCrowd は
     // おばあちゃん200台まで買わない)が土台を遅らせ、初開発が「台数トリガ成立の瞬間」(=コスト無関係の
     // 時刻)に落ちてはしごから外れる(grandmaCrowd:2 がコストe15.7なのに資産e21.4で解放を実測)。
     const pendStage = !sim.everStage[id + ':2'] || !sim.everStage[id + ':3'];
     if (!sim.run.research[id]) {
-      if (pendStage) tryBuyResearch(sim, id, 0.9);
+      if (pendStage) tryBuyResearch(sim, id, ratio);
       if (!sim.run.research[id]) continue;
     }
-    if (!sim.everStage[id + ':2']) { tryBuyResearchStage(sim, id, 2, 0.9); continue; }
-    if (!sim.run.research2[id] && !sim.everStage[id + ':3']) tryBuyResearchStage(sim, id, 2, 0.9);
-    if (sim.run.research2[id] && !sim.everStage[id + ':3']) tryBuyResearchStage(sim, id, 3, 0.9);
+    if (!sim.everStage[id + ':2']) { tryBuyResearchStage(sim, id, 2, ratio); continue; }
+    if (!sim.run.research2[id] && !sim.everStage[id + ':3']) tryBuyResearchStage(sim, id, 2, ratio);
+    if (sim.run.research2[id] && !sim.everStage[id + ':3']) tryBuyResearchStage(sim, id, 3, ratio);
   }
 }
 function pushUnlock(sim, kind, id, n) {
@@ -3707,6 +3742,7 @@ function pushUnlock(sim, kind, id, n) {
 function tryBuyUpgrade(sim, u, budgetRatio) {
   if (!sim.everUpgrade[u.id] && !unlockGateOk(sim)) return false;
   if (!sim.everUpgrade[u.id] && prestigeImminent(sim)) return false; // ㉚転生直前の初回開発見送り(方針の購入経路にも適用)
+  if (!sim.everUpgrade[u.id] && heldGroupHas(sim, 'up:' + u.id)) return false; // ㉚同額グループの全額待ち
   const cost = upgradeCost(sim, u);
   // 生涯初のスキル解放設備は初号機割増(㉚ペーシング)がかかる。予算規律(cookies×budgetRatio)で弾くと
   // 割増ぶんを貯めきれない周回の短い方針が恒久的に買えず全解放不能になる(実測: S13が21→8周回)。
@@ -3766,6 +3802,7 @@ function tryBuyResearch(sim, id, budgetRatio) {
   if (r.research[id]) return false;
   if (!sim.everResearch[id] && !unlockGateOk(sim)) return false;
   if (!sim.everResearch[id] && prestigeImminent(sim)) return false; // ㉚転生直前の初回開発見送り
+  if (!sim.everResearch[id] && heldGroupHas(sim, 'res:' + id)) return false; // ㉚同額グループの全額待ち
   // 無効化(disableResearch)でも購入行動は同じ: 効果だけがゼロになる
   const def = RESEARCH.find(x => x.id === id);
   if (!def || !researchUnlocked(sim, def)) return false;
@@ -3790,6 +3827,7 @@ function tryBuyResearchStage(sim, id, stage, budgetRatio) {
   if (stage === 2 ? r.research2[id] : r.research3[id]) return false;
   if (!sim.everStage[id + ':' + stage] && !unlockGateOk(sim)) return false;
   if (!sim.everStage[id + ':' + stage] && prestigeImminent(sim)) return false; // ㉚転生直前の初回開発見送り
+  if (!sim.everStage[id + ':' + stage] && heldGroupHas(sim, 'st:' + id + ':' + stage)) return false; // ㉚同額グループの全額待ち
   // 無効化(disableStage)でも購入行動は同じ: 効果だけがゼロになる
   if (!researchStageUnlocked(sim, id, stage)) return false;
   let cost = researchStageCostOf(sim, id, stage);
