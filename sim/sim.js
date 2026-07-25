@@ -3370,7 +3370,7 @@ function takeSnapshot(sim) {
     prestigeRuns: sim.prestigeRuns, totalCookies: sim.totalCookies,
     prevMaxStage: sim.prevMaxStage, prevDuration: sim.prevDuration,
     everMs: sim.everMs || {}, lastPrestigeCps: sim.lastPrestigeCps || 0,
-    skills: sim.skills, rotIdx: sim.rotIdx, upRotIdx: sim.upRotIdx, goldenAlt: sim.goldenAlt,
+    skills: sim.skills, rotIdx: sim.rotIdx, rotN: sim.rotN || 0, upRotIdx: sim.upRotIdx, goldenAlt: sim.goldenAlt,
     firstResearchBuy: sim.firstResearchBuy, firstPerk: sim.firstPerk, firstStageBuy: sim.firstStageBuy,
     ws: sim.ws,
     run: sim.run
@@ -3386,7 +3386,7 @@ function replayRun(strategy, snap, opts, capSec) {
   sim.prevMaxStage = s.prevMaxStage || 0;
   sim.prevDuration = s.prevDuration || 0;
   sim.everMs = s.everMs || {}; sim.lastPrestigeCps = s.lastPrestigeCps || 0;
-  sim.skills = s.skills; sim.rotIdx = s.rotIdx; sim.upRotIdx = s.upRotIdx; sim.goldenAlt = s.goldenAlt;
+  sim.skills = s.skills; sim.rotIdx = s.rotIdx; sim.rotN = s.rotN || 0; sim.upRotIdx = s.upRotIdx; sim.goldenAlt = s.goldenAlt;
   sim.firstResearchBuy = s.firstResearchBuy; sim.firstPerk = s.firstPerk; sim.firstStageBuy = s.firstStageBuy;
   if (s.ws) sim.ws = s.ws;
   sim.run = s.run;
