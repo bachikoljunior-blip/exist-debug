@@ -5451,6 +5451,8 @@
     }
     #bossApproach.imminent { animation: bossPulse 0.9s ease-in-out infinite; border-color: rgba(255, 120, 90, 0.9); }
     #bossApproach.here { color: #fff; background: linear-gradient(180deg, rgba(140, 20, 30, 0.96), rgba(90, 10, 20, 0.96)); border-color: rgba(255, 90, 70, 1); font-size: 14px; }
+    /* 守護ボス(R35): 解放を懸けた一戦=金色の別格バナー(脈動) */
+    #bossApproach.here.guardian { background: linear-gradient(180deg, rgba(120, 78, 6, 0.97), rgba(80, 46, 4, 0.97)); border-color: rgba(255, 205, 90, 1); color: #ffe9b0; text-shadow: 0 1px 3px rgba(0,0,0,0.8); animation: bossPulse 0.9s ease-in-out infinite; }
     @keyframes bossPulse { 0%,100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.08); } }
     /* 金ブースト発動中バッジ(R35 要素3): フレンジーの倍率と残り時間。HUDストリップ内のインラインチップ=盤面に被せない */
     #goldenBoostBadge {
@@ -11532,6 +11534,8 @@ function questProgressOnKill(stageNo, units) {
     state.frontierBossPending = stageNo;
     playSound("golden");
     showMessage(`討伐ノルマ達成！ ⋯守護ボスが現れる！ 倒して「${stageInfo(stageNo + 1).name}」を解放せよ！`);
+    // 即再スケジュール: scheduleMonster が守護待機を見て2.5sで登場させる(以後の再スケジュールでも維持)
+    try { scheduleMonster(); } catch (e) {}
   }
 }
 function currentQuestText() {
@@ -13322,8 +13326,14 @@ function updateBossApproach() {
   if (titleScreenActive() || pausedForSkillChoice()) { box.style.display = "none"; return; }
   const bossHere = Array.isArray(monsters) && monsters.some(m => m && m.typeId === "boss");
   if (bossHere) {
-    box.textContent = "👑 ボス出現！";
-    box.className = "here";
+    // 守護ボス(R35): 解放を懸けた一戦は専用バナーで別格に(金色・次ステージ名入り)
+    if ((state.frontierBossPending || 0) === currentStageNo() && currentStageNo() < MAX_STAGE_NO) {
+      box.textContent = `👑 守護ボス！ 勝てば「${stageInfo(currentStageNo() + 1).name}」解放！`;
+      box.className = "here guardian";
+    } else {
+      box.textContent = "👑 ボス出現！";
+      box.className = "here";
+    }
     box.style.display = "";
     return;
   }
@@ -16778,7 +16788,10 @@ function scheduleMonster() {
   const max = 60000 * levelFactor * monsterSpawnFactor() / spawnCut;
   const chainWaitMultiplier = state.nextMonsterSpawnMultiplier || 1;
   const raw = (min + Math.random() * Math.max(0.0001, max - min)) * chainWaitMultiplier;
-  const wait = protectedWait(raw, 1000);
+  // 守護ボス待機中(R35): 達成の高揚が冷めないうちに登場(once-per-stageの演出タイミング=経済影響は無視できる)
+  const guardianWaiting = (state.frontierBossPending || 0) === currentStageNo() && currentStageNo() < MAX_STAGE_NO
+    && !(Array.isArray(monsters) && monsters.some(m => m && m.typeId === "boss"));
+  const wait = protectedWait(guardianWaiting ? 2500 : raw, 1000);
   state.nextMonsterSpawnMultiplier = 1;
 
   setMonsterSpawnTimer(fireMonsterSpawn, wait);
@@ -17193,13 +17206,17 @@ function createMonsterElement(mon) {
   wrap.style.setProperty("--monster-art", `url("${assetUrl(monArt)}")`);
   // HPバー・HP数値は絵の「上」に置く。ボスは絵が大きく、下に置くと画面外(overflow:hidden)に
   // はみ出て見えなくなるため、常に見える位置(上)に固定する。
+  // 守護ボス(R35): 名前でも「別格の一戦」とわかるように(ラベルのみ・typeは共通)
+  const monLabel = (mon.typeId === "boss" && (state.frontierBossPending || 0) === currentStageNo() && currentStageNo() < MAX_STAGE_NO)
+    ? `守護ボス — ${stageInfo(currentStageNo()).name}の主`
+    : type.name;
   wrap.innerHTML = `
-    <div class="monsterTypeLabel">${type.name}</div>
+    <div class="monsterTypeLabel">${monLabel}</div>
     <div class="monsterHp">
       <div class="monsterHpFill"></div>
     </div>
     <div class="monsterHpText">HP</div>
-    <button class="cookieMonsterButton" aria-label="${type.name}"></button>
+    <button class="cookieMonsterButton" aria-label="${monLabel}"></button>
   `;
 
   const top = document.querySelector(".top") || document.body;
