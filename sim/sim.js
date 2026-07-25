@@ -1277,11 +1277,23 @@ function wsDropMaterials(sim, mon, overkill) {
     ws.questKills[stNo] = (ws.questKills[stNo] || 0) + units;
     const need = P.quest2.killsNeed[stNo - 1] || Infinity;
     if (ws.questKills[stNo] >= need && unlockGateOk(sim)) {
-      ws.stageUnlocked++;
-      pushUnlock(sim, 'ws', 'stage:' + ws.stageUnlocked);
-      wsRevealRecipes(sim); // 新ステージの素材で作れるレシピを同秒で開示
+      // ㉚バッチ開発モデル(2026-07-25): ステージ進出も「節目」(開発バッチのアンカー)で行う。
+      // クエスト達成の瞬間(キル数駆動=コスト外の時刻)に解放するとゾーンBの開発バッチと
+      // Δ19-29sで確率的に衝突する(quest2しきい値の玉突き調整を3回実測=構造修正へ)。
+      // 達成でアーミングのみ→次のバッチtickで解放=同tickの1モーメントに融合。run0(アンカー無し)は即時。
+      ws.stagePendingT = sim.t;
     }
   }
+}
+// ㉚バッチ開発モデル: アーミング済みステージ進出を開発バッチのアンカーtickで解放(毎tick判定=キル無関係)
+function wsReleasePendingStage(sim) {
+  const ws = sim.ws;
+  if (ws.stagePendingT == null) return;
+  if (sim._prevRC > 0 && sim._batchTick !== sim.t) return;
+  ws.stagePendingT = null;
+  ws.stageUnlocked++;
+  pushUnlock(sim, 'ws', 'stage:' + ws.stageUnlocked);
+  wsRevealRecipes(sim); // 新ステージの素材で作れるレシピを同秒で開示
 }
 // ボス化に必要な討伐数(ステージ依存+コンパス)。深層(S6)=65+10×層(仕様§9)=層が深いほど
 // 次のボスが遠い(自己制動)。固定周期だと24hで層74まで暴走しHP=60×4^74で序盤討伐が全滅する(実測)。
@@ -3463,6 +3475,7 @@ function advanceTick(sim, strategy) {
         sim._immiT = -1; // キャッシュ破棄(このtickは購入可)
       }
     }
+    wsReleasePendingStage(sim);
     eagerFirstDevs(sim, prod);
     // 購入(戦略)
     strategy.buy(sim, prod);
