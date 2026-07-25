@@ -174,7 +174,7 @@ module.exports = {
   // peddlerFrac 0.02→0.06(2026-07-11 hunt序盤対策) / otherMul.golden 0.9(2026-07-11) / 投資量=討伐perk8種・基準=金相場
   // otherMul.click 0.15→0.08(2026-07-12 ㉘click後半: 討直29-31%がタップ主役25%を圧迫。診断=partsDetail)
   // otherMul.balanced 0.15→0.18(2026-07-12 ㉘balanced中盤run13-19: 討伐8-9%<10%=タップ9.0倍の圧迫の再均衡)
-  huntDirect:   { coef: 0.12, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 8, otherMul: { click: 0.08, balanced: 0.35, golden: 0.9, default: 0.3 }, peddlerFrac: 0.06, rateBonus: 0.45, rateHalf: 25 }, // 新経済向け(2026-07-14 掃引r2)+回転ボーナス(③monsterRate後半飽和対策) // satMax 12→14(2026-07-17 ⑫: huntの1位周回復元・②帯はhunt1.88で余裕)
+  huntDirect:   { coef: 0.12, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 8, otherMul: { click: 0.08, balanced: 0.7, golden: 0.9, default: 0.3 }, peddlerFrac: 0.06, rateBonus: 0.45, rateHalf: 25 }, // 新経済向け(2026-07-14 掃引r2)+回転ボーナス(③monsterRate後半飽和対策) // satMax 12→14(2026-07-17 ⑫: huntの1位周回復元・②帯はhunt1.88で余裕)
   // tapDirect: clickBonus 5.0→5.6(2026-07-12 ②改2: clickのlift1.46が最弱=底上げで帯上限を引き上げhuntを収容)
   // clickBonus5.0+satMax150(2026-07-11 複合=中盤+22%・後半飽和) / otherMul.balanced7.0(echo対応) / anchorGolden0.5=神指前のみ
   // satMax 150→400・otherMul.balanced 7.0→9.0(2026-07-12 ㉘後半対策: click run33-47 打12-21%<25%・
