@@ -15,7 +15,10 @@ module.exports = {
   // pG 0.075→0.05→0.023(2026-07-13 第13次: ④が100倍→1億倍(8桁)にユーザー変更されたため
   // 段間隔=log10(1.57)/pG ≈ 8.5桁 ≥8桁に再設定。新⑥(3分2倍)下で8.5桁≈28分/周回=T1帯内の見込み。
   // pB 14で初回PT=floor(14×(2e6/1e4)^0.023)=15 → core10+入口5=15が初回で買える(入口5PT規則ちょうど)
-  prestige: { pA: 0, pD1: 200000, pB: 14, pD2: 10000, pG: 0.023, pMin: 10000, firstCost: 100000000, costCpsMul: 500,
+  // pG 0.023→0.085(2026-07-25 ㉚100%リスケール・HANDOFF_30追記5): 段間隔=log10(1.57)/pG≈2.3桁/周回。
+  // ④は「前周回超」に緩和済み(1億倍条件は撤廃)なので8.5桁は不要。2.3桁/周回×34段=総スパン約77桁
+  // (旧289桁)。収益率帯(2.3桁を1200〜7200sで稼ぐ=1桁/9〜52分)が固定コストのはしごを実時間の壁にする。
+  prestige: { pA: 0, pD1: 200000, pB: 14, pD2: 10000, pG: 0.085, pMin: 10000, firstCost: 100000000, costCpsMul: 500,
     // 転生コストの固定テーブル(2026-07-11 確定形): build_prestige_table.js が基準方針(S1)の100h測定から
     // 「第n回の転生時の毎秒×500の10べき切捨て」を焼き込む。無い間は動的フォールバック。
     costTable: (function () { try { return require('./prestige_costs.json'); } catch (e) { return []; } })() },
@@ -149,8 +152,10 @@ module.exports = {
   // 固定コストのはしごに載せ、隣接の段を大きく離す(序盤×2〜4・run1以降×32・中盤以降×320)。解放の順番も間隔も
   // コストだけが決める=コストが貯金の目標になり、周回の成長も同じ目標で測れる(ユーザー指示)。時間・収入連動・
   // 周回数・層・スキルのゲートは全廃。量産体制(massProd)は仕様ごと撤去済み。
+  // ㉚桁圧縮リマップ(2026-07-25 HANDOFF_30追記5・ladder_remap.js生成): 旧はしご(e9〜e177・2.5桁間隔)を
+  // 新経済(2.3桁/周回・終盤e77)へ線形写像。順序・交互配置は保存/間隔は約1.0桁(金ブースト×7=0.85桁より広い)。
   msResearch: { costMul: 1, rebuySec: 15, costTable: {
-    ms_taps_p1: 1e9, ms_stage_s1: 1.6e10, ms_kills_k1: 4e12, ms_golden_g1: 6.3e13, ms_eqmastery_t1: 1e15, ms_taps_p2: 1.00e+18, ms_kills_k2: 1.00e+24, ms_stage_s2: 1.00e+27, ms_golden_g2: 3.16e+31, ms_eqmastery_t2: 1.00e+36, ms_taps_p3: 1.00e+40, ms_kills_k3: 3.16e+47, ms_stage_s3: 3.16e+52, ms_golden_g3: 3.16e+57, ms_eqmastery_t3: 3.16e+62, ms_kills_k4: 1.00e+70, ms_taps_p4: 1.00e+80, ms_stage_s4: 3.16e+87, ms_kills_k5: 3.16e+92, ms_eqmastery_t4: 1.00e+95, ms_golden_g4: 3.16e+97, ms_kills_k6: 1.00e+105, ms_golden_g5: 1.00e+110, ms_prestige_r1: 3.16e+112, ms_kills_k7: 1.00e+120, ms_golden_g6: 1.00e+125, ms_prestige_r2: 3.16e+127, ms_eqmastery_t5: 1.00e+135, ms_kills_k8: 3.16e+137, ms_prestige_r3: 3.16e+142, ms_prestige_r4: 1.00e+150
+    ms_taps_p1: 1e9, ms_stage_s1: 3.05e9, ms_kills_k1: 2.9e10, ms_golden_g1: 8.9e10, ms_eqmastery_t1: 2.7e11, ms_taps_p2: 4.55e12, ms_kills_k2: 1.25e+15, ms_stage_s2: 2.05e+16, ms_golden_g2: 1.40e+18, ms_eqmastery_t2: 9.45e+19, ms_taps_p3: 4.00e+21, ms_kills_k3: 4.45e+24, ms_stage_s3: 4.80e+26, ms_golden_g3: 5.20e+28, ms_eqmastery_t3: 5.60e+30, ms_kills_k4: 6.25e+33, ms_taps_p4: 7.30e+37, ms_stage_s4: 8.15e+40, ms_kills_k5: 8.80e+42, ms_eqmastery_t4: 9.15e+43, ms_golden_g4: 9.45e+44, ms_kills_k6: 1.05e+48, ms_golden_g5: 1.10e+50, ms_prestige_r1: 1.15e+51, ms_kills_k7: 1.30e+54, ms_golden_g6: 1.40e+56, ms_prestige_r2: 1.45e+57, ms_eqmastery_t5: 1.65e+60, ms_kills_k8: 1.70e+61, ms_prestige_r3: 1.85e+63, ms_prestige_r4: 2.05e+66
   } },
 
   // ㉚解放間隔(2026-07-22 ユーザー指示「ゲート解放無くして、ゲーム調整で解放間隔30秒以上」):
@@ -226,32 +231,36 @@ module.exports = {
     // grandmaSelf 30→40(2026-07-12 ①grandmaCrowd: 金アンカー(第0回タップ40回分)で第0回の地力が膨らみ
     // 全方針の初回liftが1.06-1.18に希釈。S7の初回1.182を帯内へ=①は「1方針が全周回≥1.2」で判定)
     // grandmaOwn(2026-07-13 新設・ユーザー指示「1台あたりの初期生産1のままもっと強く」): 1台あたり生産×(1.02)^台数
+    // ㉚効果量の桁圧縮(2026-07-25 HANDOFF_30追記5(3)): 研究の固定倍率(Self/Base/グローバル)を×2〜6へ圧縮。
+    // 旧値(×5〜×24)は旧経済のe100+装飾だったが、リマップで中盤(e36+)に来ると1枚で+0.7〜1.4桁=
+    // はしご間隔(1.0桁)を単発で飛び越え、解放が連鎖する(実測: S1 run11で+43桁)。①⑨のlift下限(1.2/1.05)は
+    // ×2台でも余裕。所持数指数(own系)は knee=400 が抑えるため原則据え置き(spiceGoldOwnのみ窓内暴走で圧縮)。
     grandmaOwn: 0.032,
-    grandmaSelf: 12, grandmaSup: [0.003, 0.003, 0.003], // 6→12(2026-07-14 ①再係留: 初回周回の希釈対策)
+    grandmaSelf: 6, grandmaSup: [0.003, 0.003, 0.003], // 12→6(㉚圧縮)
     // 2026-07-06 第8次: ⑫(設備の文脈依存性)用に所持数指数を再配分。
     // factory一強(全方針の最効率=工場固定)を解消: oven 0.060→0.067 / spice 0.062→0.071 / factory 0.060→0.057
     // → 12h実測で最効率設備が factory 7方針 / oven 3方針 に分岐
-    ovenSelf: 20, ovenOwn: 0.048, ovenStage: 0.05, // ①ovenBatch 1.18→層ランプ増し(2026-07-14 2回目) // 0.03→0.045(2026-07-11: 工場の助走カード追加でS10のovenBatch liftが6NG/36 min1.104に希釈→層ランプ増し。NG0/35 min1.281実測) // 0.012→0.03(2026-07-11 ①oven: surge減速で直送比のcpsが痩せ中盤以降のliftが1.02-1.12に沈む→層ランプで再係留。S10 NG9/23→0/24 min1.296)
-    factorySelf: 14, factoryLow: 0.002, factoryOwn: 0.0416, // ①factory再係留2回目(2026-07-14: コスト100万はユーザー固定のため効果側で)
+    ovenSelf: 6, ovenOwn: 0.048, ovenStage: 0.05, // ①ovenBatch 1.18→層ランプ増し(2026-07-14 2回目) // 0.03→0.045(2026-07-11: 工場の助走カード追加でS10のovenBatch liftが6NG/36 min1.104に希釈→層ランプ増し。NG0/35 min1.281実測) // 0.012→0.03(2026-07-11 ①oven: surge減速で直送比のcpsが痩せ中盤以降のliftが1.02-1.12に沈む→層ランプで再係留。S10 NG9/23→0/24 min1.296)
+    factorySelf: 5, factoryLow: 0.002, factoryOwn: 0.0416, // ①factory再係留2回目(2026-07-14: コスト100万はユーザー固定のため効果側で)
     // 量産波及(2026-07-14 ①後半希釈対策): 研究ゲート付きの全生産×(1+係数)^台数。
     // 後半周回(台数2500-3300)で×1.6-1.9=lift受け皿・序盤(台数40-90)は≈1.01で無害。
     // 0.0002→0.00012(2026-07-14 R20: 全体項が設備収入を押し上げ②改2のbake2.66>帯2.57・balanced5/29に。
     // ①の後半liftは1.00012^2600=1.37で維持)
     ovenGlobal: 0.00012, factoryGlobal: 0.00012,
-    spiceOwn: 0.0512, spiceGold: 7, spiceGoldOwn: 0.0096, spiceGoldDur: 30000,
+    spiceOwn: 0.0512, spiceGold: 4, spiceGoldOwn: 0.004, spiceGoldDur: 30000,
     // 狩り窓(2026-07-09 ⑬作り替え): 窓は討伐が開く・維持する(金クッキー非関与)。portalHuntDur/Grow は旧・金開窓用=現在未使用(移植時に削除)。
     // portalHuntSpawnBase=窓に関係ない常時スポーン加速(研究解放中)/ portalHuntSpawn=窓中の追加加速(⑬延長狩りのコントラスト)。
     // ⑬延長狩り再係留2回目(2026-07-14)。※同日修復: 前の編集でportalHuntSpawn/SpawnBaseが行中コメントに
     // 飲まれて未定義化(窓の加速=延長狩りの実体が死んでS7比0.956/S9比1.000の一因)。独立行に復元。
-    portalSelf: 6, portalHuntDur: 9000, portalHuntGrow: 0.03,
+    portalSelf: 3, portalHuntDur: 9000, portalHuntGrow: 0.03,
     portalHuntSpawn: 0.0008, portalHuntSpawnBase: 0.007,
     bankOwn: 0.0288, bankSaved: 5.0,
-    moonBase: 8, moonStage: 0.001, moonOwn: 0.0008,
-    foldPortal: 0.002, foldMonster: 2.5, foldGold: 8,
-    galaxyTypes: 0.22, galaxyOwn: 0.0224,
-    bhGlobal: 5, bhCompress: 0.0018,
-    quantumRes: 0.17, quantumOwn: 0.0224,
-    antimatterOwn: 0.008, antimatterSkill: 0.02,
+    moonBase: 2.5, moonStage: 0.001, moonOwn: 0.0008,
+    foldPortal: 0.002, foldMonster: 1.8, foldGold: 3,
+    galaxyTypes: 0.07, galaxyOwn: 0.0224,
+    bhGlobal: 2.2, bhCompress: 0.0018,
+    quantumRes: 0.062, quantumOwn: 0.0224,
+    antimatterOwn: 0.008, antimatterSkill: 0.008,
     ctrlOven: 0.05, ctrlMoon: 0.07, ctrlBh: 0.10
   },
 
@@ -306,11 +315,11 @@ module.exports = {
   // ㉚コストのはしご: 研究の「初回開発費」(生涯初のみ)。再購入(毎周回)は従来の resCost=安い固定価格。
   // 設備の firstUnitCost と同じ構図: 初回開発=特注の大きい目標 / 再購入=開発済みの量産価格。どちらも固定。
   resFirstCost: {
-    bankClickDividend: 9e6, portalNetwork: 8e7, moonGlobalYeast: 3.16e+77, galaxyAssembly: 3.16e+102, blackHoleCompression: 3.16e+117, quantumProofing: 1.00e+155, antimatterRecipe: 3.16e+162, portalGlobalFold: 3.16e+167
+    bankClickDividend: 9e6, portalNetwork: 8e7, moonGlobalYeast: 7.00e+36, galaxyAssembly: 1.00e+47, blackHoleCompression: 1.25e+53, quantumProofing: 2.25e+68, antimatterRecipe: 2.50e+71, portalGlobalFold: 2.70e+73
   },
   // ㉚コストのはしご: 段階カード(段2/段3)の絶対額固定コスト。解禁はコストのみが律速(スキル/周回/層ゲート全廃)。
   resStageCostAbs: {
-    'ovenBatch:2': 3.16e+16, 'fingerTechnique:2': 3.16e+19, 'spiceBlend:2': 1.00e+21, 'cpsStrike:2': 2.5e11, 'grandmaCrowd:2': 3.16e+25, 'bankClickDividend:2': 1.00e+30, 'factoryNetwork:2': 1.00e+33, 'portalNetwork:2': 3.16e+37, 'cpsStrike:3': 3.16e+42, 'ovenBatch:3': 1.00e+45, 'spiceBlend:3': 1.00e+50, 'fingerTechnique:3': 1.00e+55, 'grandmaCrowd:3': 1.00e+60, 'bankClickDividend:3': 1.00e+65, 'factoryNetwork:3': 3.16e+67, 'portalNetwork:3': 3.16e+72, 'moonGlobalYeast:2': 3.16e+82, 'moonGlobalYeast:3': 1.00e+90, 'galaxyAssembly:2': 3.16e+107, 'blackHoleCompression:2': 3.16e+122, 'galaxyAssembly:3': 3.16e+132, 'blackHoleCompression:3': 3.16e+147, 'quantumProofing:2': 3.16e+157, 'antimatterRecipe:2': 1.00e+165, 'portalGlobalFold:2': 1.00e+170, 'quantumProofing:3': 3.16e+172, 'antimatterRecipe:3': 1.00e+175, 'portalGlobalFold:3': 3.16e+177
+    'ovenBatch:2': 1.1e12, 'fingerTechnique:2': 1.85e13, 'spiceBlend:2': 7.55e13, 'cpsStrike:2': 9.4e9, 'grandmaCrowd:2': 5.10e+15, 'bankClickDividend:2': 3.40e+17, 'factoryNetwork:2': 5.70e+18, 'portalNetwork:2': 3.85e+20, 'cpsStrike:3': 4.15e+22, 'ovenBatch:3': 4.30e+23, 'spiceBlend:3': 4.65e+25, 'fingerTechnique:3': 5.00e+27, 'grandmaCrowd:3': 5.40e+29, 'bankClickDividend:3': 5.80e+31, 'factoryNetwork:3': 6.05e+32, 'portalNetwork:3': 6.50e+34, 'moonGlobalYeast:2': 7.55e+38, 'moonGlobalYeast:3': 8.45e+41, 'galaxyAssembly:2': 1.10e+49, 'blackHoleCompression:2': 1.35e+55, 'galaxyAssembly:3': 1.60e+59, 'blackHoleCompression:3': 2.00e+65, 'quantumProofing:2': 2.30e+69, 'antimatterRecipe:2': 2.60e+72, 'portalGlobalFold:2': 2.80e+74, 'quantumProofing:3': 2.90e+75, 'antimatterRecipe:3': 3.00e+76, 'portalGlobalFold:3': 3.15e+77
   },
 
   // ---- モンスター報酬効果 ----
@@ -433,8 +442,12 @@ module.exports = {
   //  初開発(前段の初開発から)。
   // ㉚コストのはしご: 後半設備の初号機は特注の固定価格(firstUnitCost=はしごの段)。生涯初の1台のみ・以後は式価格。
   // 時間/収入連動の割増・周回/層/スキルのゲートは全廃(decoupleUnlockSkills=true: 設備の解禁もコストのみ)。
-  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, revealCount: 1, decoupleUnlockSkills: true,
-    firstUnitCost: { grandma: 1e4, moonBakery: 1.00e+75, timeOven: 1.00e+85, galaxyFactory: 1.00e+100, blackHoleMixer: 1.00e+115, universeOven: 1.00e+130, godFinger: 1.00e+140, cookieSingularity: 1.00e+145, quantumBakery: 3.16e+152, antimatterOven: 1.00e+160 } },
+  // ㉚100%リスケール(2026-07-25 HANDOFF_30追記5): ownPow 0.27→0.33(再投資利回りの圧縮=収益率を
+  // 1桁/10〜20分帯へ)。knee 2600→400・ownPow2 0.72→0.60: 台数400以降は1台0.078桁の急勾配=
+  // 所有数指数効果(研究own・熟練)の複利ループを台数側で断つ。効果式は無変更(①③⑨のlift帯は不動)。
+  // 実測(S1 48h): 周回0-14が+2.3桁/周回で安定・T1帯内・爆発なし(knee2600では run9 で+26桁の再爆発)。
+  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.33, knee: 400, ownPow2: 0.60, revealCount: 1, decoupleUnlockSkills: true,
+    firstUnitCost: { grandma: 1e4, moonBakery: 6.75e+35, timeOven: 7.85e+39, galaxyFactory: 9.85e+45, blackHoleMixer: 1.20e+52, universeOven: 1.50e+58, godFinger: 1.75e+62, cookieSingularity: 1.90e+64, quantumBakery: 2.15e+67, antimatterOven: 2.40e+70 } },
 
   // ---- 個別強化(報酬) ----
   upPerk: { base: 0.22, slope: 0.010, floor: 0.055 },

@@ -54,16 +54,12 @@ const RES_IDX = {}; RESEARCH.forEach((x, i) => { RES_IDX[x.id] = i; }); // ㉚�
 // 全カード k≥1(2026-07-25 実測修正): k=0だと研究の初開発と同周回の連鎖でΔ1になる(段2のアーミング周回=研究初購入
 // の周回のため)。また貯金プレミアム(凍結)との併用は、貯蓄型の膨れた財布基準の凍結が周回を跨いで k ゲートと同じ
 // 収入回復点に再同期しΔ1を生むため、段階カードのプレミアムは廃止(firstBuySecStage=0)し k ゲートに一本化。
-const STAGE_K = {
-  'portalGlobalFold:2': 1, 'blackHoleCompression:2': 2, 'galaxyAssembly:3': 3,
-  'quantumProofing:2': 1, 'antimatterRecipe:2': 3,
-  'portalGlobalFold:3': 1, 'blackHoleCompression:3': 1, 'quantumProofing:3': 2, 'antimatterRecipe:3': 2,
-  // 中盤系列のゲートスキルが同時期に揃う組の分割(実測: run12に grandmaCrowd:3/ovenBatch:3/factoryNetwork:2 が同周回衝突)
-  'ovenBatch:3': 2, 'factoryNetwork:2': 2
-};
-// ㉚研究の初回開発の周回オフセット(第14版): 後半設備の初号機→その研究がΔ1連発する系列(実測: blackHoleMixer→
-// blackHoleCompression等)は、研究の生涯初開発を「対応設備の初開発が揃った周回から+1周回後」に。再購入は無条件。
-const RES_K = { moonGlobalYeast: 1, galaxyAssembly: 1, blackHoleCompression: 1, quantumProofing: 1, antimatterRecipe: 1, portalGlobalFold: 1 };
+// ㉚リスケール(2026-07-25 HANDOFF_30追記5): +k転生の内容ゲート(STAGE_K/RES_K)は全廃(空テーブル)。
+// 旧経済(周回8.5桁・秒で数桁)ではコストが壁にならず周回オフセットで解放を散らすしかなかったが、
+// 収益率圧縮後(2.3桁/周回・1桁≈10分)は固定コスト自体が実時間の壁になる=解放時期はコストだけが決める。
+// ゲートが残っていると「コスト到達済み・転生待ち」の初回開発が転生直後(スキル束の隣)に落ちて衝突する。
+const STAGE_K = {};
+const RES_K = {};
 
 // ==== 段階式研究: 対応設備(その回で購入済みのみ表示/購入可)と段階解放スキル ====
 const RES_EQUIP = {
@@ -1547,14 +1543,18 @@ function purgeBoosts(sim) {
   r.boosts = r.boosts.filter(b => b.until > sim.t);
   r.afterheats = r.afterheats.filter(b => b.until > sim.t);
 }
+// ㉚リスケール(2026-07-25): 同時ブーストの重なりは**加算合成**(1+Σ(倍率-1))へ変更(旧=乗算合成)。
+// 金間隔が1秒フロアへ達する高回転期は同時35本×各e2の乗算=×e30超の瞬間跳躍が起き(diag_stack実測: run11でboostM e31.8)、
+// どんなコストのはしごも1秒で飛び越える=㉚100%と両立不能。加算合成なら「本数が多いほど強い」体験は保ちながら
+// 合成値は本数×倍率(e3台)に有界。ゲーム(index.html goldenBoostMultiplier)にも同じ変更を移植すること。
 function goldenBoostMultiplier(sim) {
-  let m = 1; for (const b of sim.run.boosts) m *= b.mult;
+  let m = 1; for (const b of sim.run.boosts) m += Math.max(0, b.mult - 1);
   if (m > 1) m *= equip2Fx(sim).goldenBoostMul; // 新装備: 金ブースト系(アクセ甲)
   return m;
 }
 function goldenBoostActive(sim) { return sim.run.boosts.length > 0; }
 function afterheatMultiplier(sim) {
-  let m = 1; for (const b of sim.run.afterheats) m *= b.mult; return m;
+  let m = 1; for (const b of sim.run.afterheats) m += Math.max(0, b.mult - 1); return m;
 }
 
 // --- 生産計算 ---
@@ -1864,6 +1864,11 @@ function computeProd(sim) {
   }
 
   const boostM = goldenBoostMultiplier(sim) * afterheatMultiplier(sim);
+  // ㉚リスケール診断(2026-07-25): 倍率スタックの分解ログ(opt.diagStack時のみ)。転生時にdoPrestigeが回収する。
+  if (sim.opt && sim.opt.diagStack) {
+    sim._stackNow = { cpsRaw, clickRaw, globalRes, cpsSkillMul, clickSkillMul, killMulAll, boostM, critEV,
+      eqAll: eqFx.allMul, eqCps: eqFx.cpsMul, bankM, chainM, msAll: msA, msCps: (r.ms && r.ms.cps) || 1, cps };
+  }
   return {
     baseClick: click, clickEV: click * critEV * boostM, cps: cps * boostM,
     baseCps: cps, boostM, stage, prestigeMul, critChance: critChanceOut
@@ -2108,10 +2113,12 @@ const MILESTONE_RESEARCH = (() => {
   for (const u of UPGRADES) {
     for (let ti = 0; ti < 4; ti++) {
       let fx;
+      // ㉚効果量の桁圧縮(2026-07-25): own 0.004→0.0015・sup 0.0015→0.0008。台数400+で束13枚が
+      // 各設備×5〜11(+0.7〜1.0桁)となり、はしご間隔(1.0桁)を1枚で飛ぶため。倍率系(×1.35-1.5)は据え置き。
       if (u.type === 'click') fx = ti % 2 === 0 ? { click: 1.35 } : { critAdd: 0.02 };       // クリック設備: 倍率と会心確率を交互
-      else if (ti === 0) fx = { own: { [u.id]: 0.004 } };                                     // I: 自設備数連動(台数で伸びる)
+      else if (ti === 0) fx = { own: { [u.id]: 0.0015 } };                                    // I: 自設備数連動(台数で伸びる)
       else if (ti === 1) fx = { up: { [u.id]: 1.4 } };                                        // II: 倍率
-      else if (ti === 2) fx = { sup: [u.id, 'grandma', 0.0015] };                             // III: 他設備数連動(おばあちゃん台数で支援)
+      else if (ti === 2) fx = { sup: [u.id, 'grandma', 0.0008] };                             // III: 他設備数連動(おばあちゃん台数で支援)
       else fx = { up: { [u.id]: 1.5 } };                                                      // IV: 倍率
       eqFx.push({ ti, fx });
     }
@@ -2596,7 +2603,8 @@ function measureTick(sim) {
             acc.n++;
           }
           // 投資量の周回末値(診断用): tapDirect等のsatMax/clickBonusを解析的に決めるための実数
-          r._invLast = { oven: r.upgrades.oven || 0, godFinger: r.upgrades.godFinger || 0, finger: r.upgrades.finger || 0, bank: r.upgrades.bank || 0 };
+          // ㉚リスケール診断(2026-07-25): 全設備の台数へ拡張(所有数指数の膝=kneeの作動点決定用)
+          r._invLast = Object.assign({}, r.upgrades);
         }
       }
     }
@@ -2998,6 +3006,7 @@ function doPrestige(sim) {
   const nextCostAt = cheapestUnownedSkillCost(sim); // ⑭: 購入前の次スキル最安
   const onHandCookies = r.cookies; // 転生時の所持クッキー(コスト控除前・第0回コスト再算定用=diag_prestige0.js)
   sim.lastPrestigeCps = computeProd(sim).cps; // テーブル生成用: この時点の毎秒(×500の10べき切捨てが次回コスト)
+  if (sim.opt && sim.opt.diagStack && sim._stackNow) (sim._stackLog || (sim._stackLog = [])).push(Object.assign({ runIdx: sim.runs.length }, sim._stackNow)); // ㉚リスケール診断
   r.prestigeCps = sim.lastPrestigeCps; r.prestigeCostPaid = cost;
   r.cookies -= cost;
   sim.prestige += gain;
