@@ -2826,7 +2826,9 @@ function defeatMonster(sim, mon) {
   const typeId = mon.typeId || 'normal';
   const M = P.mtype;
   // ⑬延長狩りのsnap(measurement専用): 段2取得後の最初の討伐時に取る=モンスターが生きている窓から測る
-  if (sim._portalSnapPending && sim.opt.timingSnaps && resStage2(sim, 'portalNetwork')) {
+  if (sim._portalSnapPending && sim.opt.timingSnaps && resStage2(sim, 'portalNetwork')
+      && sim.runs.length > (sim._portalSnapAfterRuns == null ? -1 : sim._portalSnapAfterRuns)) {
+    // 次の周回に入ってからの最初のkillでsnap(取得周回末期の湧きゼロ地帯を避ける・2026-07-25)
     (sim.timingSnaps || (sim.timingSnaps = {})).portalNetwork = takeSnapshot(sim);
     sim._portalSnapPending = false;
   }
@@ -3563,6 +3565,9 @@ function tryBuyResearchStage(sim, id, stage, budgetRatio) {
   }
   if (stage === 2 && sim.opt.timingSnaps && id === 'portalNetwork' && !(sim.timingSnaps && sim.timingSnaps.portalNetwork)) {
     sim._portalSnapPending = true;
+    // ⑬延長狩り測定修正(2026-07-25): 取得周回の末期(quotaFailed後=湧きゼロ)でsnapすると900s窓に討伐が無く
+    // 全方針1.000に死ぬ。snapは「次の周回の最初のkill」(ノルマ新鮮=討伐が濃い)まで遅延する。
+    sim._portalSnapAfterRuns = sim.runs.length;
   }
   const key = id + ':' + stage;
   if (sim.firstStageBuy[key] === undefined) sim.firstStageBuy[key] = sim.t;
