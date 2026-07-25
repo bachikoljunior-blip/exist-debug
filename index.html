@@ -5926,7 +5926,7 @@
 </section>
 
 <div id="transitionFx" aria-hidden="true"></div>
-<div id="stageUnlockBanner" aria-hidden="true"><div class="subT">🎉 クエスト達成 — 新ステージ解放</div><div class="mainT"></div></div>
+<div id="stageUnlockBanner" aria-hidden="true"><div class="subT">🎉 守護ボス撃破 — 新ステージ解放</div><div class="mainT"></div></div>
 <div id="recordBanner" aria-hidden="true"><span></span></div>
 
 <div id="policyChoiceScreen" class="policyChoiceScreen">
@@ -17410,11 +17410,16 @@ function hideMonster(idOrShouldReschedule, shouldRescheduleMaybe) {
     // そのステージのボスまでの討伐数を前回ボス到達時点に戻す(ボスまで再度貯め直し)。
     if (shouldReschedule && mon.typeId === "boss") {
       const sno = currentStageNo();
-      const cycle = bossCycleFor(sno);
-      const defeated = Math.max(0, Math.floor(Number((state.bossKills || {})[sno]) || 0));
-      state.stageKills = state.stageKills && typeof state.stageKills === "object" ? state.stageKills : {};
-      state.stageKills[sno] = cycle * defeated;
-      showMessage("ボスを逃した：討伐数がリセットされました");
+      // 守護ボス(R35): 逃しても討伐数リセットは無し(ノルマ達成は消えない)。少し間を置いて必ず再挑戦できる。
+      if ((state.frontierBossPending || 0) === sno && sno < MAX_STAGE_NO) {
+        showMessage("守護ボスを逃した⋯ まだ去っていない。すぐ戻ってくる！");
+      } else {
+        const cycle = bossCycleFor(sno);
+        const defeated = Math.max(0, Math.floor(Number((state.bossKills || {})[sno]) || 0));
+        state.stageKills = state.stageKills && typeof state.stageKills === "object" ? state.stageKills : {};
+        state.stageKills[sno] = cycle * defeated;
+        showMessage("ボスを逃した：討伐数がリセットされました");
+      }
     }
 
     clearTimeout(mon.hideTimer);
