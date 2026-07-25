@@ -1420,7 +1420,14 @@ function policyIs(sim, id) {
 }
 function rewardCategoryBonus(sim, cat) {
   if (!hasSkillEffect(sim, 'unlockSystem', 'rewardSynergy')) return 0;
-  return lg(satLv(sim.run.rewardCategoryCounts[cat] || 0, P.rw.categoryHalf), P.rw.categoryBonusRate) - 1;
+  // ㉚リスケール(2026-07-25): 唯一の指数項(旧コメント「(1+rate)^lv で指数のため要 Infinity 監視」)を
+  // 対数逓減へ(キャップ撤廃の教義に従い上限なし・伸びは対数)。lv4360で e5.68 の倍率が金ブースト/即時獲得量へ
+  // 乗り、終盤周回の最後の30秒に資産が3桁/30秒で跳ぶスプリントの主因だった(㉚衝突センサス+debugTrace実測)。
+  // 対数圧縮後: lv4360→実効990→×e1.29。ゲーム(index.html rewardCategoryBonus)にも同じ変更を移植すること。
+  const lvRaw = satLv((sim.lifeRewardCat && sim.lifeRewardCat[cat]) || sim.run.rewardCategoryCounts[cat] || 0, P.rw.categoryHalf); // 通算カウント(㉚: 周回内集中→生涯累積の滑らかな成長へ)
+  const half = P.rw.categoryHalf || 400; // 通算カウント化とセットの強圧縮: 生涯lv2千→e0.9・2万→e2.1・20万→e3.0=中盤が熱くならず終盤へ+0.06桁/周回の持続成長(周回内リセット時代は×1でS3停滞だったが、通算化で成長が周回間に分散するため強圧縮でも詰まらない)
+  const lv = half * Math.log1p(lvRaw / half);
+  return lg(lv, P.rw.categoryBonusRate) - 1;
 }
 function elapsed(sim) { return sim.t - sim.run.startT; }
 
@@ -1543,18 +1550,20 @@ function purgeBoosts(sim) {
   r.boosts = r.boosts.filter(b => b.until > sim.t);
   r.afterheats = r.afterheats.filter(b => b.until > sim.t);
 }
-// ㉚リスケール(2026-07-25): 同時ブーストの重なりは**加算合成**(1+Σ(倍率-1))へ変更(旧=乗算合成)。
-// 金間隔が1秒フロアへ達する高回転期は同時35本×各e2の乗算=×e30超の瞬間跳躍が起き(diag_stack実測: run11でboostM e31.8)、
-// どんなコストのはしごも1秒で飛び越える=㉚100%と両立不能。加算合成なら「本数が多いほど強い」体験は保ちながら
-// 合成値は本数×倍率(e3台)に有界。ゲーム(index.html goldenBoostMultiplier)にも同じ変更を移植すること。
+// ㉚リスケール(2026-07-25): 同時ブーストの重なりは**リフレッシュ合成**(最大倍率のみ・期間は延長)へ変更(旧=乗算合成)。
+// 乗算合成は金間隔1秒フロアの高回転期に同時35本×各e2=×e30超の瞬間跳躍(diag_stack実測: run11でboostM e31.8)。
+// 加算合成(×本数)でも高回転期は×e2.5の窓が数十秒ごとに開閉し、窓の立ち上がりで資産が2.5桁跳ぶ=
+// はしご2項目を30秒未満で通過する(衝突センサス実測: Δ7sペア群)。リフレッシュ合成(新しいブーストは
+// 「上書き・延長」)なら高回転期のブーストは滑らかな常時倍率になり、単発の跳躍が消える。
+// 「たくさん取ると強い」は倍率成長(2.6+0.45×Lv)と稼働率で保たれる。ゲーム(index.html)にも同じ変更を移植すること。
 function goldenBoostMultiplier(sim) {
-  let m = 1; for (const b of sim.run.boosts) m += Math.max(0, b.mult - 1);
+  let m = 1; for (const b of sim.run.boosts) m = Math.max(m, b.mult);
   if (m > 1) m *= equip2Fx(sim).goldenBoostMul; // 新装備: 金ブースト系(アクセ甲)
   return m;
 }
 function goldenBoostActive(sim) { return sim.run.boosts.length > 0; }
 function afterheatMultiplier(sim) {
-  let m = 1; for (const b of sim.run.afterheats) m += Math.max(0, b.mult - 1); return m;
+  let m = 1; for (const b of sim.run.afterheats) m = Math.max(m, b.mult); return m;
 }
 
 // --- 生産計算 ---
@@ -2893,6 +2902,11 @@ function applyReward(sim, choice, typeId) {
     r.upgradePerks[choice.id] += count;
   }
   r.rewardCategoryCounts[cat] = (r.rewardCategoryCounts[cat] || 0) + count;
+  // ㉚リスケール(2026-07-25): カテゴリボーナスは通算カウント(lifeRewardCat)でも積む——lifeKills/lifeGoldens/
+  // lifeEquipと同じ「周回跨ぎで滑らかに増える通算値」パターン。周回内リセットの指数ボーナスは終盤周回の
+  // 最後の1〜2分に成長を集中させ(スプリント)、㉚衝突の主因だった。通算化で(1)成長が周回を跨いで滑らかに分散
+  // (2)弱い方針(金特化等)の終盤にも持続成長エンジンが残る(=テーパ/平坦化の貧困トラップ解消)。
+  (sim.lifeRewardCat || (sim.lifeRewardCat = {}))[cat] = (sim.lifeRewardCat[cat] || 0) + count;
   r.rewardByType[typeId || 'normal'] = (r.rewardByType[typeId || 'normal'] || 0) + count;
 }
 
@@ -3612,14 +3626,23 @@ function eagerFirstDevs(sim, prod) {
   for (const rdef of RESEARCH) {
     const id = rdef.id;
     if (!sim.everResearch[id]) { tryBuyResearch(sim, id, 0.9); continue; }
-    if (!sim.run.research[id]) continue;
+    // ㉚(2026-07-25 衝突センサスで発見): 段階カードの生涯初開発が残っている研究は、土台(段1/段2)の
+    // 今周回の再購入も熱意購入で先に済ませる。さもないと方針の買い控え規律(例: grandmaCrowd は
+    // おばあちゃん200台まで買わない)が土台を遅らせ、初開発が「台数トリガ成立の瞬間」(=コスト無関係の
+    // 時刻)に落ちてはしごから外れる(grandmaCrowd:2 がコストe15.7なのに資産e21.4で解放を実測)。
+    const pendStage = !sim.everStage[id + ':2'] || !sim.everStage[id + ':3'];
+    if (!sim.run.research[id]) {
+      if (pendStage) tryBuyResearch(sim, id, 0.9);
+      if (!sim.run.research[id]) continue;
+    }
     if (!sim.everStage[id + ':2']) { tryBuyResearchStage(sim, id, 2, 0.9); continue; }
+    if (!sim.run.research2[id] && !sim.everStage[id + ':3']) tryBuyResearchStage(sim, id, 2, 0.9);
     if (sim.run.research2[id] && !sim.everStage[id + ':3']) tryBuyResearchStage(sim, id, 3, 0.9);
   }
 }
 function pushUnlock(sim, kind, id, n) {
   sim.lastUnlockT = sim.t;
-  const ev = { t: sim.t, kind, id, tc: sim.totalCookies }; // tc=解放時点の通算(はしごの段の再配置用)
+  const ev = { t: sim.t, kind, id, tc: sim.totalCookies, w: sim.run.cookies }; // tc=通算 / w=解放時点の財布(㉚配置診断: コストと財布の乖離=財布外ゲートの検出)
   if (n != null) ev.n = n;
   sim.unlockEvents.push(ev);
 }
