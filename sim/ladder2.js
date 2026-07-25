@@ -30,8 +30,8 @@ const items = src.filter(s => Math.log10(s.v) >= 9).sort((a, b) => a.v - b.v);
 // 跳躍幅ぶん余計に離す(大物研究=own指数の積み上がり解放でe1.2前後・跳躍源の設備初号機=+0.3)。
 const EXTRA = {
   'resFirst:moonGlobalYeast': 0.9, 'resFirst:galaxyAssembly': 0.9, 'resFirst:blackHoleCompression': 0.9,
-  'resFirst:quantumProofing': 0.9, 'resFirst:antimatterRecipe': 0.9, 'resFirst:portalGlobalFold': 0.9,
-  'firstUnit:moonBakery': 0.25, 'firstUnit:timeOven': 0.25, 'firstUnit:galaxyFactory': 0.25,
+  'resFirst:quantumProofing': 0.9, 'resFirst:antimatterRecipe': 0.9, 'resFirst:portalGlobalFold': 1.2,
+  'firstUnit:moonBakery': 0.4, 'firstUnit:timeOven': 0.25, 'firstUnit:galaxyFactory': 0.4,
   'firstUnit:blackHoleMixer': 0.25, 'firstUnit:universeOven': 0.25, 'firstUnit:godFinger': 0.25,
   'firstUnit:cookieSingularity': 0.25, 'firstUnit:quantumBakery': 0.25, 'firstUnit:antimatterOven': 0.25,
   'ms:ms_prestige_r3': 0.5, 'ms:ms_prestige_r4': 0.4, 'ms:ms_taps_p4': 0.3

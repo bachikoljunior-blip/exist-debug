@@ -239,10 +239,10 @@ function prestigeWhen(minElapsedSec, gainFactor) {
       if (sim._victoryLapArm) return true;
       const target = (sim._prTarget || 0) * 1.57;
       const gain = G.prestigeGainOf(sim.run.runCookies);
-      if (gain >= target * gainFactor && gain >= 1) { sim._victoryLapArm = true; sim._prTarget = Math.max(target, gain / gainFactor); return true; }
+      if (gain >= target * gainFactor && gain >= 1) { sim._victoryLapArm = true; sim._prTarget = Math.max(target, Math.min(gain / gainFactor, target * 2.46)); return true; }
       // 一周発火の時間上限はT1帯上限(7200s)に合わせる(2026-07-17 T1: matureRate0.009でS4の発火周回が
       // 7538sに伸びて帯を超えた。目標未達でも7200sで発火=帯内・run0-8は不変・完成周回の測定時間はむしろ増える)
-      if (sim.t - sim.run.startT >= Math.min(7200, G.PRESTIGE_MAX_SEC) - 1 && gain >= 1) { sim._victoryLapArm = true; sim._prTarget = Math.max(target, gain / gainFactor); return true; }
+      if (sim.t - sim.run.startT >= Math.min(7200, G.PRESTIGE_MAX_SEC) - 1 && gain >= 1) { sim._victoryLapArm = true; sim._prTarget = Math.max(target, Math.min(gain / gainFactor, target * 2.46)); return true; }
       return false;
     }
     // 転生しきい値=次スキル束(相乗り段=約1e8×間隔)or 前回目標×1.57 の高い方(2026-07-14 ④修復の恒久解)。
@@ -252,11 +252,14 @@ function prestigeWhen(minElapsedSec, gainFactor) {
     const gain = G.prestigeGainOf(sim.run.runCookies);
     // 梯子は「目標と達成PTの高い方」を積む(2026-07-15 ④修復): 1200s下限のオーバーシュートで
     // 実PTが目標を超えた分も次の床に反映=次周回は必ず前回実PTの1.57倍超が要る=生産段を毎回前進。
-    if (gain >= target * gainFactor && gain >= 1) { sim._prTarget = Math.max(target, gain / gainFactor); return true; }
+    // ラチェット上限×1.57^2(㉚2026-07-25 ④対策): 金ストリーク等で単発オーバーシュートした周回の実測gainを
+    // そのまま次目標に焼くと、次周回が7200s保険転生で前周回割れ=④(前周回超)が崩れる(S8 run20-21で-5桁を実測)。
+    // 目標の前進は1周回あたり最大2段ぶんに制限(オーバーシュートが構造的なら次周回のgainも高く④は自然に立つ)。
+    if (gain >= target * gainFactor && gain >= 1) { sim._prTarget = Math.max(target, Math.min(gain / gainFactor, target * 2.46)); return true; }
     // 上限時間の保険: 目標未達でも転生。達成PTを梯子に反映(低い段で止まらない)。
     // 保険上限を7200s(T1帯上限)に統一(2026-07-17 R17b: 署名色の経済シフトでS4 run8が7234sと帯を34s超過。
     // 旧36000は歴史的な停滞保険で現経済では実測上7200超は当該1周回のみ=「2時間で見切る」自然なペース)。
-    if (sim.t - sim.run.startT >= Math.min(7200, G.PRESTIGE_MAX_SEC) - 1 && gain >= 1) { sim._prTarget = Math.max(target, gain / gainFactor); return true; }
+    if (sim.t - sim.run.startT >= Math.min(7200, G.PRESTIGE_MAX_SEC) - 1 && gain >= 1) { sim._prTarget = Math.max(target, Math.min(gain / gainFactor, target * 2.46)); return true; }
     return false;
   };
 }
@@ -476,15 +479,15 @@ const STRATEGIES = [
         const target = (sim._prTarget || 0) * 1.57;
         if (gain >= target * factor && gain >= 1) { sim._victoryLapArm = true; sim._prTarget = target; return true; }
         // 一周発火の時間上限はT1帯上限(7200s)に合わせる(prestigeWhenと同じ・2026-07-17)
-        if ((sim.t - sim.run.startT) >= Math.min(7200, G.PRESTIGE_MAX_SEC) - 1 && gain >= 1) { sim._victoryLapArm = true; sim._prTarget = Math.max(target, gain / factor); return true; }
+        if ((sim.t - sim.run.startT) >= Math.min(7200, G.PRESTIGE_MAX_SEC) - 1 && gain >= 1) { sim._victoryLapArm = true; sim._prTarget = Math.max(target, Math.min(gain / factor, target * 2.46)); return true; }
         return false;
       }
       const target = Math.max(next, (sim._prTarget || 0) * 1.57);
       // 達成gainを梯子に反映(2026-07-17 ④修復: prestigeWhenと同じ床。S9だけ target のみ保存で、
       // 1200s床のオーバーシュート(実績5倍超過等)が記録されず次周回の目標が実績を下回り④が割れていた)
-      if (gain >= target * factor && gain >= 1) { sim._prTarget = Math.max(target, gain / factor); return true; }
+      if (gain >= target * factor && gain >= 1) { sim._prTarget = Math.max(target, Math.min(gain / factor, target * 2.46)); return true; }
       // 保険上限7200s(T1帯)に統一(prestigeWhenと同じ・2026-07-17 R17b)
-      if ((sim.t - sim.run.startT) >= Math.min(7200, G.PRESTIGE_MAX_SEC) - 1 && gain >= 1) { sim._prTarget = Math.max(target, gain / factor); return true; }
+      if ((sim.t - sim.run.startT) >= Math.min(7200, G.PRESTIGE_MAX_SEC) - 1 && gain >= 1) { sim._prTarget = Math.max(target, Math.min(gain / factor, target * 2.46)); return true; }
       return false;
     },
     skillOrder: skillOrderByBranch(['core', 'monster', 'auto', 'reward', 'economy', 'research', 'click', 'golden', 'upgrade', 'start', 'master'])

@@ -18,7 +18,7 @@ module.exports = {
   // pG 0.023→0.085(2026-07-25 ㉚100%リスケール・HANDOFF_30追記5): 段間隔=log10(1.57)/pG≈2.3桁/周回。
   // ④は「前周回超」に緩和済み(1億倍条件は撤廃)なので8.5桁は不要。2.3桁/周回×34段=総スパン約77桁
   // (旧289桁)。収益率帯(2.3桁を1200〜7200sで稼ぐ=1桁/9〜52分)が固定コストのはしごを実時間の壁にする。
-  prestige: { pA: 0, pD1: 200000, pB: 14, pD2: 10000, pG: 0.085, pMin: 10000, firstCost: 100000000, costCpsMul: 500,
+  prestige: { pA: 0, pD1: 200000, pB: 14, pD2: 10000, pG: 0.085, pMin: 10000, firstCost: 5000000, costCpsMul: 500, // firstCost 1e8→5e6(㉚2026-07-25: ユーザー仕様2026-07-09「初回転生=500万」へ復帰。1e8は圧縮経済でrun0が9400-11200s=T1帯(≤7200s)超の全方針系統的違反源)
     // 転生コストの固定テーブル(2026-07-11 確定形): build_prestige_table.js が基準方針(S1)の100h測定から
     // 「第n回の転生時の毎秒×500の10べき切捨て」を焼き込む。無い間は動的フォールバック。
     costTable: (function () { try { return require('./prestige_costs.json'); } catch (e) { return []; } })() },
@@ -154,7 +154,7 @@ module.exports = {
   // 周回数・層・スキルのゲートは全廃。量産体制(massProd)は仕様ごと撤去済み。
   // ㉚桁圧縮リマップ(2026-07-25 HANDOFF_30追記5・ladder_remap.js生成): 旧はしご(e9〜e177・2.5桁間隔)を
   // 新経済(2.3桁/周回・終盤e77)へ線形写像。順序・交互配置は保存/間隔は約1.0桁(金ブースト×7=0.85桁より広い)。
-  msResearch: { costMul: 1, rebuySec: 15, costTable: { ms_taps_p1: 1000000000, ms_stage_s1: 7550000000, ms_kills_k1: 435000000000, ms_golden_g1: 3350000000000, ms_eqmastery_t1: 25500000000000, ms_taps_p2: 1.50e+15, ms_kills_k2: 7.15e+17, ms_stage_s2: 4.40e+19, ms_golden_g2: 2.75e+21, ms_eqmastery_t2: 1.80e+23, ms_taps_p3: 1.15e+25, ms_kills_k3: 6.75e+27, ms_stage_s3: 4.80e+29, ms_golden_g3: 3.50e+31, ms_eqmastery_t3: 2.65e+33, ms_kills_k4: 1.85e+36, ms_taps_p4: 1.85e+41, ms_stage_s4: 5.60e+44, ms_kills_k5: 5.30e+46, ms_eqmastery_t4: 5.25e+47, ms_golden_g4: 5.20e+48, ms_kills_k6: 7.85e+52, ms_golden_g5: 8.65e+54, ms_prestige_r1: 9.20e+55, ms_kills_k7: 1.70e+60, ms_golden_g6: 2.15e+62, ms_prestige_r2: 2.45e+63, ms_eqmastery_t5: 7.15e+66, ms_kills_k8: 8.65e+67, ms_prestige_r3: 2.30e+70, ms_prestige_r4: 2.70e+74 } },
+  msResearch: { costMul: 1, rebuySec: 15, costTable: { ms_taps_p1: 1000000000, ms_stage_s1: 7550000000, ms_kills_k1: 435000000000, ms_golden_g1: 3350000000000, ms_eqmastery_t1: 25500000000000, ms_taps_p2: 1.50e+15, ms_kills_k2: 7.15e+17, ms_stage_s2: 4.40e+19, ms_golden_g2: 2.75e+21, ms_eqmastery_t2: 1.80e+23, ms_taps_p3: 1.15e+25, ms_kills_k3: 6.75e+27, ms_stage_s3: 4.80e+29, ms_golden_g3: 3.50e+31, ms_eqmastery_t3: 2.65e+33, ms_kills_k4: 1.85e+36, ms_taps_p4: 2.60e+41, ms_stage_s4: 7.90e+44, ms_kills_k5: 7.50e+46, ms_eqmastery_t4: 7.40e+47, ms_golden_g4: 7.40e+48, ms_kills_k6: 1.55e+53, ms_golden_g5: 1.70e+55, ms_prestige_r1: 1.80e+56, ms_kills_k7: 3.35e+60, ms_golden_g6: 4.30e+62, ms_prestige_r2: 4.90e+63, ms_eqmastery_t5: 1.40e+67, ms_kills_k8: 1.70e+68, ms_prestige_r3: 4.65e+70, ms_prestige_r4: 5.40e+74 } },
 
   // ㉚解放間隔(2026-07-22 ユーザー指示「ゲート解放無くして、ゲーム調整で解放間隔30秒以上」):
   // 解放を待たせるハードゲートは撤去(minGap=0=常に解放可)。解放間隔≥30秒はノルマを本当の壁にする
@@ -294,7 +294,7 @@ module.exports = {
   // 第11次(値段割り・D'): weave.js が「1周回に中間目標1件」になるよう再配置した値を
   // weave_costs.json に保存し、ここで上書き読込する(研究コスト=調整項目・ユーザー確認済み)
   resCost: Object.assign({
-    fingerTechnique: 2500, grandmaCrowd: 100000, ovenBatch: 300000, // ①初回希釈対策(2026-07-14): 第0回取得を第1回以降へ=金アンカー圏外
+    fingerTechnique: 500, grandmaCrowd: 100000, ovenBatch: 300000, // fT 2500→500(㉚: 熱意購入しきい値(÷0.9)でgrandma1万(固定)と0.6桁=金初期ブースト1回で跳ぶ間隔→1.3桁へ) // ①初回希釈対策(2026-07-14): 第0回取得を第1回以降へ=金アンカー圏外
     factoryNetwork: 150000, spiceBlend: 400000, portalNetwork: 1200000,
     bankClickDividend: 9e6, moonGlobalYeast: 40000000,
     portalGlobalFold: 400000000, galaxyAssembly: 6000000000,
@@ -312,9 +312,9 @@ module.exports = {
   }),
   // ㉚コストのはしご: 研究の「初回開発費」(生涯初のみ)。再購入(毎周回)は従来の resCost=安い固定価格。
   // 設備の firstUnitCost と同じ構図: 初回開発=特注の大きい目標 / 再購入=開発済みの量産価格。どちらも固定。
-  resFirstCost: { bankClickDividend: 9000000, portalNetwork: 80000000, moonGlobalYeast: 2.50e+39, galaxyAssembly: 9.55e+50, blackHoleCompression: 1.90e+58, quantumProofing: 2.10e+77, antimatterRecipe: 7.55e+81, portalGlobalFold: 1.20e+85 },
+  resFirstCost: { bankClickDividend: 9000000, portalNetwork: 80000000, moonGlobalYeast: 3.55e+39, galaxyAssembly: 1.90e+51, blackHoleCompression: 3.85e+58, quantumProofing: 4.20e+77, antimatterRecipe: 1.50e+82, portalGlobalFold: 2.40e+85 },
   // ㉚コストのはしご: 段階カード(段2/段3)の絶対額固定コスト。解禁はコストのみが律速(スキル/周回/層ゲート全廃)。
-  resStageCostAbs: { 'cpsStrike:2': 57500000000, 'ovenBatch:2': 195000000000000, 'fingerTechnique:2': 1.15e+16, 'spiceBlend:2': 9.15e+16, 'grandmaCrowd:2': 5.60e+18, 'bankClickDividend:2': 3.50e+20, 'factoryNetwork:2': 2.20e+22, 'portalNetwork:2': 1.45e+24, 'cpsStrike:3': 9.80e+25, 'ovenBatch:3': 8.10e+26, 'spiceBlend:3': 5.65e+28, 'fingerTechnique:3': 4.05e+30, 'grandmaCrowd:3': 3.00e+32, 'bankClickDividend:3': 2.30e+34, 'factoryNetwork:3': 2.05e+35, 'portalNetwork:3': 1.65e+37, 'moonGlobalYeast:2': 3.45e+42, 'moonGlobalYeast:3': 5.40e+45, 'galaxyAssembly:2': 8.20e+53, 'blackHoleCompression:2': 1.90e+61, 'galaxyAssembly:3': 6.00e+65, 'blackHoleCompression:3': 2.10e+73, 'quantumProofing:2': 2.25e+79, 'antimatterRecipe:2': 8.45e+83, 'portalGlobalFold:2': 1.35e+87, 'quantumProofing:3': 2.00e+88, 'antimatterRecipe:3': 3.00e+89, 'portalGlobalFold:3': 4.60e+90 },
+  resStageCostAbs: { 'cpsStrike:2': 57500000000, 'ovenBatch:2': 195000000000000, 'fingerTechnique:2': 1.15e+16, 'spiceBlend:2': 9.15e+16, 'grandmaCrowd:2': 5.60e+18, 'bankClickDividend:2': 3.50e+20, 'factoryNetwork:2': 2.20e+22, 'portalNetwork:2': 1.45e+24, 'cpsStrike:3': 9.80e+25, 'ovenBatch:3': 8.10e+26, 'spiceBlend:3': 5.65e+28, 'fingerTechnique:3': 4.05e+30, 'grandmaCrowd:3': 3.00e+32, 'bankClickDividend:3': 2.30e+34, 'factoryNetwork:3': 2.05e+35, 'portalNetwork:3': 1.65e+37, 'moonGlobalYeast:2': 4.90e+42, 'moonGlobalYeast:3': 7.65e+45, 'galaxyAssembly:2': 1.60e+54, 'blackHoleCompression:2': 3.80e+61, 'galaxyAssembly:3': 1.20e+66, 'blackHoleCompression:3': 4.20e+73, 'quantumProofing:2': 4.50e+79, 'antimatterRecipe:2': 1.65e+84, 'portalGlobalFold:2': 5.50e+87, 'quantumProofing:3': 8.10e+88, 'antimatterRecipe:3': 1.20e+90, 'portalGlobalFold:3': 1.80e+91 },
 
   // ---- モンスター報酬効果 ----
   rw: {
@@ -441,7 +441,7 @@ module.exports = {
   // 所有数指数効果(研究own・熟練)の複利ループを台数側で断つ。効果式は無変更(①③⑨のlift帯は不動)。
   // 実測(S1 48h): 周回0-14が+2.3桁/周回で安定・T1帯内・爆発なし(knee2600では run9 で+26桁の再爆発)。
   upCost: { coef: 1100, basePow: 0.60, ownPow: 0.33, knee: 400, ownPow2: 0.60, revealCount: 1, decoupleUnlockSkills: true,
-    firstUnitCost: { grandma: 10000, moonBakery: 1.50e+38, timeOven: 3.30e+43, galaxyFactory: 5.25e+49, blackHoleMixer: 9.95e+56, universeOven: 2.85e+64, godFinger: 1.05e+69, cookieSingularity: 9.30e+71, quantumBakery: 8.90e+75, antimatterOven: 3.05e+80 } },
+    firstUnitCost: { grandma: 10000, moonBakery: 1.50e+38, timeOven: 4.65e+43, galaxyFactory: 7.45e+49, blackHoleMixer: 1.95e+57, universeOven: 5.70e+64, godFinger: 2.10e+69, cookieSingularity: 1.85e+72, quantumBakery: 1.75e+76, antimatterOven: 6.15e+80 } },
 
   // ---- 個別強化(報酬) ----
   upPerk: { base: 0.22, slope: 0.010, floor: 0.055 },

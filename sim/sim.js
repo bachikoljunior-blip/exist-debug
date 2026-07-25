@@ -2239,8 +2239,10 @@ function tryBuyMilestones(sim, prod) {
   // ゲートは一切なし——解放間隔はコストのはしご(全初回開発の固定コストが隣接で大きく離れている)だけが作る。
   const ratio = (P.reveal && P.reveal.msBudgetRatio != null) ? P.reveal.msBudgetRatio : 0.5;
   let best = null;
+  const immi = prestigeImminent(sim); // ㉚転生直前は生涯初の実績研究も見送り(解放イベントがスキル束の隣に落ちる)
   for (const m of MILESTONE_RESEARCH) {
     if (r.ms.bought[m.id]) continue;
+    if (immi && !(sim.everMs && sim.everMs[m.id])) continue;
     if (!m.trig(sim)) continue;
     const cost = msCostOf(sim, m, prod);
     if (cost > r.cookies * ratio) continue;
@@ -3619,7 +3621,27 @@ function firstBuyPace(sim, key, cost, sec) {
 function firstBuyPaid(sim, key) { if (sim._premTarget && sim._premTarget[key] != null) delete sim._premTarget[key]; } // 支払い完了=次の凍結を許可
 // 新要素の熱意購入(㉚): 生涯初の設備初号機・研究・段階カードを、見えて買える(所持の90%以内)なら即購入。
 // 初回開発の購入時期をコストのはしごの到達時期に一致させる(詳細は advanceTick 内コメント)。
+// ㉚転生直前の初回開発の繰り延べ(2026-07-25 v9残渣対策): 獲得予定PTが転生目標の85%を超えたら
+// 生涯初の開発(=解放イベント)は次の周回へ見送る。転生の一歩手前は周回内で最も収入が熱い帯で、
+// ここで初開発すると転生(スキル束=同tick解放)と<30秒で隣接する(v9残渣35本中の約半分が該当)。
+// 見送られた解放は次周回の再建てっぺん(遅い帯)で起きる=スキル束から数分離れる。
+// プレイヤー語: 「もうすぐ転生するなら新しい開発は転生後に」。gain0.85=周回の最後の約0.8桁ぶんの窓。
+function prestigeImminent(sim) {
+  if (sim._immiT === sim.t) return sim._immiV; // 毎tickキャッシュ(tryBuy*全部から呼ばれるため)
+  sim._immiT = sim.t;
+  // 財布条件も見る(2026-07-25 v10の教訓): gain条件は初期周回では転生のずっと前に飽和する
+  // (run0はgainが目標到達後も財布が転生コスト1e8に届くまで数桁走る)ため、gainだけで見送ると
+  // ゾーンAの初回開発が丸ごと次周回の再建帯(e8を数秒で通過)へ落ちて衝突の山を作った(×12/×11実測)。
+  // 「転生間近」= gainが目標の85%以上 かつ 財布が転生コストの50%以上。
+  if (sim.run.cookies < prestigeCostOf(sim) * 0.5) return (sim._immiV = false);
+  const f = sim._prGainFactor || 1.2;
+  const next = cheapestNextSkillCostSim(sim);
+  const tgt = Math.max(next != null ? next : 0, (sim._prTarget || 0) * 1.57) * f;
+  if (!(tgt > 0)) return (sim._immiV = false);
+  return (sim._immiV = prestigeGainOf(sim.run.runCookies) >= tgt * 0.85);
+}
 function eagerFirstDevs(sim, prod) {
+  if (prestigeImminent(sim)) return;
   for (const u of visibleUpgrades(sim)) {
     if (!sim.everUpgrade[u.id] && !(sim.run.upgrades[u.id] > 0)) tryBuyUpgrade(sim, u, 0.9);
   }
@@ -3648,6 +3670,7 @@ function pushUnlock(sim, kind, id, n) {
 }
 function tryBuyUpgrade(sim, u, budgetRatio) {
   if (!sim.everUpgrade[u.id] && !unlockGateOk(sim)) return false;
+  if (!sim.everUpgrade[u.id] && prestigeImminent(sim)) return false; // ㉚転生直前の初回開発見送り(方針の購入経路にも適用)
   const cost = upgradeCost(sim, u);
   // 生涯初のスキル解放設備は初号機割増(㉚ペーシング)がかかる。予算規律(cookies×budgetRatio)で弾くと
   // 割増ぶんを貯めきれない周回の短い方針が恒久的に買えず全解放不能になる(実測: S13が21→8周回)。
@@ -3706,6 +3729,7 @@ function tryBuyResearch(sim, id, budgetRatio) {
   const r = sim.run;
   if (r.research[id]) return false;
   if (!sim.everResearch[id] && !unlockGateOk(sim)) return false;
+  if (!sim.everResearch[id] && prestigeImminent(sim)) return false; // ㉚転生直前の初回開発見送り
   // 無効化(disableResearch)でも購入行動は同じ: 効果だけがゼロになる
   const def = RESEARCH.find(x => x.id === id);
   if (!def || !researchUnlocked(sim, def)) return false;
@@ -3729,6 +3753,7 @@ function tryBuyResearchStage(sim, id, stage, budgetRatio) {
   const r = sim.run;
   if (stage === 2 ? r.research2[id] : r.research3[id]) return false;
   if (!sim.everStage[id + ':' + stage] && !unlockGateOk(sim)) return false;
+  if (!sim.everStage[id + ':' + stage] && prestigeImminent(sim)) return false; // ㉚転生直前の初回開発見送り
   // 無効化(disableStage)でも購入行動は同じ: 効果だけがゼロになる
   if (!researchStageUnlocked(sim, id, stage)) return false;
   let cost = researchStageCostOf(sim, id, stage);
