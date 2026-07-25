@@ -150,7 +150,7 @@ module.exports = {
   // コストだけが決める=コストが貯金の目標になり、周回の成長も同じ目標で測れる(ユーザー指示)。時間・収入連動・
   // 周回数・層・スキルのゲートは全廃。量産体制(massProd)は仕様ごと撤去済み。
   msResearch: { costMul: 1, rebuySec: 15, costTable: {
-    ms_taps_p1: 1.00e+09, ms_stage_s1: 3.16e+10, ms_kills_k1: 1.00e+12, ms_golden_g1: 3.16e+13, ms_eqmastery_t1: 1.00e+15, ms_taps_p2: 1.00e+18, ms_kills_k2: 1.00e+24, ms_stage_s2: 1.00e+27, ms_golden_g2: 3.16e+31, ms_eqmastery_t2: 1.00e+36, ms_taps_p3: 1.00e+40, ms_kills_k3: 3.16e+47, ms_stage_s3: 3.16e+52, ms_golden_g3: 3.16e+57, ms_eqmastery_t3: 3.16e+62, ms_kills_k4: 1.00e+70, ms_taps_p4: 1.00e+80, ms_stage_s4: 3.16e+87, ms_kills_k5: 3.16e+92, ms_eqmastery_t4: 1.00e+95, ms_golden_g4: 3.16e+97, ms_kills_k6: 1.00e+105, ms_golden_g5: 1.00e+110, ms_prestige_r1: 3.16e+112, ms_kills_k7: 1.00e+120, ms_golden_g6: 1.00e+125, ms_prestige_r2: 3.16e+127, ms_eqmastery_t5: 1.00e+135, ms_kills_k8: 3.16e+137, ms_prestige_r3: 3.16e+142, ms_prestige_r4: 1.00e+150
+    ms_taps_p1: 1e9, ms_stage_s1: 1.6e10, ms_kills_k1: 4e12, ms_golden_g1: 6.3e13, ms_eqmastery_t1: 1e15, ms_taps_p2: 1.00e+18, ms_kills_k2: 1.00e+24, ms_stage_s2: 1.00e+27, ms_golden_g2: 3.16e+31, ms_eqmastery_t2: 1.00e+36, ms_taps_p3: 1.00e+40, ms_kills_k3: 3.16e+47, ms_stage_s3: 3.16e+52, ms_golden_g3: 3.16e+57, ms_eqmastery_t3: 3.16e+62, ms_kills_k4: 1.00e+70, ms_taps_p4: 1.00e+80, ms_stage_s4: 3.16e+87, ms_kills_k5: 3.16e+92, ms_eqmastery_t4: 1.00e+95, ms_golden_g4: 3.16e+97, ms_kills_k6: 1.00e+105, ms_golden_g5: 1.00e+110, ms_prestige_r1: 3.16e+112, ms_kills_k7: 1.00e+120, ms_golden_g6: 1.00e+125, ms_prestige_r2: 3.16e+127, ms_eqmastery_t5: 1.00e+135, ms_kills_k8: 3.16e+137, ms_prestige_r3: 3.16e+142, ms_prestige_r4: 1.00e+150
   } },
 
   // ㉚解放間隔(2026-07-22 ユーザー指示「ゲート解放無くして、ゲーム調整で解放間隔30秒以上」):
@@ -289,7 +289,7 @@ module.exports = {
   resCost: Object.assign({
     fingerTechnique: 2500, grandmaCrowd: 100000, ovenBatch: 300000, // ①初回希釈対策(2026-07-14): 第0回取得を第1回以降へ=金アンカー圏外
     factoryNetwork: 150000, spiceBlend: 400000, portalNetwork: 1200000,
-    bankClickDividend: 4000000, moonGlobalYeast: 40000000,
+    bankClickDividend: 9e6, moonGlobalYeast: 40000000,
     portalGlobalFold: 400000000, galaxyAssembly: 6000000000,
     blackHoleCompression: 160000000000, quantumProofing: 3200000000000,
     antimatterRecipe: 64000000000000
@@ -306,11 +306,11 @@ module.exports = {
   // ㉚コストのはしご: 研究の「初回開発費」(生涯初のみ)。再購入(毎周回)は従来の resCost=安い固定価格。
   // 設備の firstUnitCost と同じ構図: 初回開発=特注の大きい目標 / 再購入=開発済みの量産価格。どちらも固定。
   resFirstCost: {
-    bankClickDividend: 3.16e+28, portalNetwork: 3.16e+34, moonGlobalYeast: 3.16e+77, galaxyAssembly: 3.16e+102, blackHoleCompression: 3.16e+117, quantumProofing: 1.00e+155, antimatterRecipe: 3.16e+162, portalGlobalFold: 3.16e+167
+    bankClickDividend: 9e6, portalNetwork: 8e7, moonGlobalYeast: 3.16e+77, galaxyAssembly: 3.16e+102, blackHoleCompression: 3.16e+117, quantumProofing: 1.00e+155, antimatterRecipe: 3.16e+162, portalGlobalFold: 3.16e+167
   },
   // ㉚コストのはしご: 段階カード(段2/段3)の絶対額固定コスト。解禁はコストのみが律速(スキル/周回/層ゲート全廃)。
   resStageCostAbs: {
-    'ovenBatch:2': 3.16e+16, 'fingerTechnique:2': 3.16e+19, 'spiceBlend:2': 1.00e+21, 'cpsStrike:2': 3.16e+22, 'grandmaCrowd:2': 3.16e+25, 'bankClickDividend:2': 1.00e+30, 'factoryNetwork:2': 1.00e+33, 'portalNetwork:2': 3.16e+37, 'cpsStrike:3': 3.16e+42, 'ovenBatch:3': 1.00e+45, 'spiceBlend:3': 1.00e+50, 'fingerTechnique:3': 1.00e+55, 'grandmaCrowd:3': 1.00e+60, 'bankClickDividend:3': 1.00e+65, 'factoryNetwork:3': 3.16e+67, 'portalNetwork:3': 3.16e+72, 'moonGlobalYeast:2': 3.16e+82, 'moonGlobalYeast:3': 1.00e+90, 'galaxyAssembly:2': 3.16e+107, 'blackHoleCompression:2': 3.16e+122, 'galaxyAssembly:3': 3.16e+132, 'blackHoleCompression:3': 3.16e+147, 'quantumProofing:2': 3.16e+157, 'antimatterRecipe:2': 1.00e+165, 'portalGlobalFold:2': 1.00e+170, 'quantumProofing:3': 3.16e+172, 'antimatterRecipe:3': 1.00e+175, 'portalGlobalFold:3': 3.16e+177
+    'ovenBatch:2': 3.16e+16, 'fingerTechnique:2': 3.16e+19, 'spiceBlend:2': 1.00e+21, 'cpsStrike:2': 2.5e11, 'grandmaCrowd:2': 3.16e+25, 'bankClickDividend:2': 1.00e+30, 'factoryNetwork:2': 1.00e+33, 'portalNetwork:2': 3.16e+37, 'cpsStrike:3': 3.16e+42, 'ovenBatch:3': 1.00e+45, 'spiceBlend:3': 1.00e+50, 'fingerTechnique:3': 1.00e+55, 'grandmaCrowd:3': 1.00e+60, 'bankClickDividend:3': 1.00e+65, 'factoryNetwork:3': 3.16e+67, 'portalNetwork:3': 3.16e+72, 'moonGlobalYeast:2': 3.16e+82, 'moonGlobalYeast:3': 1.00e+90, 'galaxyAssembly:2': 3.16e+107, 'blackHoleCompression:2': 3.16e+122, 'galaxyAssembly:3': 3.16e+132, 'blackHoleCompression:3': 3.16e+147, 'quantumProofing:2': 3.16e+157, 'antimatterRecipe:2': 1.00e+165, 'portalGlobalFold:2': 1.00e+170, 'quantumProofing:3': 3.16e+172, 'antimatterRecipe:3': 1.00e+175, 'portalGlobalFold:3': 3.16e+177
   },
 
   // ---- モンスター報酬効果 ----
