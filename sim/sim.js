@@ -1290,6 +1290,9 @@ function wsDropMaterials(sim, mon, overkill) {
     // 守護ボス(R35・ゲーム同期): ノルマ到達で即解放せず、"次の討伐"=守護ボス撃破で解放。
     // ゲームはpending→次出現が必ず守護ボス(HP×2)→撃破で解放。simは「到達後の次killイベント」で近似
     // (守護は即時湧き・撃破前提=中盤以降の実挙動と一致。序盤の弱火力で逃す分の遅れはモデル外と明記)。
+    // R35b補記(2026-07-25): ゲームは守護待機中ノルマ未達/終了後も守護が湧き続ける(挑戦権の凍結防止)+
+    // 逃走ごとHP×0.85の情け。simのkillイベント近似はノルマ帯でしか湧かない=解放時刻がやや保守的(遅め)側。
+    // 経済影響は解放タイミングの微差のみ=許容(実測: ステージ解放時刻はS1/S4でsim/ゲーム一致を維持)。
     if (beforeKills >= need && unlockGateOk(sim)) {
       ws.stageUnlocked++;
       pushUnlock(sim, 'ws', 'stage:' + ws.stageUnlocked);
