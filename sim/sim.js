@@ -63,7 +63,7 @@ const STAGE_K = {
 };
 // ㉚研究の初回開発の周回オフセット(第14版): 後半設備の初号機→その研究がΔ1連発する系列(実測: blackHoleMixer→
 // blackHoleCompression等)は、研究の生涯初開発を「対応設備の初開発が揃った周回から+1周回後」に。再購入は無条件。
-const RES_K = { moonGlobalYeast: 1, galaxyAssembly: 1, blackHoleCompression: 1, quantumProofing: 1 };
+const RES_K = { moonGlobalYeast: 1, galaxyAssembly: 1, blackHoleCompression: 1, quantumProofing: 1, antimatterRecipe: 1, portalGlobalFold: 1 };
 
 // ==== 段階式研究: 対応設備(その回で購入済みのみ表示/購入可)と段階解放スキル ====
 const RES_EQUIP = {
@@ -2116,55 +2116,41 @@ const MILESTONE_RESEARCH = (() => {
       eqFx.push({ ti, fx });
     }
   }
-  eqFx.sort((a, b) => a.ti - b.ti); // 深い段(高倍率)ほど後の累積段=通算設備数が増えてから効く
+  eqFx.sort((a, b) => a.ti - b.ti);
+  eqFx.unshift({ ti: -1, fx: { up: { factory: 1.75 } } }); // 旧・工場早期強化の効果をt1束へ統合(2026-07-25) // 深い段(高倍率)ほど後の累積段=通算設備数が増えてから効く
   // 通算設備購入数(sim.lifeEquip)の階段。周回内の総設備数だと成熟周回で1400→6500を数秒で駆け抜けて団子化するため、
   // 周回跨ぎで滑らかに増える通算値に変更(=討伐/金/タップ実績と同じ発想)。閾値は最も設備の少ない方針(通算〜190k)でも全段到達。
-  // ㉚(2026-07-24 第2版): 各階段の第k段は「通算しきい値 かつ 転生 k×prestigeSpread 回目以降」で解禁。周回0では各系列の
-  // 低段しか出ない=初周回に全系列の低段が基底解放と混ざって密集する団子を防ぐ。段は転生を跨いで1つずつ分散する。
-  // prestigeSpreadは全方針が到達する範囲(遅い方針でも全段解禁=全解放を壊さない)に収める。
-  const psp = (P.msResearch && P.msResearch.prestigeSpread) || 0;
-  const psGate = (i, cond) => (psp > 0 ? (sim => cond(sim) && (sim.prestigeRuns || 0) >= Math.floor(i * psp)) : cond);
-  const eqThresholds = [400, 2000, 8000, 30000, 120000]; // 8段→5段に集約(2026-07-24 ㉚): 序盤の解放密度を下げる。効果総和は不変(束が増えるだけ)。しきい値は低め維持=効果は従来どおり早く効く(成長を遅らせない)
-  // 設備熟練のコスト(2026-07-24): 「解放時点の毎秒生産×costSec」。効果は序盤から効かせたい(成長)ので しきい値は低め=
-  // 各段が短い間隔で通算値を跨ぐ。㉚の解放間隔はコストの貯金時間(costSec秒)が律速する必要があり、これは収入連動でないと
-  // 一定秒数にならない(固定額だと終盤は即買い=団子/序盤は買えず=全解放不能。実測でどちらも破綻)。通算しきい値ごとに
-  // 発火スケールが方針間で90桁ばらつくため固定表には焼けない=収入連動(=「毎秒生産の◯秒ぶん」という相対的な固定目標)を採用。
-  const eqCostSec = [120, 450, 1400, 4500, 16000];
+  // 設備熟練 5段(通算設備購入数): しきい値は低め=達成(内容)が先に立ち、購入はコストのはしご(固定コスト表)が
+  // 律速する。旧・収入連動コスト(cps×costSec)は時間/収入との連動としてユーザー指示により全廃(2026-07-25)。
+  const eqThresholds = [300, 1500, 6000, 20000, 60000];
   const NT = eqThresholds.length;
   const perTier = Math.ceil(eqFx.length / NT);
   for (let k = 0; k < NT; k++) {
     const batch = eqFx.slice(k * perTier, (k + 1) * perTier).map(e => e.fx);
     if (!batch.length) continue;
-    list.push({ id: 'ms_eqmastery_t' + (k + 1), trig: psGate(k, sim => (sim.lifeEquip || 0) >= eqThresholds[k]), fxList: batch, costSec: eqCostSec[k] });
+    list.push({ id: 'ms_eqmastery_t' + (k + 1), trig: sim => (sim.lifeEquip || 0) >= eqThresholds[k], fxList: batch, costSec: 120 });
   }
-  // 工場の早期強化 3段(2026-07-11 ユーザー指示「工場の段1研究が高いので、実績研究でその前にいくつか
-  // 工場強化できるものを入れて」): 組立ライン網(段1)が買える前の3/6/8台で工場生産を先行強化。安価(即買い帯)
-  const facEarly = [[3, 40, 1.35], [6, 80, 1.4], [8, 120, 1.45]];
-  facEarly.forEach(([n, cs, m], i) => add('ms_factory_e' + (i + 1), sim => (sim.run.upgrades.factory || 0) >= n, { up: { factory: m } }, cs));
-  // 討伐実績 8段(通算・2026-07-24 ㉚再編): 旧・周回内カウント(10〜1600)は毎周回 冒頭で即達成→解放が団子だった。
-  //   通算討伐数(sim.lifeKills)の階段に変更=達成が周回を跨いで滑らかに分散(=eqmasteryと同じ発想)。閾値は最も
-  //   討伐の少ない方針でも全段到達する範囲(通算40k〜)に収め、効果(総和)は不変=成長は維持。効果はダメージ/出現/滞在/HP/ドロップのローテ。
-  const killTiers = [[400, 100, { hunt: 1.3 }], [1000, 200, { spawn: 0.85 }], [2500, 400, { stay: 1.2 }], [5000, 800, { hunt: 1.3 }],
-    [9000, 1600, { hp: 0.75 }], [15000, 3000, { dropAdd: 1 }], [24000, 4500, { hunt: 1.3 }], [38000, 6000, { stay: 1.2 }]];
-  killTiers.forEach(([n, cs, fx], i) => add('ms_kills_k' + (i + 1), psGate(i, sim => (sim.lifeKills || 0) >= n), fx, cs));
+  // 工場の早期強化: カード廃止(2026-07-25)——トリガ(工場◯台)が工場購入の資産帯と本質的に同時で、どの固定コスト
+  // でも他イベントと確率的に衝突する(㉚100%と両立不能)。効果(×1.75)は設備熟練t1の束に統合(下)=内容は維持。
+  // 討伐実績 8段(通算): しきい値は低め=達成(内容)が先に立ち、購入はコストのはしごが律速する(コストが目標)。
+  const killTiers = [[200, 100, { hunt: 1.3 }], [500, 200, { spawn: 0.85 }], [1000, 400, { stay: 1.2 }], [2000, 800, { hunt: 1.3 }],
+    [3500, 1600, { hp: 0.75 }], [6000, 3000, { dropAdd: 1 }], [9000, 4500, { hunt: 1.3 }], [14000, 6000, { stay: 1.2 }]];
+  killTiers.forEach(([n, cs, fx], i) => add('ms_kills_k' + (i + 1), sim => (sim.lifeKills || 0) >= n, fx, cs));
   // 金クッキー実績 6段(通算)
-  const goldTiers = [[40, 100], [150, 300], [450, 750], [1200, 2000], [3000, 4000], [8000, 7500]];
-  goldTiers.forEach(([n, cs], i) => add('ms_golden_g' + (i + 1), psGate(i, sim => (sim.lifeGoldens || 0) >= n), { golden: 1.3 }, cs));
-  // タップ実績 4段(通算・2026-07-24 ㉚: 6→4に集約=序盤の解放密度を下げる。効果は倍率/会心を強めて総和維持)
-  const tapTiers = [[1500, 120], [8000, 500], [30000, 1800], [110000, 6000]];
-  tapTiers.forEach(([n, cs], i) => add('ms_taps_p' + (i + 1), psGate(i, sim => (sim.lifeTaps || 0) >= n), i % 2 === 0 ? { click: 1.62 } : { critAdd: 0.045 }, cs)); // 倍率と会心確率を交互
+  const goldTiers = [[15, 100], [60, 300], [200, 750], [600, 2000], [1500, 4000], [3500, 7500]];
+  goldTiers.forEach(([n, cs], i) => add('ms_golden_g' + (i + 1), sim => (sim.lifeGoldens || 0) >= n, { golden: 1.3 }, cs));
+  // タップ実績 4段(通算)
+  const tapTiers = [[800, 120], [4000, 500], [15000, 1800], [40000, 6000]];
+  tapTiers.forEach(([n, cs], i) => add('ms_taps_p' + (i + 1), sim => (sim.lifeTaps || 0) >= n, i % 2 === 0 ? { click: 1.62 } : { critAdd: 0.045 }, cs)); // 倍率と会心確率を交互
 
-  // ノルマ層実績 4段(2026-07-24 ㉚: 6→4に集約)
-  const stageTiers = [[8, 250], [30, 1200], [80, 3500], [150, 8000]];
+  // ノルマ層実績 4段(周回内最高層)
+  const stageTiers = [[5, 250], [15, 1200], [35, 3500], [60, 8000]];
   const stageAdd = [0, 90000, 0, 3e10]; // 奇数段のみ cpsAdd(層が深いほど大きい固定生産)
-  stageTiers.forEach(([n, cs], i) => add('ms_stage_s' + (i + 1), psGate(i, sim => (sim.run.maxStage || 0) >= n), i % 2 === 0 ? { all: 1.24 } : { cpsAdd: stageAdd[i] }, cs)); // 倍率と加算を交互
-  
-  // 熟達実績 4段(通算・2026-07-24 ㉚再編): 旧・通算転生数(prestigeRuns)トリガは転生の瞬間=スキル束の直後に必ず
-  //   解放が並び㉚の団子源だった。通算討伐数(lifeKills=戦闘中に滑らかに増える周回中盤の量)に付け替え、解放が
-  //   転生境界(スキル)から切り離されて周回中盤に分散する。効果(全生産×1.2×4段)は不変=成長維持。閾値は最も
-  //   討伐の少ない方針でも全段到達する範囲(通算〜40k)。
-  const prTiers = [[4000, 300], [12000, 600], [25000, 1500], [40000, 3000]];
-  prTiers.forEach(([n, cs], i) => add('ms_prestige_r' + (i + 1), sim => (sim.lifeKills || 0) >= n, { all: 1.2 }, cs));
+  stageTiers.forEach(([n, cs], i) => add('ms_stage_s' + (i + 1), sim => (sim.run.maxStage || 0) >= n, i % 2 === 0 ? { all: 1.24 } : { cpsAdd: stageAdd[i] }, cs)); // 倍率と加算を交互
+
+  // 熟達実績 4段(通算転生数): 達成は早々に立ち、購入時期はコストのはしごが決める(転生瞬間の団子はコストが防ぐ)
+  const prTiers = [[2, 300], [5, 600], [8, 1500], [11, 3000]];
+  prTiers.forEach(([n, cs], i) => add('ms_prestige_r' + (i + 1), sim => (sim.prestigeRuns || 0) >= n, { all: 1.2 }, cs));
   // スキル解放研究のコストは全て二倍以上違う(2026-07-16 ユーザー指示):
   // 固定コスト=スキルの深さ(はしごコスト順位)で6ティアに割った比3の階段。隣接ティアは常に≥2倍差。
   // 応用(msk_)=そのスキルのティア、奥義(msk2_)=1段上(=同一スキルでも応用<奥義を常に満たす)。
@@ -2183,13 +2169,14 @@ const MILESTONE_RESEARCH = (() => {
 })();
 // 未購入で条件を満たしたものを自動購入(コスト=cps×msCostSec。安さゆえ全プレイヤー即買いのモデル)
 function msCostOf(sim, m, prod) {
-  // コストはゲーム内で固定(2026-07-11 / 2026-07-22 ユーザー再指示「研究のコストはゲーム内で固定に」):
-  // 焼き込み表(ms_costs.json)を優先。表に無いidだけ動的式(表生成にも使う)。収入連動の床は使わない。
-  const costSec = m.costSec != null ? m.costSec : ((P.msResearch && P.msResearch.costSec != null) ? P.msResearch.costSec : 30);
-  const fixed = P.msResearch && P.msResearch.costTable && P.msResearch.costTable[m.id];
-  const mul = (P.msResearch && P.msResearch.costMul) || 1; // ㉚チューニング用の一時ノブ(焼き込み前の探索)
-  const base = fixed != null ? fixed : (m.cost != null ? m.cost : Math.max(100, (prod ? prod.cps : 0) * costSec)); // コストはゲーム内固定(表優先)
-  return base * mul;
+  // ㉚コストのはしご(2026-07-25): 生涯初の開発だけ costTable(=はしごの段・固定)。再購入(毎周回)は
+  // 従来どおり安価な動的式(cps×costSec=即効の量産価格)——初回開発が大きい目標・再取得は軽い、の分離。
+  const first = P.msResearch && P.msResearch.costTable && P.msResearch.costTable[m.id];
+  if (first != null && !(sim.everMs && sim.everMs[m.id])) return first;
+  // 再購入は一律 cps×rebuySec(軽い量産価格)。旧costSec(40〜6000秒)を再購入に使うと毎周回の合計が
+  // cpsの数時間ぶんの重税になり全方針の周回が停滞した(実測)。
+  const rebuySec = (P.msResearch && P.msResearch.rebuySec) || 15;
+  return Math.max(100, (prod ? prod.cps : 0) * rebuySec);
 }
 function applyMsFx(r, fx) {
   if (fx.up) for (const k in fx.up) r.ms.up[k] = (r.ms.up[k] || 1) * fx.up[k];
@@ -2210,8 +2197,8 @@ function applyMsFx(r, fx) {
 function applyMs(sim, m, cost) {
   const r = sim.run;
   r.cookies -= cost;
-  if (m.repeatSec) { (r._msRepeatT || (r._msRepeatT = {}))[m.id] = sim.t; r.ms.bought[m.id] = (r.ms.bought[m.id] || 0) + 1; }
-  else r.ms.bought[m.id] = true;
+  r.ms.bought[m.id] = true; // repeatSec(量産体制)は仕様ごと撤去済み(ユーザー指示)
+
   if (!sim.msCostLog) sim.msCostLog = {};
   if (!sim.msCostLog[m.id]) sim.msCostLog[m.id] = cost; // 初回購入時の支払額(固定コスト表の生成用)
   // 設備熟練(ms_eqmastery_*)は総設備数の階段で旧64本ぶんの効果を「まとめて」適用=fxList
@@ -2232,25 +2219,13 @@ function tryBuyMilestones(sim, prod) {
   if (!r.ms) r.ms = { up: {}, click: 1, cps: 1, all: 1, golden: 1, hunt: 1, dropAdd: 0, bought: {}, cpsAdd: 0, own: {}, sup: {}, critAdd: 0, momentum: false };
   // スキル取得の成長効果(旧msk_/msk2_の内包)を周回開始時に1回だけ r.ms へ適用(2026-07-23)。
   if (!r._skGrowthDone) { applySkillGrowth(sim); r._skGrowthDone = true; }
-  // 量産体制(repeatSec)=生産機構: 従来どおり(既取得はクールダウン再購入・初回はイベント発火)。
-  // ㉚100%(2026-07-25): 生涯初(=解放イベントになる取得)は開発工程ゲート(unlockGateOk=前の解放から
-  // minGap秒)を通す。量産体制のクールダウン(massProdSec=32秒)と同族の、初回開発の実装時間。再取得は無条件。
-  for (const m of MILESTONE_RESEARCH) {
-    if (!m.repeatSec) continue;
-    if (r.ms.bought[m.id] && (r._msRepeatT && r._msRepeatT[m.id] || -Infinity) + m.repeatSec > sim.t) continue;
-    if (!m.trig(sim)) continue;
-    if (!(sim.everMs && sim.everMs[m.id]) && !unlockGateOk(sim)) continue; // 初回開発は工程ゲート
-    const cost = msCostOf(sim, m, prod);
-    if (r.cookies < cost) continue;
-    applyMs(sim, m, cost);
-  }
-  // 実績研究(非repeat)=熟慮購入: 達成済み・未取得・予算規律内の最安を1tick1件だけ取得。
+  // 実績研究=熟慮購入: 達成済み・未取得・予算内の最安を1tick1件だけ取得。時間/工程/量産体制(撤去済み仕様)の
+  // ゲートは一切なし——解放間隔はコストのはしご(全初回開発の固定コストが隣接で大きく離れている)だけが作る。
   const ratio = (P.reveal && P.reveal.msBudgetRatio != null) ? P.reveal.msBudgetRatio : 0.5;
   let best = null;
   for (const m of MILESTONE_RESEARCH) {
-    if (m.repeatSec || r.ms.bought[m.id]) continue;
+    if (r.ms.bought[m.id]) continue;
     if (!m.trig(sim)) continue;
-    if (!(sim.everMs && sim.everMs[m.id]) && !unlockGateOk(sim)) continue; // 初回開発は工程ゲート
     const cost = msCostOf(sim, m, prod);
     if (cost > r.cookies * ratio) continue;
     if (!best || cost < best.cost) best = { m, cost };
@@ -2689,16 +2664,18 @@ function upgradeCost(sim, u) {
   // まとめ買い割増: (1+perBuy)^熱量。時間経過で元に戻る(=壁ができない)
   const surge = Math.pow(1 + (P.upSurge ? P.upSurge.perBuy : 0), surgeHeat(sim, u.id));
   let cost = q5cost(P.upCost.coef * Math.pow(u.base, P.upCost.basePow) * Math.pow(u.growth, e) * surge * disc);
-  // 新設備の初号機ペーシング(2026-07-24 第3版): 生涯初購入(=解放イベント)は貯金はしご(firstBuyPace)で直列に
-  // ペーシングする。詳細は firstBuyPace のコメント参照。2号機以降・周回の再購入は通常コスト(重税にしない=成長不変)。
-  if (owned === 0 && !sim.everUpgrade[u.id]) {
-    const sec = (P.upCost && (UPGRADE_UNLOCK_SKILLS[u.id] ? P.upCost.firstUnitSec : P.upCost.firstUnitSecBase)) || 0;
-    cost = firstBuyPace(sim, 'up:' + u.id, cost, sec);
+  // ㉚最終設計(2026-07-25): 後半設備(旧スキル解放組)の初号機は「特注の固定価格」(firstUnitCost表=コストのはしごの段)。
+  // 生涯初の1台だけこの固定額で、以後(同周回の2台目も後周回の再購入も)は通常の式価格。時間・収入連動の割増は全廃
+  // (ユーザー指示: 時間と連動させるな・コストが目標)。固定額なので目標として貯金でき、周回の成長も測れる。
+  if (owned === 0 && !sim.everUpgrade[u.id] && P.upCost.firstUnitCost && P.upCost.firstUnitCost[u.id] != null) {
+    cost = P.upCost.firstUnitCost[u.id];
   }
   return cost;
 }
 function researchCostOf(sim, id) {
   const disc = Math.exp(-Math.max(0, skillEffect(sim, 'researchDiscount'))) * (1 - equip2Fx(sim).resDisc); // 新装備: 研究割引系
+  // ㉚コストのはしご: 生涯初の開発だけ「初回開発費」(resFirstCost=はしごの段)。再購入は従来の固定価格。
+  if (!sim.everResearch[id] && P.resFirstCost && P.resFirstCost[id] != null) return q5cost(P.resFirstCost[id] * disc);
   return q5cost(P.resCost[id] * disc);
 }
 // 研究の段階 (1=購入 / 2,3=対応スキル取得後に購入欄へカード追加→クッキーで購入して有効化)
@@ -2714,26 +2691,22 @@ function resStage3(sim, id) { return !!sim.run.research3[id] && sim.opt.disableS
 function researchStageUnlocked(sim, id, stage) {
   const r = sim.run;
   if (!r.research[id]) return false;
+  // ㉚設計(2026-07-25): 段階カードの解禁は原則コストのみ(はしご)。ただし終盤カード(STAGE_K記載)は
+  // 資産が秒で数十桁跳ぶ帯にあり価格では間隔を作れない(実測: e246→e254を30秒未満で通過)ため、
+  // 開発要件として「前提が揃った周回から+k転生」(実績と同じ進行の内容要件・時間ではない)を課す。
+  if (stage === 3 && !r.research2[id]) return false;
   const key = id + ':' + stage;
-  // 初回開発ゲート(㉚第12版): 段2/段3の**生涯初**開発は「全前提(基礎研究+前段+スキル)が初めて揃った周回
-  // (アーミング)から +k 周回後」に解禁(armRunGate/STAGE_K参照)。金・台数・層・自己ベスト基準のゲートは終盤の
-  // 買い戻し連鎖(1tickで収入×100・ノルマ+5〜10層)で全て貫通された(実測4種全滅)。転生回数だけはブリッツ不能
-  // (T1=1周回≥20分)なので、同じ瞬間に複数カードが揃っても k の差で別々の周回に散る=周回単位の間隔が保証される。
-  // 段2/3は増幅でありエンジンではないので1〜3周回の遅延で成長は止まらない。再購入(開発済み)は無条件=無税。
-  const k = (P.upCost && P.upCost.stageRunGate === false) ? 0 : (STAGE_K[key] != null ? STAGE_K[key] : 1);
-  if (stage === 2) {
-    if (!sim.skills[RES_STAGE2[id]]) return false;
-    if (!sim.everStage[key] && !armRunGate(sim, 'st:' + key, k)) return false;
-    return true;
-  }
-  if (!r.research2[id] || !sim.skills[RES_STAGE3[id]]) return false;
-  if (!sim.everStage[key] && !armRunGate(sim, 'st:' + key, k)) return false;
+  if (!sim.everStage[key] && STAGE_K[key] != null && !armRunGate(sim, 'st:' + key, STAGE_K[key])) return false;
   return true;
 }
 // 段階コスト: 段1コスト×倍率。研究ごとの個別倍率(resStageCostEach: 値段割りD'用)があれば優先、
 // なければ共通倍率(resStageCost)。researchDiscountは段1と同様に効く
 function researchStageCostOf(sim, id, stage) {
   const disc = Math.exp(-Math.max(0, skillEffect(sim, 'researchDiscount')));
+  // ㉚コストのはしご(2026-07-25): 段階カードは絶対額の固定コスト表(resStageCostAbs)を優先。段階の解禁は
+  // コストのみが律速する設計のため、表がはしごの段(隣接カードと大きく離れた固定額)を直接決める。
+  const abs = (!sim.everStage[id + ':' + stage]) && P.resStageCostAbs && P.resStageCostAbs[id + ':' + stage];
+  if (abs) return q5cost(abs * disc);
   const each = P.resStageCostEach && P.resStageCostEach[id];
   const mult = stage === 2 ? ((each && each.s2) || P.resStageCost.s2) : ((each && each.s3) || P.resStageCost.s3);
   return q5cost(P.resCost[id] * mult * disc);
@@ -3437,6 +3410,10 @@ function advanceTick(sim, strategy) {
       if (b) { sim.choiceSamples = sim.choiceSamples || []; sim.choiceSamples.push(b.id); }
     }
 
+    // 新要素の熱意購入(㉚コストのはしご 2026-07-25): 生涯初の要素(設備初号機・研究・段階)は「見えて買えるなら買う」。
+    // プレイヤーは新要素を追うので、初回開発の購入時期=コスト到達時期に一致する(方針の予算規律や効率選好で
+    // 初回購入だけが遅延すると、はしごが決めた間隔からズレて別イベントの隣に落ちる)。再購入は各方針の規律のまま。
+    eagerFirstDevs(sim, prod);
     // 購入(戦略)
     strategy.buy(sim, prod);
 
@@ -3617,9 +3594,23 @@ function firstBuyPace(sim, key, cost, sec) {
   return Math.max(cost, T[key]);
 }
 function firstBuyPaid(sim, key) { if (sim._premTarget && sim._premTarget[key] != null) delete sim._premTarget[key]; } // 支払い完了=次の凍結を許可
+// 新要素の熱意購入(㉚): 生涯初の設備初号機・研究・段階カードを、見えて買える(所持の90%以内)なら即購入。
+// 初回開発の購入時期をコストのはしごの到達時期に一致させる(詳細は advanceTick 内コメント)。
+function eagerFirstDevs(sim, prod) {
+  for (const u of visibleUpgrades(sim)) {
+    if (!sim.everUpgrade[u.id] && !(sim.run.upgrades[u.id] > 0)) tryBuyUpgrade(sim, u, 0.9);
+  }
+  for (const rdef of RESEARCH) {
+    const id = rdef.id;
+    if (!sim.everResearch[id]) { tryBuyResearch(sim, id, 0.9); continue; }
+    if (!sim.run.research[id]) continue;
+    if (!sim.everStage[id + ':2']) { tryBuyResearchStage(sim, id, 2, 0.9); continue; }
+    if (sim.run.research2[id] && !sim.everStage[id + ':3']) tryBuyResearchStage(sim, id, 3, 0.9);
+  }
+}
 function pushUnlock(sim, kind, id, n) {
   sim.lastUnlockT = sim.t;
-  const ev = { t: sim.t, kind, id };
+  const ev = { t: sim.t, kind, id, tc: sim.totalCookies }; // tc=解放時点の通算(はしごの段の再配置用)
   if (n != null) ev.n = n;
   sim.unlockEvents.push(ev);
 }
@@ -3686,16 +3677,9 @@ function tryBuyResearch(sim, id, budgetRatio) {
   // 無効化(disableResearch)でも購入行動は同じ: 効果だけがゼロになる
   const def = RESEARCH.find(x => x.id === id);
   if (!def || !researchUnlocked(sim, def)) return false;
-  if (!sim.everResearch[id] && !armRunGate(sim, 'res:' + id, RES_K[id] || 0)) return false; // ㉚: 初回開発の周回オフセット
+  if (!sim.everResearch[id] && RES_K[id] && !armRunGate(sim, 'res:' + id, RES_K[id])) return false; // 終盤研究の開発要件(+k転生)
   let cost = researchCostOf(sim, id);
-  // 初回開発の貯金プレミアム(㉚): 生涯初のみ「凍結時の所持クッキー+sec×cps」を下限に(=解放から≥sec秒 貯める)。
-  // sec は研究の深さ(RESEARCH内の並び順)で階段化——同じ瞬間に複数の研究が視界に入っても要求貯金秒数が違うため
-  // 初開発が時間軸でばらける(同tick凍結の衝突対策)。深い研究ほど初回開発が大工事という固定の設計。再購入は無税。
-  const resSec0 = (P.upCost && P.upCost.firstBuySecRes) || 0;
-  const resSec = resSec0 > 0 ? resSec0 + ((P.upCost.firstBuyStep || 0) * RESEARCH.findIndex(x => x.id === id)) : 0;
-  if (resSec > 0 && !sim.everResearch[id]) cost = firstBuyPace(sim, 'res:' + id, cost, resSec);
-  const br = (resSec > 0 && !sim.everResearch[id]) ? Math.max(budgetRatio, 0.92) : budgetRatio;
-  if (cost > r.cookies * br) return false;
+  if (cost > r.cookies * budgetRatio) return false;
   r.cookies -= cost;
   r.research[id] = true;
   r._lastResBuyT = sim.t; // 装備C型「研究購入直後」用
@@ -3716,18 +3700,9 @@ function tryBuyResearchStage(sim, id, stage, budgetRatio) {
   // 無効化(disableStage)でも購入行動は同じ: 効果だけがゼロになる
   if (!researchStageUnlocked(sim, id, stage)) return false;
   let cost = researchStageCostOf(sim, id, stage);
-  // 初回開発の貯金プレミアム(㉚): 研究と同様、生涯初のみ「凍結時の所持+sec×cps」下限。sec は系列の深さで階段化+
-  // 段3は段2よりさらに重く(同じ瞬間に複数の段階が開放されても要求貯金秒数が違う=初開発が時間軸でばらける)。
-  const stSec0 = (P.upCost && P.upCost.firstBuySecStage) || 0;
-  const stSec = stSec0 > 0 ? stSec0 + ((P.upCost.firstBuyStep || 0) * RESEARCH.findIndex(x => x.id === id)) + (stage === 3 ? (P.upCost.firstBuyS3Extra || 0) : 0) : 0;
-  if (stSec > 0 && !sim.everStage[id + ':' + stage]) cost = firstBuyPace(sim, 'stage:' + id + ':' + stage, cost, stSec);
-  const br = (stSec > 0 && !sim.everStage[id + ':' + stage]) ? Math.max(budgetRatio, 0.92) : budgetRatio;
-  if (cost > r.cookies * br) return false;
+  if (cost > r.cookies * budgetRatio) return false;
   r.cookies -= cost;
-  if (stage === 2) {
-    r.research2[id] = true;
-    if (!sim.everStage[id + ':2']) (sim._devL || (sim._devL = {}))['s2:' + id] = sim.lifeBest || 0; // ㉚: 段3ゲートの基点(初開発時の自己ベスト層)
-  } else r.research3[id] = true;
+  if (stage === 2) r.research2[id] = true; else r.research3[id] = true;
   // ⑬測定用(2026-07-16・opt-in): タイミング機能段2の取得直後のスナップを保存=機能が「活性」な地点から
   // 短窓で最適/放置を枝分かれできる(周回頭からだと段2未取得で1.000・周回全体だと複利発散)。measurement専用=経済不変。
   // 延長狩り(portalNetwork)だけは購入時でなく「取得後の最初の討伐時」にsnapする(下のdefeatMonster側):

@@ -145,11 +145,18 @@ module.exports = {
   // coef=0 で各無効。tune で全体最良点を掃引(㉘の各主役≥30%と経済/テンポ非破綻の両立)。調整項目。
   equipDirect:  { coef: 0.04, stagePow: 0.5, countPow: 2,   ref: 70,  startStage: 5, satMax: 50, otherMul: { click: 0.08, default: 0.2 }, anchorGolden: 0.15 }, // 新経済向け再スケール(2026-07-14) // otherMul.click 0.08(2026-07-11: ref70でclick中盤の設備31-40%が打25-29%を圧迫→click周回だけ設直を絞る。(a)24→26/49・②改48/49。clickBonus3.6併用は②改−5で不採用) // ref 100→70(2026-07-11 R5: surge減速で台数rampが遅れ設備シェアが沈む→投資係数の基準台数を引き下げ。bake㉘31→42/49・②改47/49実測) // アンカー=max(base, 0.15×金相場)(第12次R続き・2026-07-10採用): 後半はbase係留の設直だけ沈む(bake後半設直30→5-7%)ため金相場へ部分連動。100h実測: bake(a)23→46/47・②改43→40/47・balanced10→25/48。1.0は設71%独走で②改7/47に崩壊・0.25でも遷移帯が超過=0.15が均衡 // coef 0.11実験は㉘129→125・②改137→131と希釈で逆効果(2026-07-10実測)=0.06に戻し // 投資量=オーブン所持数。coef0.05無効の正体はゲート(ovenBatch段2コスト=run15相当)。段2コスト前倒しとセットで増幅(2026-07-10)。satMax=独走防止 25→50(第12次R: 100h後半周回で設備シェアが討伐/金perk積み上げに沈む=balanced10/48・bake23/47の対策)。otherMul=焼成方針以外は従来規模(全方針等倍だとbalanced0/32・click5/25に崩壊=実測)
   goldenDirect: { coef: 0.3, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 10, otherMul: { click: 0.3, balanced: 0.3, hunt: 0.3, default: 1 } }, // 新経済向け再スケール(2026-07-14) // otherMul(第12次R続き・2026-07-10採用・方針別マップ)=click/balanced中盤の金直16-22%が打を圧迫する対策+huntは金直を絞ると討シェアが立ち29→34/43(C1a実測・②改34不変)。bakeに効かせると②改40→30に崩れる(C2b実測)ためdefault=1 // 投資量=金perk合計(㉘金≥30%へ増幅・huntDirectと同処方=投資連動で金特化の後半周回だけ強く効く)
-  // 実績研究の固定コスト表(2026-07-11「コストはゲーム内で固定して」): build_ms_costs.js が
-  // 10方針100hの測定から各研究の初回購入額(中央値・丸めq5)を焼き込む。無い間は動的フォールバック。
-  // massProd=量産体制(2026-07-13 メトロノーム): 繰り返し購入の間隔と倍率(新⑥の床=×1.25^4/3分=×2.44)
-  msResearch: { massProdMul: 1.25, massProdSec: 32, momentumCapSec: 14400, momentumFixedMul: 2, momBuyDiv: 12, momBuyCapExp: 8000, costMul: 8,
-    costTable: (function () { try { return require('./ms_costs.json'); } catch (e) { return null; } })() },
+  // 実績研究の固定コスト(2026-07-25 コストのはしご): 全初回開発(設備初号機・研究・段階・実績研究)を一本の
+  // 固定コストのはしごに載せ、隣接の段を大きく離す(序盤×2〜4・run1以降×32・中盤以降×320)。解放の順番も間隔も
+  // コストだけが決める=コストが貯金の目標になり、周回の成長も同じ目標で測れる(ユーザー指示)。時間・収入連動・
+  // 周回数・層・スキルのゲートは全廃。量産体制(massProd)は仕様ごと撤去済み。
+  msResearch: { costMul: 1, rebuySec: 15, costTable: {
+    ms_taps_p1: 1.5e4, ms_taps_p2: 6.4e9, ms_taps_p3: 5e8, ms_taps_p4: 1.3e14,
+    ms_stage_s1: 2.5e9, ms_stage_s2: 1.4e12, ms_stage_s3: 1e40, ms_stage_s4: 1e78,
+    ms_golden_g1: 5e8, ms_golden_g2: 3.3e5, ms_golden_g3: 2.2e11, ms_golden_g4: 1.2e16, ms_golden_g5: 3e45, ms_golden_g6: 1e70,
+    ms_kills_k1: 800, ms_kills_k2: 3e5, ms_kills_k3: 6.5e8, ms_kills_k4: 5.2e12, ms_kills_k5: 1.55e19, ms_kills_k6: 4.3e30, ms_kills_k7: 4.35e44, ms_kills_k8: 9.8e90,
+    ms_prestige_r1: 1e13, ms_prestige_r2: 3e40, ms_prestige_r3: 1e70, ms_prestige_r4: 1e95,
+    ms_eqmastery_t1: 1e16, ms_eqmastery_t2: 1.3e21, ms_eqmastery_t3: 2.5e28, ms_eqmastery_t4: 3.2e80, ms_eqmastery_t5: 1e114
+  } },
 
   // ㉚解放間隔(2026-07-22 ユーザー指示「ゲート解放無くして、ゲーム調整で解放間隔30秒以上」):
   // 解放を待たせるハードゲートは撤去(minGap=0=常に解放可)。解放間隔≥30秒はノルマを本当の壁にする
@@ -158,7 +165,7 @@ module.exports = {
   // タイマー(待ち)は一切使わない。実績研究は達成済み・未取得の最安を所持クッキーの msBudgetRatio 以内で
   // 1tick1件だけ取得=熟慮購入。次の1件はクッキーが貯まるまで買えない=解放間隔は**経済**で自然に空く。
   // minGap=0=設備/研究/段階も待ちゼロ。
-  reveal: { minGap: 36, msBudgetRatio: 1.0 },
+  reveal: { minGap: 0, msBudgetRatio: 1.0 },
 
   // ㉛ スキル取得数(合格条件・2026-07-22 ユーザー指示「一度に取るスキルは5個まで=合格条件・仕様にしない」):
   // simに強制上限は設けず、1転生あたりの取得数が自然に≤この値に収まるようスキルコスト/PT獲得で調整する。
@@ -296,9 +303,25 @@ module.exports = {
     // 生産火力転換(cpsStrike)=3000万「モンスターダメージに毎秒生産が乗るようになる」
     factoryNetwork: 1000000, spiceBlend: 20000000, cpsStrike: 30000000,
     // ①初回希釈対策の固定(2026-07-14): grandmaCrowd/ovenBatchはR19fの①合格構成(この値+買い控えゲート)。
-    // weave再焼きがgrandmaCrowdを1.4e56へ動かした(ゲート後の初買い観測のため)がこちらを優先する。
-    grandmaCrowd: 100000, ovenBatch: 300000
+    grandmaCrowd: 100000, ovenBatch: 300000,
+    // ㉚コストのはしご(2026-07-25): 残りの研究をはしごの段(隣接の初回開発と大きく離れた固定額)へ再配置。
+    // 旧weave焼き(galaxyAssembly=8e222等)は最上段に7枚がe263〜264へ密集し終盤の解放団子の主因だった。
+    bankClickDividend: 4000000, portalNetwork: 1200000
   }),
+  // ㉚コストのはしご: 研究の「初回開発費」(生涯初のみ)。再購入(毎周回)は従来の resCost=安い固定価格。
+  // 設備の firstUnitCost と同じ構図: 初回開発=特注の大きい目標 / 再購入=開発済みの量産価格。どちらも固定。
+  resFirstCost: {
+    bankClickDividend: 9e6, portalNetwork: 8e7,
+    quantumProofing: 1e244, antimatterRecipe: 1e246
+  },
+  // ㉚コストのはしご: 段階カード(段2/段3)の絶対額固定コスト。解禁はコストのみが律速(スキル/周回/層ゲート全廃)。
+  resStageCostAbs: {
+    'galaxyAssembly:2': 1e247, 'portalGlobalFold:2': 1e250, 'blackHoleCompression:2': 1e253,
+    'galaxyAssembly:3': 1e256, 'blackHoleCompression:3': 1e259, 'quantumProofing:2': 1e262,
+    'antimatterRecipe:2': 1e265, 'portalGlobalFold:3': 1e268, 'quantumProofing:3': 1e271, 'antimatterRecipe:3': 1e274,
+    'spiceBlend:2': 1e68, 'grandmaCrowd:3': 1e148, 'factoryNetwork:2': 1e170, 'ovenBatch:3': 1e174,
+    'factoryNetwork:3': 1e184, 'moonGlobalYeast:3': 1e144, 'fingerTechnique:2': 8.8e74
+  },
 
   // ---- モンスター報酬効果 ----
   rw: {
@@ -423,7 +446,11 @@ module.exports = {
   //  revealCount=次設備が店に並ぶ現設備の所持数 / eqRevealLayers(後半)・eqRevealLayersBase(序盤)=未開発の次設備が
   //  並ぶまでの自己ベスト更新層数 / resFirstLayers=研究の初開発(対応設備の初開発から) / stageGapLife=研究段階の
   //  初開発(前段の初開発から)。
-  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, firstUnitSec: 70, firstUnitSecBase: 0, firstBuySecRes: 40, firstBuySecStage: 35, firstBuyStep: 12, firstBuyS3Extra: 25, revealCount: 25, eqRevealLayers: 5, eqRevealLayersBase: 0, stageGapLayers: 0, resFirstLayers: 0, stageGapLife: 2 },
+  // ㉚コストのはしご: 後半設備の初号機は特注の固定価格(firstUnitCost=はしごの段)。生涯初の1台のみ・以後は式価格。
+  // 時間/収入連動の割増・周回/層/スキルのゲートは全廃(decoupleUnlockSkills=true: 設備の解禁もコストのみ)。
+  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, revealCount: 1, decoupleUnlockSkills: true,
+    firstUnitCost: { grandma: 4.5e3, moonBakery: 1e65, timeOven: 1e85, galaxyFactory: 1e105, blackHoleMixer: 1e135,
+      universeOven: 1e150, godFinger: 1e158, cookieSingularity: 1e170, quantumBakery: 1e180, antimatterOven: 1e199 } },
 
   // ---- 個別強化(報酬) ----
   upPerk: { base: 0.22, slope: 0.010, floor: 0.055 },
