@@ -7234,6 +7234,7 @@ function freshState() {
     stageKills: {},
     bossKills: {},
     frontierBossPending: 0, // 守護ボス(R35): クエスト達成→守護ボス撃破でステージ解放。待機中のステージ番号(0=なし)
+    frontierBossEscapes: 0, // 守護ボスを逃した回数(R35b 情け): 逃すたびHP-15%(下限=通常ボス)。撃破でリセット
     stageChangedAt: 0,
 
     lastSave: Date.now()
@@ -7405,6 +7406,7 @@ function ensureState() {
   Object.keys(state.stageKills).forEach(no => state.stageKills[no] = Math.max(0, Math.floor(Number(state.stageKills[no]) || 0)));
   Object.keys(state.bossKills).forEach(no => state.bossKills[no] = Math.max(0, Math.floor(Number(state.bossKills[no]) || 0)));
   state.frontierBossPending = Math.max(0, Math.floor(Number(state.frontierBossPending) || 0));
+  state.frontierBossEscapes = Math.max(0, Math.floor(Number(state.frontierBossEscapes) || 0));
   state.stageChangedAt = Math.max(0, Number(state.stageChangedAt) || 0);
   // v4: 総プレイ秒(転生持ち越し)・条件ドロップ・注文間隔の正規化(追跡ノルマは廃止=2026-07-06)
   state.totalPlaySec = Math.max(0, Number(state.totalPlaySec) || 0);
@@ -9987,6 +9989,7 @@ function grantMonsterDrops(typeId, level, overkill, colorTier) {
     // 守護ボス撃破(R35 hard-won): クエスト達成後のボスを倒して初めてステージ解放=戦って勝ち取る節目。
     if ((state.frontierBossPending || 0) === stageNo && stageNo < MAX_STAGE_NO) {
       state.frontierBossPending = 0;
+      state.frontierBossEscapes = 0; // 消耗カウンタは次の守護ボスへ持ち込まない
       markUnlock();
       state.stageUnlocked = stageNo + 1;
       playScreenTransition();
@@ -11851,6 +11854,8 @@ function failQuota(message) {
   clearMonsterSpawnTimer();
   hideMonster(false);
   showMessage(message);
+  // 守護ボス待機中はノルマ終了後も挑戦を続けられる(R35b): タイマーを再点火
+  if (guardianPendingNow()) scheduleMonster();
 }
 
 function checkQuotaState() {
@@ -11879,8 +11884,19 @@ function checkQuotaState() {
   state.quotaHoldSeconds = Math.max(state.quotaHoldSeconds || 0, elapsed);
 }
 
+// 守護ボス待機中か(R35b): クエスト討伐ノルマは達成済み=挑戦権は獲得済み
+function guardianPendingNow() {
+  return (state.frontierBossPending || 0) === currentStageNo() && currentStageNo() < MAX_STAGE_NO;
+}
+// 守護ボスのHP倍率(R35b 情け): 基本×2、逃すたび×0.85(下限=通常ボスの×1)。撃破で挑戦回数リセット
+function guardianHpMul() {
+  return Math.max(1, 2 * Math.pow(0.85, Math.max(0, Math.floor(Number(state.frontierBossEscapes) || 0))));
+}
+
 function canMonsterAppear() {
-  return !pausedForSkillChoice() && monsterQuotaMet();
+  // 守護ボス待機中はクッキーノルマの現況に関係なく挑戦できる(R35b):
+  // 討伐ノルマ達成で得た挑戦権が、周回末期のノルマ未達で凍結される(バナーだけ残る)のを防ぐ
+  return !pausedForSkillChoice() && (monsterQuotaMet() || guardianPendingNow());
 }
 
 function quotaLayerWidth(progressRatio, layerIndex) {
@@ -15998,6 +16014,7 @@ function buildRunStartFromCurrent() {
   s.stageKills = { ...(cur.stageKills || {}) };
   s.bossKills = { ...(cur.bossKills || {}) };
   s.frontierBossPending = Math.max(0, Math.floor(Number(cur.frontierBossPending) || 0));
+  s.frontierBossEscapes = Math.max(0, Math.floor(Number(cur.frontierBossEscapes) || 0));
   s.totalPlaySec = Math.max(0, Number(cur.totalPlaySec) || 0);
   s.maxQuotaStageEver = Math.max(1, Math.floor(Number(cur.maxQuotaStageEver) || 1));
   s.awaitingSkillChoice = true;
@@ -16093,6 +16110,7 @@ function prestigeReset() {
   const keepQuestKills = { ...(state.questKills || {}) };
   const keepBossKills = { ...(state.bossKills || {}) };
   const keepFrontierBossPending = Math.max(0, Math.floor(Number(state.frontierBossPending) || 0)); // 守護ボス待機も持ち越し(クエスト進捗と同格)
+  const keepFrontierBossEscapes = Math.max(0, Math.floor(Number(state.frontierBossEscapes) || 0)); // 消耗(情け)も持ち越し=転生しても弱ったまま
   const keepTotalPlaySec = Math.max(0, Number(state.totalPlaySec) || 0);
   const keepMaxQuotaStageEver = Math.max(1, Math.floor(Number(state.maxQuotaStageEver) || 1));
   // ㉚解放ドリップ: 「生涯すでに棚に並んだ」記録は転生を跨いで持ち越す(=再購入は待たされない)
@@ -16141,6 +16159,7 @@ function prestigeReset() {
   state.eq2Seen = keepEq2Seen;
   state.questKills = keepQuestKills;
   state.frontierBossPending = keepFrontierBossPending;
+  state.frontierBossEscapes = keepFrontierBossEscapes;
   state.eq2MadeThisRun = {};
   state.eq2CraftTotalThisRun = 0; // 周回の作成総数リセット(0〜5上限)
   state.deepLayer = keepDeepLayer;
@@ -17207,8 +17226,8 @@ function createMonsterElement(mon) {
   // HPバー・HP数値は絵の「上」に置く。ボスは絵が大きく、下に置くと画面外(overflow:hidden)に
   // はみ出て見えなくなるため、常に見える位置(上)に固定する。
   // 守護ボス(R35): 名前でも「別格の一戦」とわかるように(ラベルのみ・typeは共通)
-  const monLabel = (mon.typeId === "boss" && (state.frontierBossPending || 0) === currentStageNo() && currentStageNo() < MAX_STAGE_NO)
-    ? `守護ボス — ${stageInfo(currentStageNo()).name}の主`
+  const monLabel = (mon.typeId === "boss" && guardianPendingNow())
+    ? `守護ボス — ${stageInfo(currentStageNo()).name}の主${(state.frontierBossEscapes || 0) > 0 ? "(消耗)" : ""}`
     : type.name;
   wrap.innerHTML = `
     <div class="monsterTypeLabel">${monLabel}</div>
@@ -17277,9 +17296,10 @@ function showMonster(forcedTypeId) {
   const level = monsterLevel();
   const colorTier = typeId === "boss" ? layerOreTier() : pickMonsterColorTier(); // 色(強さ段)=ノルマ層の確率分布(2026-07-15)
   const colorHp = Math.pow(1.08, colorTier - 1); // 上位色ほど一段強い(控えめ・sim同期)
-  // 守護ボス(R35): ステージ解放を懸けたボスはHP×2=節目の大物感(報酬は通常ボス同等=経済中立)
-  const guardian = typeId === "boss" && (state.frontierBossPending || 0) === currentStageNo() && currentStageNo() < MAX_STAGE_NO;
-  const hpMulShared = (state.nextMonsterHpMultiplier || 1) * type.hpMul * (stage.hpMul || 1) * colorHp * (guardian ? 2 : 1);
+  // 守護ボス(R35): ステージ解放を懸けたボスはHP×2=節目の大物感(報酬は通常ボス同等=経済中立)。
+  // 逃すたび×0.85で消耗(R35b 情け・下限=通常ボス)=弱火力でも挑み続ければ必ず届く
+  const guardian = typeId === "boss" && guardianPendingNow();
+  const hpMulShared = (state.nextMonsterHpMultiplier || 1) * type.hpMul * (stage.hpMul || 1) * colorHp * (guardian ? guardianHpMul() : 1);
   // ボスは60秒固定。それ以外は従来式×type滞在倍率×ステージ滞在倍率
   const stayMs = typeId === "boss"
     ? 60000
@@ -17411,8 +17431,12 @@ function hideMonster(idOrShouldReschedule, shouldRescheduleMaybe) {
     if (shouldReschedule && mon.typeId === "boss") {
       const sno = currentStageNo();
       // 守護ボス(R35): 逃しても討伐数リセットは無し(ノルマ達成は消えない)。少し間を置いて必ず再挑戦できる。
+      // R35b 情け: 逃すたび消耗(HP-15%・下限=通常ボス)+火力強化の導線を示す
       if ((state.frontierBossPending || 0) === sno && sno < MAX_STAGE_NO) {
-        showMessage("守護ボスを逃した⋯ まだ去っていない。すぐ戻ってくる！");
+        state.frontierBossEscapes = Math.max(0, Math.floor(Number(state.frontierBossEscapes) || 0)) + 1;
+        showMessage(guardianHpMul() > 1
+          ? "守護ボスを逃した⋯ だが確実に消耗している！火力を強化して迎え撃て！"
+          : "守護ボスを逃した⋯ もう限界まで弱っている。次で仕留めろ！");
       } else {
         const cycle = bossCycleFor(sno);
         const defeated = Math.max(0, Math.floor(Number((state.bossKills || {})[sno]) || 0));
