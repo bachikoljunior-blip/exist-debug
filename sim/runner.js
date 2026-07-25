@@ -721,43 +721,44 @@ function judgeWindowTiming(hours, W) {
 function judgeAcqWindowTiming(hours, W) {
   const win = W || 900;
   let ok = 0;
-  console.log(`⑬ タイミング機能v4(取得直後snap→同窓${win}s枝分かれ・購入/転生凍結・窓内増分クッキー比, 要求[1.05,2.00])`);
-  // 凍結+増分化(2026-07-25): (1)freezeBuys=窓内の購入・転生を両枝で止める。末期複利レジームでは
-  // 僅かな枝差が購入閾値跨ぎで数万倍に発散(圧縮チャージS3=36226実測)=タイミングの直接効果が測れない。
-  // (2)比は総runCookiesでなく窓内増分(snap時点からの増加分)。総額比はsnap前の共有蓄積で1.0側へ希釈され
-  // ラベルの「窓内クッキー比」と不一致だった。増分比=操作の巧拙そのもの。measurement専用=経済不変。
-  // 既知の構造限界(2026-07-25 実測診断・帯NGの帰属):
+  console.log(`⑬ タイミング機能v4(取得直後snap→同窓${win}s枝分かれの窓内クッキー比の中央値, 要求[1.05,2.00])`);
+  // 2026-07-25 診断ラウンドの結論(freezeBuys+窓内増分比を試作→3バッテリー対照で棄却し本形へ復帰):
+  // ・freezeBuys(窓内購入/転生凍結)は転生の自然打ち切りを失わせ、末期snap(観測ゆらぎ=e+263購入直後等)の
+  //   runCookiesがe+308を越えInfinity→行が全て弾かれ「(未取得)」誤表示=合格していたwave S3=1.310✓を壊した
+  //   (実測)。総額比+転生打ち切り(本形)は転生が発散の有界化装置として働く=触らない。
+  // 既知の構造限界(帯NGの帰属・実測診断 2026-07-25):
+  // ・圧縮チャージ=比が数万に発散: 後期レジームには討伐報酬EMA・銀行利息cap(EMA連動)等の乗法feedbackが
+  //   あり枝の倍率差が窓内で指数増幅される(購入凍結・窓300s・尾部snapのいずれでも発散=3対照実測)。
+  //   有界に測るには「成長率差」等の別統計=判定仕様の変更(要ユーザー判断・提案として記録)。
   // ・延長狩り=全方針exactly 1.000: simの実収入経路に討伐パルスが無い(討伐価値項kpsSat×KVSは㉘シェア
-  //   分解の計測専用・実払いはcps+タップ+直送5系のみ)。窓=湧きテンポの機構は sim経済がクッキーへ
-  //   経路化していない=窓比では原理的に測れない。実ゲームは討伐がクッキーを落とすため機構は生きている
-  //   (E2E/HANDOFF R31確認)。sim側で測るには討伐パルス収入の追加=経済モデル変更(要ユーザー判断)。
-  // ・観測ゆらぎ=48hでは段2(コストe+263)の取得が確率的で(未取得)が出る。正式判定は100hで見ること。
+  //   分解の計測専用・実払いはcps+タップ+直送5系のみ)=窓(湧きテンポ)はクッキーへ経路化されておらず
+  //   窓比では原理的に測れない。実ゲームは討伐がクッキーを落とすため機構は生きている(E2E/HANDOFF R31)。
+  //   sim側で測るには討伐パルス収入の追加=経済モデル変更(要ユーザー判断・提案として記録)。
   for (const f of TIMING_FEATURES) {
     const rid = f.stage.split(':')[0];
     const rows = [];
     let feature = false;
+    let snapSeen = false, skipped = 0;
     for (const s of STRATEGIES) {
       const sim = G.simulate(s, { hours, timingSnaps: true });
       const snap = sim.timingSnaps && sim.timingSnaps[rid];
       if (!snap) continue;
-      // 圧縮チャージだけ窓=1発動周期(bhBoostDur240+余白)。900s窓だと発動後の報酬EMA連鎖
-      // (報酬∝直近稼ぎ率→報酬が稼ぎ率を押し上げる乗法feedback)が複利発散し帯で測れない(S5=6.8e6実測)
-      const winF = f.key === 'bhCharge' ? Math.min(win, 300) : win;
-      const cap = (snap.run.startT != null ? (snap.t - snap.run.startT) : 0) + winF; // 取得地点から winF 秒
-      const baseC = (snap.run && snap.run.runCookies) || 0;
-      const on = G.replayRun(s, snap, { hours, freezeBuys: true }, cap);
-      const off = G.replayRun(s, snap, { hours, idleTiming: f.key, freezeBuys: true }, cap);
-      const onW = on ? on.runCookies - baseC : 0;
-      const offW = off ? off.runCookies - baseC : 0;
-      if (on && off && onW > 0 && offW > 0 && Number.isFinite(onW) && Number.isFinite(offW)) {
-        const ratio = Math.min(BRANCH_CAP, onW / offW);
+      snapSeen = true;
+      const cap = (snap.run.startT != null ? (snap.t - snap.run.startT) : 0) + win; // 取得地点から win 秒
+      const on = G.replayRun(s, snap, { hours }, cap);
+      const off = G.replayRun(s, snap, { hours, idleTiming: f.key }, cap);
+      if (on && off && on.runCookies > 0 && off.runCookies > 0 && Number.isFinite(on.runCookies) && Number.isFinite(off.runCookies)) {
+        const ratio = Math.min(BRANCH_CAP, on.runCookies / off.runCookies);
         const inBand = ratio >= 1.05 && ratio <= 2.0;
         if (inBand) feature = true;
         rows.push(`${s.id}=${ratio.toFixed(3)}${inBand ? '✓' : ''}`);
+      } else {
+        skipped++; // snapはあるが比較不能(Infinity等)=「未取得」と混同しない
       }
     }
     if (feature) ok++;
-    console.log(`  ${feature ? 'OK' : 'NG'} ${f.label.padEnd(26)} ${rows.join(' ') || '(未取得)'}`);
+    const empty = snapSeen ? `(snapあり・比較不能${skipped}件=overflow等)` : '(未取得)';
+    console.log(`  ${feature ? 'OK' : 'NG'} ${f.label.padEnd(26)} ${rows.join(' ') || empty}`);
   }
   console.log(`⑬v4 タイミング ${ok}/${TIMING_FEATURES.length}`);
   return ok;
