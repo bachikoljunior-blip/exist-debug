@@ -150,12 +150,7 @@ module.exports = {
   // コストだけが決める=コストが貯金の目標になり、周回の成長も同じ目標で測れる(ユーザー指示)。時間・収入連動・
   // 周回数・層・スキルのゲートは全廃。量産体制(massProd)は仕様ごと撤去済み。
   msResearch: { costMul: 1, rebuySec: 15, costTable: {
-    ms_taps_p1: 1.5e4, ms_taps_p2: 6.4e9, ms_taps_p3: 5e8, ms_taps_p4: 1.3e14,
-    ms_stage_s1: 2.5e9, ms_stage_s2: 1.4e12, ms_stage_s3: 1e40, ms_stage_s4: 1e78,
-    ms_golden_g1: 5e8, ms_golden_g2: 3.3e5, ms_golden_g3: 2.2e11, ms_golden_g4: 1.2e16, ms_golden_g5: 3e45, ms_golden_g6: 1e70,
-    ms_kills_k1: 800, ms_kills_k2: 3e5, ms_kills_k3: 6.5e8, ms_kills_k4: 5.2e12, ms_kills_k5: 1.55e19, ms_kills_k6: 4.3e30, ms_kills_k7: 4.35e44, ms_kills_k8: 9.8e90,
-    ms_prestige_r1: 1e13, ms_prestige_r2: 3e40, ms_prestige_r3: 1e70, ms_prestige_r4: 1e95,
-    ms_eqmastery_t1: 1e16, ms_eqmastery_t2: 1.3e21, ms_eqmastery_t3: 2.5e28, ms_eqmastery_t4: 3.2e80, ms_eqmastery_t5: 1e114
+    ms_taps_p1: 1.00e+09, ms_stage_s1: 3.16e+10, ms_kills_k1: 1.00e+12, ms_golden_g1: 3.16e+13, ms_eqmastery_t1: 1.00e+15, ms_taps_p2: 1.00e+18, ms_kills_k2: 1.00e+24, ms_stage_s2: 1.00e+27, ms_golden_g2: 3.16e+31, ms_eqmastery_t2: 1.00e+36, ms_taps_p3: 1.00e+40, ms_kills_k3: 3.16e+47, ms_stage_s3: 3.16e+52, ms_golden_g3: 3.16e+57, ms_eqmastery_t3: 3.16e+62, ms_kills_k4: 1.00e+70, ms_taps_p4: 1.00e+80, ms_stage_s4: 3.16e+87, ms_kills_k5: 3.16e+92, ms_eqmastery_t4: 1.00e+95, ms_golden_g4: 3.16e+97, ms_kills_k6: 1.00e+105, ms_golden_g5: 1.00e+110, ms_prestige_r1: 3.16e+112, ms_kills_k7: 1.00e+120, ms_golden_g6: 1.00e+125, ms_prestige_r2: 3.16e+127, ms_eqmastery_t5: 1.00e+135, ms_kills_k8: 3.16e+137, ms_prestige_r3: 3.16e+142, ms_prestige_r4: 1.00e+150
   } },
 
   // ㉚解放間隔(2026-07-22 ユーザー指示「ゲート解放無くして、ゲーム調整で解放間隔30秒以上」):
@@ -311,16 +306,11 @@ module.exports = {
   // ㉚コストのはしご: 研究の「初回開発費」(生涯初のみ)。再購入(毎周回)は従来の resCost=安い固定価格。
   // 設備の firstUnitCost と同じ構図: 初回開発=特注の大きい目標 / 再購入=開発済みの量産価格。どちらも固定。
   resFirstCost: {
-    bankClickDividend: 9e6, portalNetwork: 8e7,
-    quantumProofing: 1e244, antimatterRecipe: 1e246
+    bankClickDividend: 3.16e+28, portalNetwork: 3.16e+34, moonGlobalYeast: 3.16e+77, galaxyAssembly: 3.16e+102, blackHoleCompression: 3.16e+117, quantumProofing: 1.00e+155, antimatterRecipe: 3.16e+162, portalGlobalFold: 3.16e+167
   },
   // ㉚コストのはしご: 段階カード(段2/段3)の絶対額固定コスト。解禁はコストのみが律速(スキル/周回/層ゲート全廃)。
   resStageCostAbs: {
-    'galaxyAssembly:2': 1e247, 'portalGlobalFold:2': 1e250, 'blackHoleCompression:2': 1e253,
-    'galaxyAssembly:3': 1e256, 'blackHoleCompression:3': 1e259, 'quantumProofing:2': 1e262,
-    'antimatterRecipe:2': 1e265, 'portalGlobalFold:3': 1e268, 'quantumProofing:3': 1e271, 'antimatterRecipe:3': 1e274,
-    'spiceBlend:2': 1e68, 'grandmaCrowd:3': 1e148, 'factoryNetwork:2': 1e170, 'ovenBatch:3': 1e174,
-    'factoryNetwork:3': 1e184, 'moonGlobalYeast:3': 1e144, 'fingerTechnique:2': 8.8e74
+    'ovenBatch:2': 3.16e+16, 'fingerTechnique:2': 3.16e+19, 'spiceBlend:2': 1.00e+21, 'cpsStrike:2': 3.16e+22, 'grandmaCrowd:2': 3.16e+25, 'bankClickDividend:2': 1.00e+30, 'factoryNetwork:2': 1.00e+33, 'portalNetwork:2': 3.16e+37, 'cpsStrike:3': 3.16e+42, 'ovenBatch:3': 1.00e+45, 'spiceBlend:3': 1.00e+50, 'fingerTechnique:3': 1.00e+55, 'grandmaCrowd:3': 1.00e+60, 'bankClickDividend:3': 1.00e+65, 'factoryNetwork:3': 3.16e+67, 'portalNetwork:3': 3.16e+72, 'moonGlobalYeast:2': 3.16e+82, 'moonGlobalYeast:3': 1.00e+90, 'galaxyAssembly:2': 3.16e+107, 'blackHoleCompression:2': 3.16e+122, 'galaxyAssembly:3': 3.16e+132, 'blackHoleCompression:3': 3.16e+147, 'quantumProofing:2': 3.16e+157, 'antimatterRecipe:2': 1.00e+165, 'portalGlobalFold:2': 1.00e+170, 'quantumProofing:3': 3.16e+172, 'antimatterRecipe:3': 1.00e+175, 'portalGlobalFold:3': 3.16e+177
   },
 
   // ---- モンスター報酬効果 ----
@@ -411,15 +401,10 @@ module.exports = {
 
   // ---- 段階コストの研究別倍率(第11次・値段割り用) ----
   // 研究ごとに {s2, s3} を指定(なければ resStageCost の共通倍率)。研究コスト=調整項目(ユーザー確認済み)
-  resStageCostEach: (function () {
-    let m = {}; try { m = require('./weave_costs.json').resStageCostEach || {}; } catch (e) { }
-    // ㉘bake対策(2026-07-10): weave(値段割りD')は ovenBatch段2 を run15相当(コスト~e43)に置くが、
-    // bake代表(S1)の主役エンジン(大量焼成倍率+設備直送ゲート)が金ゲート(spiceBlend段2=run7相当)に
-    // 12周回遅れ、中盤(run4-14)の設備19-29%NGの構造要因になる。主役の特殊経済は早期に開く=
-    // 実コスト~1e8(run4-5相当・30000×3333)へ前倒し(研究コスト=調整項目)。
-    m.ovenBatch = Object.assign({}, m.ovenBatch, { s2: 1000 }); // 実コスト3e7=run3-4相当(3333=1e8だとS1のrun4だけゲートが間に合わずNG)
-    return m;
-  })(),
+  // ㉚コストのはしご(2026-07-25): weave焼きのEach値(e58〜e224の巨大倍率)は再購入価格をe60〜e264の全域に
+  // 散在させ、毎周回の再購入ストームと初回価格の置き場潰しの両方を生んでいたため全廃。再購入は標準倍率
+  // (段2=×1500・段3=×2.25e6)=各周回の序盤で安く再取得(エンジンが早く戻る)。初回開発費は resStageCostAbs。
+  resStageCostEach: { ovenBatch: { s2: 1000 } },
 
   // ---- まとめ買い割増(2026-07-06 ユーザー採用・第10次) ----
   // 同じ設備を短時間に連続購入するほど値段に割増がつき、時間で元に戻る。
@@ -449,8 +434,7 @@ module.exports = {
   // ㉚コストのはしご: 後半設備の初号機は特注の固定価格(firstUnitCost=はしごの段)。生涯初の1台のみ・以後は式価格。
   // 時間/収入連動の割増・周回/層/スキルのゲートは全廃(decoupleUnlockSkills=true: 設備の解禁もコストのみ)。
   upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, revealCount: 1, decoupleUnlockSkills: true,
-    firstUnitCost: { grandma: 4.5e3, moonBakery: 1e65, timeOven: 1e85, galaxyFactory: 1e105, blackHoleMixer: 1e135,
-      universeOven: 1e150, godFinger: 1e158, cookieSingularity: 1e170, quantumBakery: 1e180, antimatterOven: 1e199 } },
+    firstUnitCost: { grandma: 1e4, moonBakery: 1.00e+75, timeOven: 1.00e+85, galaxyFactory: 1.00e+100, blackHoleMixer: 1.00e+115, universeOven: 1.00e+130, godFinger: 1.00e+140, cookieSingularity: 1.00e+145, quantumBakery: 3.16e+152, antimatterOven: 1.00e+160 } },
 
   // ---- 個別強化(報酬) ----
   upPerk: { base: 0.22, slope: 0.010, floor: 0.055 },
