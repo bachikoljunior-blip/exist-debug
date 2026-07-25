@@ -55,7 +55,7 @@ const RES_IDX = {}; RESEARCH.forEach((x, i) => { RES_IDX[x.id] = i; }); // ㉚�
 // の周回のため)。また貯金プレミアム(凍結)との併用は、貯蓄型の膨れた財布基準の凍結が周回を跨いで k ゲートと同じ
 // 収入回復点に再同期しΔ1を生むため、段階カードのプレミアムは廃止(firstBuySecStage=0)し k ゲートに一本化。
 const STAGE_K = {
-  'portalGlobalFold:2': 1, 'blackHoleCompression:2': 2, 'galaxyAssembly:3': 2,
+  'portalGlobalFold:2': 1, 'blackHoleCompression:2': 2, 'galaxyAssembly:3': 3,
   'quantumProofing:2': 1, 'antimatterRecipe:2': 2,
   'portalGlobalFold:3': 1, 'blackHoleCompression:3': 1, 'quantumProofing:3': 2, 'antimatterRecipe:3': 2,
   // 中盤系列のゲートスキルが同時期に揃う組の分割(実測: run12に grandmaCrowd:3/ovenBatch:3/factoryNetwork:2 が同周回衝突)

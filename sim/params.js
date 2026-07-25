@@ -423,7 +423,7 @@ module.exports = {
   //  revealCount=次設備が店に並ぶ現設備の所持数 / eqRevealLayers(後半)・eqRevealLayersBase(序盤)=未開発の次設備が
   //  並ぶまでの自己ベスト更新層数 / resFirstLayers=研究の初開発(対応設備の初開発から) / stageGapLife=研究段階の
   //  初開発(前段の初開発から)。
-  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, firstUnitSec: 70, firstUnitSecBase: 0, firstBuySecRes: 40, firstBuySecStage: 0, firstBuyStep: 12, firstBuyS3Extra: 25, revealCount: 25, eqRevealLayers: 5, eqRevealLayersBase: 0, stageGapLayers: 0, resFirstLayers: 0, stageGapLife: 2 },
+  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, firstUnitSec: 70, firstUnitSecBase: 0, firstBuySecRes: 40, firstBuySecStage: 35, firstBuyStep: 12, firstBuyS3Extra: 25, revealCount: 25, eqRevealLayers: 5, eqRevealLayersBase: 0, stageGapLayers: 0, resFirstLayers: 0, stageGapLife: 2 },
 
   // ---- 個別強化(報酬) ----
   upPerk: { base: 0.22, slope: 0.010, floor: 0.055 },
