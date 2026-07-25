@@ -95,9 +95,13 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
 
   // offline式で放置生産→設備/研究を建て直し。runCookiesを厚く積む(=討伐窓を延ばし転生回数を減らす=実プレイヤの立ち回り)。
   const BANK_TARGET=Number(process.env.BANK_TARGET||1e18);
-  const bankRun=async(target)=>p.evaluate((target)=>{
+  // 放置チャンク(10h)の上限。多いほど周回内cps複利が回り転生待ちが縮む。決定的掃引(TARGET_STAGE=3):
+  // 40=24076日/60=21658/100=10431(谷)/150=18755/300=16233 → stage3狙いはBANK_ITERS=100が最良(28.6年)。
+  // 既定は40のまま=正典stage2パス(33日8時間)を不変に保つ。深部の健全ラベル(月〜年)には依然強いプレイモデルが要る。
+  const BANK_ITERS=Number(process.env.BANK_ITERS||40);
+  const bankRun=async(target)=>p.evaluate(([target,iters])=>{
     const log={idleSec:0, builds:[], researches:[], gainStr:''}; const before=state.cookies;
-    for(let r=0;r<40;r++){
+    for(let r=0;r<iters;r++){
       const bc=Math.max(1,Number(baseCps().toString()));
       const sec=3600*10; earn(D(bc).mul(sec)); state.totalPlaySec=(state.totalPlaySec||0)+sec; log.idleSec+=sec;
       const agg={},order=[];
@@ -124,7 +128,7 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     }
     log.cps=Number(currentCps().toString()); log.rc=Number(state.runCookies.toString());
     log.gainStr=(typeof fmt==='function')?fmt(state.cookies.sub(before)):String(state.cookies.sub(before));
-    return log; },target);
+    return log; },[target,BANK_ITERS]);
 
   // 討伐フェーズ: fastForwardで出現を発火→倒す。ボスは別ブロックで捕捉、ステージ解放の瞬間も捕捉。
   // huntPhase自身が通常討伐/ボス/報酬をrec(=ボス出現前に通常討伐をflushして時系列を保つ)。
