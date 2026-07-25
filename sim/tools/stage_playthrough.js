@@ -110,6 +110,16 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         if(!best||!state.cookies.gte(bestC))break; const b4=state.upgrades[best.id]||0; buyUpgrade(best.id); const bt=(state.upgrades[best.id]||0)-b4; if(bt<=0)break; if(!agg[best.id]){agg[best.id]=[best.name,0];order.push(best.id);} agg[best.id][1]+=bt; }
       for(const id of order){if(!log.builds.find(x=>x[0]===agg[id][0]))log.builds.push(agg[id]);else log.builds.find(x=>x[0]===agg[id][0])[1]+=agg[id][1];}
       if(typeof RESEARCH!=='undefined')for(const rr of RESEARCH){try{if(!state.research[rr.id]&&(typeof researchUnlocked!=='function'||researchUnlocked(rr))&&state.cookies.gte(D(rr.cost))){buyResearch(rr.id);log.researches.push(rr.name);}}catch(e){}}
+      // 研究の段階2/3(実プレイヤの複利源=directive A): 生産系のみ買う(生産に効かない段階へ大金を流すと
+      // cps複利が細り転生+1回=1e25の壁を踏む=決定的A/Bで実測)。buyResearchStageが条件/費用を検査。
+      if(typeof buyResearchStage==='function'&&typeof RESEARCH!=='undefined'){
+        const PROD_RS=['ovenBatch','factoryNetwork','grandmaCrowd','moonGlobalYeast','galaxyAssembly','antimatterRecipe'];
+        for(const rid of PROD_RS){try{
+          if(!state.research[rid])continue;
+          const b4=Math.max(1,Math.floor(Number((state.researchStages||{})[rid])||1)); if(b4>=3)continue;
+          buyResearchStage(rid,b4+1);
+          const af=Math.max(1,Math.floor(Number((state.researchStages||{})[rid])||1));
+          if(af>b4){const rr=RESEARCH.find(x=>x.id===rid);log.researches.push((rr?rr.name:rid)+' 段階'+af);}}catch(e){}}}
       if(state.runCookies.gte(D(target)))break; // 討伐窓を賄える厚みまで積んだら終い
     }
     log.cps=Number(currentCps().toString()); log.rc=Number(state.runCookies.toString());
