@@ -5071,8 +5071,9 @@
     .questPreview { font-size: 11.5px; margin: 2px 0 3px; color: #cfe6c0; }
     .questHard { opacity: 0.82; font-style: italic; }
     /* HUDストリップ: ノルマ帯の直下。進行HUD(目標)+生産ブーストをまとめてプレイ領域の外に置く=盤面すっきり */
-    /* HUD帯はゲーム内エンティティ(monsterInstance=z40)より上=大型ボスのHPバーがクエスト文を覆わない(R35b QA実測) */
-    #hudStrip { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin: 4px 0 0; position: relative; z-index: 45; }
+    /* HUD帯はゲーム内エンティティ(monsterInstance=z40)より上=大型ボスのHPバーがクエスト文を覆わない(R35b QA実測)。
+       全ピルは情報表示のみ(aria-hidden・ハンドラ無し)なのでタップは素通し=帯の下のモンスターを塞がない */
+    #hudStrip { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin: 4px 0 0; position: relative; z-index: 45; pointer-events: none; }
     #questHud {
       flex: 1 1 55%; min-width: 0;
       display: flex; align-items: center; gap: 8px;
