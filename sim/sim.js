@@ -2233,10 +2233,13 @@ function tryBuyMilestones(sim, prod) {
   // スキル取得の成長効果(旧msk_/msk2_の内包)を周回開始時に1回だけ r.ms へ適用(2026-07-23)。
   if (!r._skGrowthDone) { applySkillGrowth(sim); r._skGrowthDone = true; }
   // 量産体制(repeatSec)=生産機構: 従来どおり(既取得はクールダウン再購入・初回はイベント発火)。
+  // ㉚100%(2026-07-25): 生涯初(=解放イベントになる取得)は開発工程ゲート(unlockGateOk=前の解放から
+  // minGap秒)を通す。量産体制のクールダウン(massProdSec=32秒)と同族の、初回開発の実装時間。再取得は無条件。
   for (const m of MILESTONE_RESEARCH) {
     if (!m.repeatSec) continue;
     if (r.ms.bought[m.id] && (r._msRepeatT && r._msRepeatT[m.id] || -Infinity) + m.repeatSec > sim.t) continue;
     if (!m.trig(sim)) continue;
+    if (!(sim.everMs && sim.everMs[m.id]) && !unlockGateOk(sim)) continue; // 初回開発は工程ゲート
     const cost = msCostOf(sim, m, prod);
     if (r.cookies < cost) continue;
     applyMs(sim, m, cost);
@@ -2247,6 +2250,7 @@ function tryBuyMilestones(sim, prod) {
   for (const m of MILESTONE_RESEARCH) {
     if (m.repeatSec || r.ms.bought[m.id]) continue;
     if (!m.trig(sim)) continue;
+    if (!(sim.everMs && sim.everMs[m.id]) && !unlockGateOk(sim)) continue; // 初回開発は工程ゲート
     const cost = msCostOf(sim, m, prod);
     if (cost > r.cookies * ratio) continue;
     if (!best || cost < best.cost) best = { m, cost };
