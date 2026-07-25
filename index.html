@@ -9963,7 +9963,7 @@ const OVERKILL_RARE = { 2: "ironShard", 3: "silentCore", 4: "cometShard", 5: "co
 const FERMENT_MATERIAL = { 1: "flour", 2: "lavaSugar", 3: "frostSugar", 4: "lavaSugar", 5: "stardust", 6: "stardust" };
 
 // 撃破時の素材ドロップ・討伐カウント・ボス処理。表示用テキストを返す
-function grantMonsterDrops(typeId, level, overkill, colorTier) {
+function grantMonsterDrops(typeId, level, overkill, colorTier, guardianOf) {
   const stageNo = currentStageNo();
   const stage = stageInfo(stageNo);
   const type = MONSTER_TYPES[typeId] || MONSTER_TYPES.normal;
@@ -9989,14 +9989,17 @@ function grantMonsterDrops(typeId, level, overkill, colorTier) {
     state.bossKills[stageNo] = Math.floor(Number(state.bossKills[stageNo]) || 0) + 1;
 
     // 守護ボス撃破(R35 hard-won): クエスト達成後のボスを倒して初めてステージ解放=戦って勝ち取る節目。
-    if ((state.frontierBossPending || 0) === stageNo && stageNo < MAX_STAGE_NO) {
+    // R35c: 判定は「その守護が守っていたステージ」(guardianOf=出現時に刻印)。戦闘中にステージ表示を
+    // 移動しても撃破が正しく解放になる(currentStageNo基準だと移動先ステージ扱いで解放が消えるのを実測)。
+    const gof = Math.max(0, Math.floor(Number(guardianOf) || 0));
+    if (gof > 0 && (state.frontierBossPending || 0) === gof && gof < MAX_STAGE_NO) {
       state.frontierBossPending = 0;
       state.frontierBossEscapes = 0; // 消耗カウンタは次の守護ボスへ持ち込まない
       markUnlock();
-      state.stageUnlocked = stageNo + 1;
+      state.stageUnlocked = gof + 1;
       playScreenTransition();
-      celebrateStageUnlock(stageInfo(stageNo + 1).name);
-      parts.push(`守護ボス撃破！ 新ステージ「${stageInfo(stageNo + 1).name}」解放！`);
+      celebrateStageUnlock(stageInfo(gof + 1).name);
+      parts.push(`守護ボス撃破！ 新ステージ「${stageInfo(gof + 1).name}」解放！`);
     }
 
     if (dropsEnabled) {
@@ -17230,8 +17233,8 @@ function createMonsterElement(mon) {
   // HPバー・HP数値は絵の「上」に置く。ボスは絵が大きく、下に置くと画面外(overflow:hidden)に
   // はみ出て見えなくなるため、常に見える位置(上)に固定する。
   // 守護ボス(R35): 名前でも「別格の一戦」とわかるように(ラベルのみ・typeは共通)
-  const monLabel = (mon.typeId === "boss" && guardianPendingNow())
-    ? `守護ボス — ${stageInfo(currentStageNo()).name}の主${(state.frontierBossEscapes || 0) > 0 ? "(消耗)" : ""}`
+  const monLabel = (mon.typeId === "boss" && (mon.guardianOf || 0) > 0)
+    ? `守護ボス — ${stageInfo(mon.guardianOf).name}の主${(state.frontierBossEscapes || 0) > 0 ? "(消耗)" : ""}`
     : type.name;
   wrap.innerHTML = `
     <div class="monsterTypeLabel">${monLabel}</div>
@@ -17325,6 +17328,8 @@ function showMonster(forcedTypeId) {
         : 1,
       goldenFirstHitReady: firstHitReady,
       firstHitUsed: false,
+      guardianOf: guardian ? currentStageNo() : 0, // 守護ボスの担当ステージ(R35c): 撃破/逃走の判定を出現時のステージに固定=戦闘中のステージ移動で解放が迷子にならない
+
       maxHp: Math.max((MONSTER_TYPES[typeId] && MONSTER_TYPES[typeId].base) === "swarm" ? 12 : 40, Math.floor(monsterHpValue(level) * hpMulShared)),
       hp: 1,
       el: null,
@@ -17436,7 +17441,9 @@ function hideMonster(idOrShouldReschedule, shouldRescheduleMaybe) {
       const sno = currentStageNo();
       // 守護ボス(R35): 逃しても討伐数リセットは無し(ノルマ達成は消えない)。少し間を置いて必ず再挑戦できる。
       // R35b 情け: 逃すたび消耗(HP-15%・下限=通常ボス)+火力強化の導線を示す
-      if ((state.frontierBossPending || 0) === sno && sno < MAX_STAGE_NO) {
+      // R35c: 判定は出現時刻印(guardianOf)=戦闘中のステージ移動で通常ボス扱い(討伐数リセット)にならない
+      const gofE = Math.max(0, Math.floor(Number(mon.guardianOf) || 0));
+      if (gofE > 0 && (state.frontierBossPending || 0) === gofE && gofE < MAX_STAGE_NO) {
         state.frontierBossEscapes = Math.max(0, Math.floor(Number(state.frontierBossEscapes) || 0)) + 1;
         showMessage(guardianHpMul() > 1
           ? "守護ボスを逃した⋯ だが確実に消耗している！火力を強化して迎え撃て！"
@@ -17626,7 +17633,7 @@ function defeatMonster(id) {
 
   // 素材ドロップ判定・ステージ討伐カウント・ボス撃破処理。素材はここでは付与せず、
   // 報酬選択後にアイコンとして落とし、タップ or 自動回収で一度だけ付与する。
-  const dropText = grantMonsterDrops(defeatedTypeId, defeatedLevel, Boolean(mon.overkill), mon.colorTier);
+  const dropText = grantMonsterDrops(defeatedTypeId, defeatedLevel, Boolean(mon.overkill), mon.colorTier, mon.guardianOf);
   if (dropText) message += ` / ${dropText}`; // 深層到達・金クッキー短縮など、素材以外のイベント文のみ
   pendingMaterialDrops = { drops: { ...lastMonsterDropMap }, pos: dropPos };
 
