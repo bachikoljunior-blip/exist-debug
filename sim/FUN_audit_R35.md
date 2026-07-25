@@ -234,3 +234,13 @@ FUN軸の最大残漏れ=段2タイミング機構4種の不可視を全て見�
 **検証**: 統合リグレッションALL GREEN・持続プレイ50s頑健・sim経済 revert以降変更ゼロ。
 **残(要ユーザーGo)**: 「最新ステージの実難度アップ=簡単には達成できないストレスの核」は経済/バランス領域。方向をもらえれば検証込みで実装(候補: 討伐必要数増/フロンティアボス撃破を解放条件に/タップに毎秒生産の一定割合=click後半救済)。
 **方針**: 安全圏の追加は一巡=以後は過剰追加を避け、維持(ハートビート+commit)+定期健全性確認+ユーザーGo待ち。
+
+## R35難度: レバー決着と守護ボス設計(2026-07-25・自律決定=Go待ちをやめた)
+**レバー「討伐必要数増」=実測で棄却**(sim/tools/stage_difficulty_eval.js・100h・S1/S2/S4×killsNeed×1/1.5/2/3): ×3でも解放時刻ほぼ不動(S1 st6 7.6h→8.6h/S4 2.3h→2.4h)=討伐供給がノルマを大幅超過し count ゲートは不感。型間分散も大(S4=2.3hでst6自動達成/S2=100hでst5未達)=増量はS2を殺すだけでS4に効かない。
+
+**採用設計: L2「守護ボス解放ゲート」(イベント型・count非依存)**
+- ゲーム: ①questProgressOnKill=killsNeed到達で即解放をやめ `frontierBossPending=stageNo` を立て告知「守護ボスが現れる…!」 ②pickMonsterTypeId=pending中は次の出現を守護ボス(boss・HP×2.0・guardianフラグ・報酬は通常ボス同等=経済中立)に強制 ③守護ボス撃破→stageUnlocked++・celebrateStageUnlock(既存祝祭流用) ④逃した→pending維持=次のボス周期で再挑戦(ハードロック無し=救済)。⑤クエストカード文言「守護ボスを倒せ!」・接近インジケータ流用。
+- sim: ws.questKills>=need で即解放せず guardianPending。simのボス周期モデルで撃破時に解放(ボスモデルが薄ければ「pending後+1ボス周期(bossCycleFor(st)相当kills)」で近似し、実機stage_playthroughとtiming照合)。
+- 検証: stage_difficulty_eval(guardian版)で解放時刻の後ろ倒し量と型別公平性(S2悪化が限定的=ボスは全型で周期湧き)→ws/baselineバッテリー→実機で解放の瞬間+守護ボス戦を実況キャプチャ(payoffの絵)。
+- felt: 解放が「戦って勝ち取る」に変わる=hard-wonの核。失敗(逃す)がありうる=本物の緊張。
+- **順序制約**: sim.js編集はF6ワークフロー(転生表再校正の検証)完走後に着手=走行中バッテリーの汚染防止。
