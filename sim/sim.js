@@ -2780,7 +2780,15 @@ function buildRewardOffer(sim, level, typeId) {
   // モンスター報酬に「固定で設備強化(upgrade)が1枠入る」仕様は撤廃(2026-07-08 ユーザー決定)。
   // 報酬は報酬プール(perk)のみから決定的ローテーションで選ぶ。
   const offer = [];
-  const pool = unlockedPerks.map(x => ({ kind: 'perk', id: x.id, category: x.category, count }));
+  const rawPool = unlockedPerks.map(x => ({ kind: 'perk', id: x.id, category: x.category, count }));
+  // カテゴリ交互の決定的順序(ゲーム同期・R35「選んでる感」): 3枚窓が単色化しないよう並びを交互化。一巡性は維持。
+  const byCat = {};
+  for (const c of rawPool) (byCat[c.category] = byCat[c.category] || []).push(c);
+  const catKeys = Object.keys(byCat);
+  const pool = [];
+  for (let i = 0; pool.length < rawPool.length; i++) {
+    for (const cat of catKeys) { if (byCat[cat][i]) pool.push(byCat[cat][i]); }
+  }
   for (let k = 0; k < pool.length && offer.length < choiceLimit; k++) {
     const c = pool[(sim.rotIdx + k) % pool.length];
     if (!offer.some(o => o.kind === c.kind && o.id === c.id)) offer.push(c);

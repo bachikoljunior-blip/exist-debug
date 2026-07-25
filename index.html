@@ -17681,19 +17681,26 @@ function buildMonsterRewardChoices(level) {
       desc: n => upgradeRewardDesc(u, n)
     }));
 
+  // 2026-07-08 ユーザー決定(sim同期・parity修復): 「設備強化の固定1枠」は撤廃。報酬はperkプールのみから
+  // 決定的ローテーションで選ぶ=プールを一巡するまで同じカードが再登場しない(手札が毎回変わる=選んでる感)。
+  // 旧実装(固定枠+ランダム混合)は中盤で手札の10%が「設備強化×3」に縮退していた(実測)。
   const choices = [];
-
-  if (ownedUpgradeChoices.length > 0) {
-    choices.push(ownedUpgradeChoices[Math.floor(Math.random() * ownedUpgradeChoices.length)]);
+  const rawPool = coreChoices.length > 0 ? coreChoices : ownedUpgradeChoices; // 保険: perk未解禁の極初期のみ設備強化
+  // カテゴリ交互の決定的順序(REWARD_POOLはカテゴリ順の塊=素のローテーションだと3枚窓が単色化するため)。
+  // 一巡性(プールを回り切るまで再登場なし)は保ちつつ、1手が自然に異カテゴリ混成になる。
+  const byCat = {};
+  for (const c of rawPool) (byCat[c.category] = byCat[c.category] || []).push(c);
+  const catKeys = Object.keys(byCat);
+  const pool = [];
+  for (let i = 0; pool.length < rawPool.length; i++) {
+    for (const cat of catKeys) { if (byCat[cat][i]) pool.push(byCat[cat][i]); }
   }
-
-  const restPool = [...coreChoices, ...ownedUpgradeChoices]
-    .filter(c => !choices.some(x => x.key === c.key))
-    .sort(() => Math.random() - 0.5);
-
-  while (choices.length < choiceLimit && restPool.length > 0) {
-    choices.push(restPool.shift());
+  state.rewardRotIdx = Math.max(0, Math.floor(Number(state.rewardRotIdx) || 0));
+  for (let k = 0; k < pool.length && choices.length < choiceLimit; k++) {
+    const c = pool[(state.rewardRotIdx + k) % pool.length];
+    if (!choices.some(x => x.key === c.key)) choices.push(c);
   }
+  state.rewardRotIdx = (state.rewardRotIdx + 3) % Math.max(1, pool.length);
 
   return choices;
 }
