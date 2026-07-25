@@ -174,7 +174,7 @@ module.exports = {
   // peddlerFrac 0.02→0.06(2026-07-11 hunt序盤対策) / otherMul.golden 0.9(2026-07-11) / 投資量=討伐perk8種・基準=金相場
   // otherMul.click 0.15→0.08(2026-07-12 ㉘click後半: 討直29-31%がタップ主役25%を圧迫。診断=partsDetail)
   // otherMul.balanced 0.15→0.18(2026-07-12 ㉘balanced中盤run13-19: 討伐8-9%<10%=タップ9.0倍の圧迫の再均衡)
-  huntDirect:   { coef: 0.15, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 16, otherMul: { click: 0.08, balanced: 0.35, golden: 0.9, default: 0.3 }, peddlerFrac: 0.06, rateBonus: 0.45, rateHalf: 25 }, // 新経済向け(2026-07-14 掃引r2)+回転ボーナス(③monsterRate後半飽和対策) // satMax 12→14(2026-07-17 ⑫: huntの1位周回復元・②帯はhunt1.88で余裕)
+  huntDirect:   { coef: 0.12, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 8, otherMul: { click: 0.08, balanced: 0.35, golden: 0.9, default: 0.3 }, peddlerFrac: 0.06, rateBonus: 0.45, rateHalf: 25 }, // 新経済向け(2026-07-14 掃引r2)+回転ボーナス(③monsterRate後半飽和対策) // satMax 12→14(2026-07-17 ⑫: huntの1位周回復元・②帯はhunt1.88で余裕)
   // tapDirect: clickBonus 5.0→5.6(2026-07-12 ②改2: clickのlift1.46が最弱=底上げで帯上限を引き上げhuntを収容)
   // clickBonus5.0+satMax150(2026-07-11 複合=中盤+22%・後半飽和) / otherMul.balanced7.0(echo対応) / anchorGolden0.5=神指前のみ
   // satMax 150→400・otherMul.balanced 7.0→9.0(2026-07-12 ㉘後半対策: click run33-47 打12-21%<25%・
@@ -334,7 +334,7 @@ module.exports = {
     // 第12次M 再テーマ(増加方向・従来効果は残置): monsterStay/chainPrep とも討伐連鎖の持続窓 breakSec を Lv で延長し、
     // 連鎖数で全生産×(1+prodCoef×連鎖)に効かせる(飽和/カオス解消)。monsterStay は取得数が多いので per-Lv を小さく。
     monsterStayChain: 0.25, chainPrepPersist: 0.25, crackedFangKill: 0.000001, brandHuntKill: 0,
-    biteRecoveryKill: 0.000002, crushedMillProd: 0.03, goldenBeastMutationProd: 0.05, brandHuntProd: 0.1,
+    biteRecoveryKill: 0.000002, crushedMillProd: 0.004, goldenBeastMutationProd: 0.006, brandHuntProd: 0.012, // ÷7.5(㉚: 深部報酬の自己参照フロア=勝利の一周ブラスト(killM e48実測)の燃料)
     beastScent: 0.5,
     deepPursuitSpawn: 0.045, deepPursuitHp: 1.035, deepPursuitReward: 1.6,
     mutationBase: 0.9, mutationPerLv: 0.18, // 0.5/0.1→0.9/0.18(2026-07-11 ③: 取得n=1の単発判定が1.087-1.203で振動=期待発動率を厚くして閾値1.1から離す)

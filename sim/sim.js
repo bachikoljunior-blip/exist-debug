@@ -2240,15 +2240,22 @@ function tryBuyMilestones(sim, prod) {
   const ratio = (P.reveal && P.reveal.msBudgetRatio != null) ? P.reveal.msBudgetRatio : 0.5;
   let best = null;
   const immi = prestigeImminent(sim); // ㉚転生直前は生涯初の実績研究も見送り(解放イベントがスキル束の隣に落ちる)
-  for (const m of MILESTONE_RESEARCH) {
-    if (r.ms.bought[m.id]) continue;
-    if (immi && !(sim.everMs && sim.everMs[m.id])) continue;
-    if (!m.trig(sim)) continue;
-    const cost = msCostOf(sim, m, prod);
-    if (cost > r.cookies * ratio) continue;
-    if (!best || cost < best.cost) best = { m, cost };
+  // ㉚同tickチェックアウト(2026-07-25): 達成済み・予算内の実績研究は同tickで買い切る(同一tick=1モーメント)。
+  // 旧「1tick1件」はブラスト帯で複数件が1秒ずつズレる機関銃の源だった。低速帯では財布が各段に達した時だけ
+  // 買える=1tick1件と同じ挙動(機会費用のモデルは保たれる)。
+  for (let pass = 0; pass < 8; pass++) {
+    best = null;
+    for (const m of MILESTONE_RESEARCH) {
+      if (r.ms.bought[m.id]) continue;
+      if (immi && !(sim.everMs && sim.everMs[m.id])) continue;
+      if (!m.trig(sim)) continue;
+      const cost = msCostOf(sim, m, prod);
+      if (cost > r.cookies * ratio) continue;
+      if (!best || cost < best.cost) best = { m, cost };
+    }
+    if (!best) break;
+    applyMs(sim, best.m, best.cost);
   }
-  if (best) applyMs(sim, best.m, best.cost);
 }
 
 // 稼ぎ力 = 直接生産 + 金クッキー収入率 + 討伐報酬(投資)価値率 の合成。すべて現在状態から式で算出。
@@ -3022,6 +3029,7 @@ function doPrestige(sim) {
   const nextCostAt = cheapestUnownedSkillCost(sim); // ⑭: 購入前の次スキル最安
   const onHandCookies = r.cookies; // 転生時の所持クッキー(コスト控除前・第0回コスト再算定用=diag_prestige0.js)
   sim.lastPrestigeCps = computeProd(sim).cps; // テーブル生成用: この時点の毎秒(×500の10べき切捨てが次回コスト)
+  sim._prevRC = r.runCookies; // ㉚再建ホールド用: 前周回の総生産(次周回の再建フェーズ判定の基準)
   if (sim.opt && sim.opt.diagStack && sim._stackNow) (sim._stackLog || (sim._stackLog = [])).push(Object.assign({ runIdx: sim.runs.length }, sim._stackNow)); // ㉚リスケール診断
   r.prestigeCps = sim.lastPrestigeCps; r.prestigeCostPaid = cost;
   r.cookies -= cost;
@@ -3629,6 +3637,11 @@ function firstBuyPaid(sim, key) { if (sim._premTarget && sim._premTarget[key] !=
 function prestigeImminent(sim) {
   if (sim._immiT === sim.t) return sim._immiV; // 毎tickキャッシュ(tryBuy*全部から呼ばれるため)
   sim._immiT = sim.t;
+  // ㉚再建ホールド(2026-07-25 ユーザー最終指示「30秒だけ完全達成」): 周回頭の再建フェーズ
+  // (総生産が前周回の2%未満)の間も生涯初開発を見送る。転生直前に見送った初開発が次周回の
+  // 再建カスケード(数秒で数桁)の中で解放されΔ2-10sのクラスタになるのを防ぐ。進行量(前周回比の生産)
+  // ゲート=時間・収入とは非連動。解放は再建完了後の中盤(遅い帯)で同tick一括(=1モーメント)。
+  if (sim._prevRC > 0 && sim.run.runCookies < sim._prevRC * 0.02) return (sim._immiV = true);
   // 財布条件も見る(2026-07-25 v10の教訓): gain条件は初期周回では転生のずっと前に飽和する
   // (run0はgainが目標到達後も財布が転生コスト1e8に届くまで数桁走る)ため、gainだけで見送ると
   // ゾーンAの初回開発が丸ごと次周回の再建帯(e8を数秒で通過)へ落ちて衝突の山を作った(×12/×11実測)。
@@ -3642,6 +3655,18 @@ function prestigeImminent(sim) {
 }
 function eagerFirstDevs(sim, prod) {
   if (prestigeImminent(sim)) return;
+  // ㉚同tickチェックアウト(2026-07-25 ユーザー最終指示「30秒だけ完全達成」): 買える生涯初開発は同tickで
+  // 買い切るまでループする。ユーザー規則「同一tick(同一瞬間)の解放=1モーメント=1判定」により、
+  // ブラスト帯(財布が複数段を同時に越えている)のクラスタは1回の解放体験に畳まれる。旧実装は
+  // continue連鎖(研究→段2→段3)と予算の逐次消化で購入が1〜10秒ずつズレ、Δ1-25sの機関銃を作っていた。
+  // 低速帯では財布が各段のコストに達した時にしか買えない=間隔は従来どおり経済(はしご)が作る。
+  for (let pass = 0; pass < 10; pass++) {
+    const n0 = sim.unlockEvents.length;
+    eagerFirstDevsPass(sim, prod);
+    if (sim.unlockEvents.length === n0) break;
+  }
+}
+function eagerFirstDevsPass(sim, prod) {
   for (const u of visibleUpgrades(sim)) {
     if (!sim.everUpgrade[u.id] && !(sim.run.upgrades[u.id] > 0)) tryBuyUpgrade(sim, u, 0.9);
   }
