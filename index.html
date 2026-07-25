@@ -6422,20 +6422,20 @@ const UPGRADES = [
 const RESEARCH = [
   // 序盤は体感しやすい研究。研究改造室以降は、設備ごとの特殊効果を一つずつ広げる。
   // 段階2/3は「対応スキル取得後、研究タブに購入カードが出現し、クッキーで購入して有効化」する。
-  { id: "fingerTechnique", name: "指先の型", cost: 2500, detail: "式：会心率=99.5%×score/(score+12)+装備/研究の会心率(上限なしで99.5%へ漸近)、会心倍率=8+score×10。score=0.01+√強い指×0.045+0.002×最高到達層+方針補正(クリック型+0.01)。さらに毎秒生産の約0.4%(強い指の√で増加)がタップ力に加算。段階2(スキル「連打の呼吸」で購入可):会心コンボ=会心ごとに+1(上限なし、30秒途切れでリセット)、会心倍率×(1+0.03×コンボ)＋屋台が全開になる。段階3(スキル「神経直結」で購入可):会心の余熱=会心のたびに毎秒生産×0.025%×最高到達層を追加獲得。", s2: "会心ごとにコンボ+1(30秒途切れでリセット)、会心倍率+3%/コンボ。屋台も全開。", s3: "会心のたび追加クッキー(毎秒生産と最高到達層で上昇)。", desc: "タップに会心を追加。会心率と倍率は強い指・最高到達層で上昇。段階購入でコンボ・屋台・余熱が追加" },
-  { id: "grandmaCrowd", name: "おばあちゃん連携", cost: 100000, detail: "式：おばあちゃん自身の生産×12。支援=1.002〜1.003^おばあちゃん(強い指・オーブン・工場)。段階2(スキル「炉の列」で購入可):支援先に銀行・香料棚を追加(×1.008^おばあちゃん)。段階3(スキル「無人ライン」で購入可):全支援×(1+0.001×最高到達層)。", s2: "支援先に銀行・香料棚を追加(+0.8%/台)。", s3: "最高到達層でさらに上昇。", desc: "おばあちゃんの生産×12。さらに1台ごとに強い指・オーブン・工場を+0.2〜0.3%強化。段階購入で対象と層連動が追加" },
-  { id: "ovenBatch", name: "オーブン大量焼成", cost: 300000, detail: "式：9×1.0128^オーブン×1.015^(最高到達層-1)。さらに量産波及＝全生産×1.00012^オーブン。段階2(スキル「火種」で購入可):オーブン強化倍率×1.35＋量産品の売上(毎秒収入)が始まる。段階3(スキル「無人ライン」で購入可):オーブン個別強化Lv×(1+0.05×Lv)。", s2: "オーブン強化×1.35。量産品の売上(毎秒収入)を開始。", s3: "個別強化Lvごとに+5%。", desc: "オーブンを強化(オーブン数・最高到達層で上昇)。段階購入で倍率と個別強化連動が追加" },
-  { id: "factoryNetwork", name: "工場ネットワーク", cost: 1000000, detail: "式：9×1.002^(指+婆+炉)×1.0128^工場。さらに物流波及＝全生産×1.00012^工場。段階2(スキル「無人ライン」で購入可):銀行以上の所持設備種類×(1+0.15×種類数)。段階3(スキル「まとめ買い」で購入可):×(1+0.0012×最高到達層)。", s2: "上位設備の種類ごとに+15%。", s3: "最高到達層でさらに上昇。", desc: "工場を強化(下位設備・工場数で上昇)。段階購入で設備種類と層連動が追加" },
+  { id: "fingerTechnique", name: "指先の型", cost: 1500, detail: "式：会心率=99.5%×score/(score+12)+装備/研究の会心率(上限なしで99.5%へ漸近)、会心倍率=8+score×10。score=0.01+√強い指×0.045+0.002×最高到達層+方針補正(クリック型+0.01)。さらに毎秒生産の約0.4%(強い指の√で増加)がタップ力に加算。段階2(スキル「連打の呼吸」で購入可):会心コンボ=会心ごとに+1(上限なし、30秒途切れでリセット)、会心倍率×(1+0.03×コンボ)＋屋台が全開になる。段階3(スキル「神経直結」で購入可):会心の余熱=会心のたびに毎秒生産×0.025%×最高到達層を追加獲得。", s2: "会心ごとにコンボ+1(30秒途切れでリセット)、会心倍率+3%/コンボ。屋台も全開。", s3: "会心のたび追加クッキー(毎秒生産と最高到達層で上昇)。", desc: "タップに会心を追加。会心率と倍率は強い指・最高到達層で上昇。段階購入でコンボ・屋台・余熱が追加" },
+  { id: "grandmaCrowd", name: "おばあちゃん連携", cost: 100000, detail: "式：おばあちゃん自身の生産×6。支援=1.002〜1.003^おばあちゃん(強い指・オーブン・工場)。段階2(スキル「炉の列」で購入可):支援先に銀行・香料棚を追加(×1.008^おばあちゃん)。段階3(スキル「無人ライン」で購入可):全支援×(1+0.001×最高到達層)。", s2: "支援先に銀行・香料棚を追加(+0.8%/台)。", s3: "最高到達層でさらに上昇。", desc: "おばあちゃんの生産×6。さらに1台ごとに強い指・オーブン・工場を+0.2〜0.3%強化。段階購入で対象と層連動が追加" },
+  { id: "ovenBatch", name: "オーブン大量焼成", cost: 300000, detail: "式：6×1.0128^オーブン×1.015^(最高到達層-1)。さらに量産波及＝全生産×1.00012^オーブン。段階2(スキル「火種」で購入可):オーブン強化倍率×1.35＋量産品の売上(毎秒収入)が始まる。段階3(スキル「無人ライン」で購入可):オーブン個別強化Lv×(1+0.05×Lv)。", s2: "オーブン強化×1.35。量産品の売上(毎秒収入)を開始。", s3: "個別強化Lvごとに+5%。", desc: "オーブンを強化(オーブン数・最高到達層で上昇)。段階購入で倍率と個別強化連動が追加" },
+  { id: "factoryNetwork", name: "工場ネットワーク", cost: 1000000, detail: "式：5×1.002^(指+婆+炉)×1.0128^工場。さらに物流波及＝全生産×1.00012^工場。段階2(スキル「無人ライン」で購入可):銀行以上の所持設備種類×(1+0.15×種類数)。段階3(スキル「まとめ買い」で購入可):×(1+0.0012×最高到達層)。", s2: "上位設備の種類ごとに+15%。", s3: "最高到達層でさらに上昇。", desc: "工場を強化(下位設備・工場数で上昇)。段階購入で設備種類と層連動が追加" },
   { id: "cpsStrike", name: "生産火力転換", cost: 30000000, detail: "式：モンスターへのダメージに現在の毎秒生産がそのまま加算される。", desc: "毎秒生産の値がそのままモンスターへのダメージに加算されるようになる" },
-  { id: "spiceBlend", name: "香料調合", cost: 20000000, detail: "式：常時 香料棚×1.0128^棚。金取得後30秒(棚数で少し延長)はさらに×8×1.0096^棚。段階2(スキル「金色の匂い」で購入可):風味の熟成=金取得から12秒間、全生産×(1+0.9%×前回の金からの経過秒・最大60秒)＋香料の売上(毎秒収入)が始まる。段階3(スキル「輝き増幅」で購入可):熟成×(1+0.0015×最高到達層)。", s2: "金取得で全生産バースト(12秒・間が空くほど強い、最大60秒分)。香料の売上も開始。", s3: "最高到達層でさらに上昇。", desc: "香料棚を強化、金取得後はさらに大きく強化。段階購入でバーストと香料の売上が追加" },
-  { id: "portalNetwork", name: "異世界接続網", cost: 1200000, detail: "式：異世界炉の生産×9。出現間隔×0.993^異世界炉(常時)。段階2(スキル「砕ける皮」で購入可):延長狩り=討伐のたびに狩り窓を40秒張り直す(討伐間隔<40秒なら窓が続く)、窓中は出現×0.997^異世界炉＋行商が全開になる。段階3(スキル「群れ読み」で購入可):窓中の出現×e^(-0.0008×最高到達層)。", s2: "討伐ごとに40秒の狩り窓(窓中は炉の数だけ出現がさらに速い)。行商も全開。", s3: "窓中の出現間隔が最高到達層でさらに短縮。", desc: "異世界炉の生産×9・炉の数だけ出現が速くなる。段階購入で狩り窓と行商全開が追加" },
+  { id: "spiceBlend", name: "香料調合", cost: 20000000, detail: "式：常時 香料棚×1.0128^棚。金取得後30秒(棚数で少し延長)はさらに×4×1.0012^棚。段階2(スキル「金色の匂い」で購入可):風味の熟成=金取得から12秒間、全生産×(1+0.9%×前回の金からの経過秒・最大60秒)＋香料の売上(毎秒収入)が始まる。段階3(スキル「輝き増幅」で購入可):熟成×(1+0.0015×最高到達層)。", s2: "金取得で全生産バースト(12秒・間が空くほど強い、最大60秒分)。香料の売上も開始。", s3: "最高到達層でさらに上昇。", desc: "香料棚を強化、金取得後はさらに大きく強化。段階購入でバーストと香料の売上が追加" },
+  { id: "portalNetwork", name: "異世界接続網", cost: 1200000, detail: "式：異世界炉の生産×3。出現間隔×0.993^異世界炉(常時)。段階2(スキル「砕ける皮」で購入可):延長狩り=討伐のたびに狩り窓を40秒張り直す(討伐間隔<40秒なら窓が続く)、窓中は出現×0.997^異世界炉＋行商が全開になる。段階3(スキル「群れ読み」で購入可):窓中の出現×e^(-0.0008×最高到達層)。", s2: "討伐ごとに40秒の狩り窓(窓中は炉の数だけ出現がさらに速い)。行商も全開。", s3: "窓中の出現間隔が最高到達層でさらに短縮。", desc: "異世界炉の生産×3・炉の数だけ出現が速くなる。段階購入で狩り窓と行商全開が追加" },
   { id: "bankClickDividend", name: "銀行クリック配当", cost: 4000000, detail: "式：クリック×1.0128^銀行×(1+log(所持クッキーの桁数+1)×8)。取得と同時に銀行配当(毎秒収入)を開始。段階2(スキル「まとめ買い」で購入可):複利利息=所持×0.5%×log10(1+銀行)を毎秒獲得(毎秒生産×8付近から逓減、打ち止めなし)。段階3(スキル「経済分析」で購入可):逓減基準×(1+0.08×最高到達層)。", s2: "毎秒利息を獲得(所持クッキーと銀行数で上昇・大きいほど伸びは緩やか)。", s3: "利息の上限が最高到達層で上昇。", desc: "タップを強化(銀行数・貯蓄で上昇)、銀行配当(毎秒収入)も開始。段階購入で複利利息が追加" },
-  { id: "moonGlobalYeast", name: "月面発酵", cost: 7.4e116, detail: "式：全生産×9(常時)。さらに第3層以降 ×1.003^(最高到達層-2)×1.0016^月面。段階2(スキル「時空免許」で購入可):log10(1+ノルマ余裕率)/10で発酵が進む。段階3(スキル「研究解析」で購入可):×(1+5%×取得研究数)。", s2: "ノルマの余裕が大きいほど全生産上昇。", s3: "研究1件ごとに+5%。", desc: "全生産×9。第3層からは最高到達層・月面数でさらに上昇。段階購入で余裕率連動と研究数連動が追加" },
-  { id: "portalGlobalFold", name: "異世界増幅", cost: 8.7e38, detail: "式：1.002^異世界炉×3.5^出現中モンスター×金ブースト中×5。段階2(スキル「特異点管理」で購入可):折込連鎖=全生産×1.058^ノルマ中討伐数。討伐するほど成長率が上がる。段階3(スキル「超越体」で購入可):×(1+0.001×最高到達層)。", s2: "ノルマ中の討伐ごとに全生産+5.8%(複利)。", s3: "最高到達層でさらに上昇。", desc: "全生産アップ(異世界炉・出現中モンスター・金ブーストで上昇)。段階購入で討伐連鎖が追加" },
-  { id: "galaxyAssembly", name: "銀河分業", cost: 8.15e222, detail: "式：銀河工場×1.5^種類数×1.0096^銀河工場。段階2(スキル「宇宙炉心」で購入可):編成ボーナス=全生産×(1+0.027×バランス係数)^銀河工場数。バランス係数=所持数の幾何平均/算術平均(まんべんなく揃えるほど1に近い)。段階3(スキル「特異点管理」で購入可):レート×(1+0.0008×最高到達層)。", s2: "設備を均等に揃えるほど全生産上昇(銀河工場数で複利)。", s3: "最高到達層でさらに上昇。", desc: "銀河工場を強化(設備の種類数で上昇)。段階購入で編成ボーナスが追加" },
-  { id: "blackHoleCompression", name: "重力圧縮", cost: 7.65e239, detail: "式：全生産×5。圧縮=必要ノルマ×0.9982^BH数(未達寸前に1回)。段階2(スキル「特異点管理」で購入可):圧縮ゲージ(√BH/秒、1200で満タン)。満タンでボタン発動(30秒放置なら自動発動)、240秒間 全生産×(1+1.8×√BH/10)、周回2回。段階3(スキル「量子厨房」で購入可):発動3回+倍率×(1+0.002×最高到達層)+圧縮×e^(-0.1%×最高到達層)(逓減式)。", s2: "ゲージ満タンで発動(放置30秒で自動)、240秒間 全生産アップ(BH数で上昇)。周回2回。", s3: "発動が周回3回に増加。倍率は最高到達層で上昇、ノルマ圧縮も深まる。", desc: "全生産×5・次のノルマ必要量を軽減(BH数で上昇)。段階購入で圧縮ゲージが追加" },
-  { id: "quantumProofing", name: "量子発酵", cost: 7.55e263, detail: "式：量子ベーカリー×1.30^研究数×1.0096^量子。段階2(スキル「反物質炉」で購入可):観測ゆらぎ=90秒周期の波×(1+振幅×max(0,sin))、振幅=0.5+0.05×研究数。段階3(スキル「超越体」で購入可):振幅×(1+0.001×最高到達層)。", s2: "90秒周期の波で全生産が上下(振幅は研究数で上昇)。", s3: "振幅が最高到達層で上昇。", desc: "量子ベーカリーを強化(研究数で上昇)。段階購入で90秒の波が追加" },
-  { id: "antimatterRecipe", name: "反物質配合", cost: 7.55e263, detail: "式：全生産×1.0032^反物質×1.032^取得スキル数。段階2(スキル「研究解析」で購入可):×(1+0.0008×最高到達層)。段階3(スキル「超越体」で購入可):対消滅=×(1+3%×転生回数)。周回をまたいで恒久成長する。", s2: "最高到達層でさらに上昇。", s3: "転生ごとに恒久+3%(周回をまたいで蓄積)。", desc: "全生産アップ(反物質数・スキル数で上昇)。段階購入で層連動と恒久成長が追加" },
+  { id: "moonGlobalYeast", name: "月面発酵", cost: 40000000, detail: "式：全生産×1.8(常時)。さらに第3層以降 ×1.003^(最高到達層-2)×1.0016^月面。段階2(スキル「時空免許」で購入可):log10(1+ノルマ余裕率)/10で発酵が進む。段階3(スキル「研究解析」で購入可):×(1+5%×取得研究数)。", s2: "ノルマの余裕が大きいほど全生産上昇。", s3: "研究1件ごとに+5%。", desc: "全生産×1.8。第3層からは最高到達層・月面数でさらに上昇。段階購入で余裕率連動と研究数連動が追加" },
+  { id: "portalGlobalFold", name: "異世界増幅", cost: 400000000, detail: "式：1.0008^異世界炉×2.8^出現中モンスター×金ブースト中×3。段階2(スキル「特異点管理」で購入可):折込連鎖=全生産×1.058^ノルマ中討伐数。討伐するほど成長率が上がる。段階3(スキル「超越体」で購入可):×(1+0.001×最高到達層)。", s2: "ノルマ中の討伐ごとに全生産+5.8%(複利)。", s3: "最高到達層でさらに上昇。", desc: "全生産アップ(異世界炉・出現中モンスター・金ブーストで上昇)。段階購入で討伐連鎖が追加" },
+  { id: "galaxyAssembly", name: "銀河分業", cost: 6000000000, detail: "式：銀河工場×1.07^種類数×1.002^銀河工場。段階2(スキル「宇宙炉心」で購入可):編成ボーナス=全生産×(1+0.027×バランス係数)^銀河工場数。バランス係数=所持数の幾何平均/算術平均(まんべんなく揃えるほど1に近い)。段階3(スキル「特異点管理」で購入可):レート×(1+0.0008×最高到達層)。", s2: "設備を均等に揃えるほど全生産上昇(銀河工場数で複利)。", s3: "最高到達層でさらに上昇。", desc: "銀河工場を強化(設備の種類数で上昇)。段階購入で編成ボーナスが追加" },
+  { id: "blackHoleCompression", name: "重力圧縮", cost: 160000000000, detail: "式：全生産×1.8。圧縮=必要ノルマ×0.9982^BH数(未達寸前に1回)。段階2(スキル「特異点管理」で購入可):圧縮ゲージ(√BH/秒、1200で満タン)。満タンでボタン発動(30秒放置なら自動発動)、240秒間 全生産×(1+1.8×√BH/10)、周回2回。段階3(スキル「量子厨房」で購入可):発動3回+倍率×(1+0.002×最高到達層)+圧縮×e^(-0.1%×最高到達層)(逓減式)。", s2: "ゲージ満タンで発動(放置30秒で自動)、240秒間 全生産アップ(BH数で上昇)。周回2回。", s3: "発動が周回3回に増加。倍率は最高到達層で上昇、ノルマ圧縮も深まる。", desc: "全生産×1.8・次のノルマ必要量を軽減(BH数で上昇)。段階購入で圧縮ゲージが追加" },
+  { id: "quantumProofing", name: "量子発酵", cost: 3200000000000, detail: "式：量子ベーカリー×1.062^研究数×1.002^量子。段階2(スキル「反物質炉」で購入可):観測ゆらぎ=90秒周期の波×(1+振幅×max(0,sin))、振幅=0.5+0.05×研究数。段階3(スキル「超越体」で購入可):振幅×(1+0.001×最高到達層)。", s2: "90秒周期の波で全生産が上下(振幅は研究数で上昇)。", s3: "振幅が最高到達層で上昇。", desc: "量子ベーカリーを強化(研究数で上昇)。段階購入で90秒の波が追加" },
+  { id: "antimatterRecipe", name: "反物質配合", cost: 64000000000000, detail: "式：全生産×1.0015^反物質×1.008^取得スキル数。段階2(スキル「研究解析」で購入可):×(1+0.0008×最高到達層)。段階3(スキル「超越体」で購入可):対消滅=×(1+3%×転生回数)。周回をまたいで恒久成長する。", s2: "最高到達層でさらに上昇。", s3: "転生ごとに恒久+3%(周回をまたいで蓄積)。", desc: "全生産アップ(反物質数・スキル数で上昇)。段階購入で層連動と恒久成長が追加" },
 
   // ==== v2: 設備増幅研究の全設備化(効果は既存と同型: その設備の生産×9×レート^所持数。段階購入なし) ====
   { id: "bankVault", name: "複利金庫", cost: 8000000, detail: "式：銀行生産×9×1.0096^銀行数。銀行を持つほど倍率が伸びる腐らない指数型。", desc: "銀行数で銀行の生産を増幅する" },
@@ -6450,7 +6450,7 @@ const RESEARCH = [
 const REWARD_POOL = [
   { id: "goldenRate", name: "金クッキー出現率アップ", category: "golden", desc: n => `金クッキーの出現間隔 -${(100 * (1 - Math.exp(-0.075 * n / (1 + n / 80)))).toFixed(0)}%(重ねるほど伸びは緩やか) Lv.${n}` },
   { id: "goldenPower", name: "金ブースト倍率アップ", category: "golden", desc: n => `金ブースト倍率 +${(0.25 * n / (1 + n / 60)).toFixed(2)}、ブースト時間も延長(重ねるほど伸びは緩やか)` },
-  { id: "goldenAmount", name: "金クッキー獲得量アップ", category: "golden", desc: n => `金クッキー即時獲得量 +${Math.round(45 * n / (1 + n / 45))}%、ブースト時間も延長(重ねるほど伸びは緩やか)` },
+  { id: "goldenAmount", name: "金クッキー獲得量アップ", category: "golden", desc: n => `金クッキー即時獲得量 +${Math.round(8 * n / (1 + n / 45))}%、ブースト時間も延長(重ねるほど伸びは緩やか)` },
   { id: "monsterDamage", name: "対モンスターダメージアップ", category: "hunt", desc: n => `モンスターへのダメージ +${550 * n}%` },
   { id: "monsterRate", name: "モンスター出現率アップ", category: "hunt", desc: n => `モンスターの出現間隔 -${(100 * (1 - Math.exp(-0.18 * n / (1 + n / 80)))).toFixed(0)}%(重ねるほど伸びは緩やか) Lv.${n}` },
   { id: "monsterStay", name: "濃い餌", category: "hunt", desc: n => `モンスター滞在 ×${Math.exp(0.04 * n).toFixed(2)}(+4%/Lv) Lv.${n}` },
@@ -6493,101 +6493,101 @@ const SKILL_MAP_X_OFFSET = 60;
 
 const SKILL_NODES = [
   // 座標規則：中央x=1000。左側はタップ/金色、右側は自動/怪物、上側は研究/設備、下側は報酬/周回。各列は原則x=200刻み、各段はy=140〜160刻み。
-  { id: "core", name: "分岐炉心", branchId: "core", cost: 10, x: 340, y: 707, icon: "◎", prereqs: [], desc: "転生後に周回方針を選べる。", effects: [{ type: "unlockSystem", target: "runPolicy" }] },
+  { id: "core", name: "分岐炉心", branchId: "core", cost: 6, x: 340, y: 707, icon: "◎", prereqs: [], desc: "転生後に周回方針を選べる。", effects: [{ type: "unlockSystem", target: "runPolicy" }] },
 
   // 左上：タップ型
   { id: "click_1", name: "会心の指", branchId: "click", cost: 5, x: 1086, y: 99, icon: "◆", prereqs: ["core"], desc: "タップ生産 +200%。", effects: [{ type: "click", value: 2 }] },
   { id: "click_2", name: "連打の呼吸", branchId: "click", cost: 50, x: 1489, y: 62, icon: "◆", prereqs: ["click_1"], desc: "タップ生産 +600%(タップ系スキルと加算)。", effects: [{ type: "click", value: 6 }] },
-  { id: "click_3", name: "焼き印タップ", branchId: "click", cost: 15500, x: 1513, y: 487, icon: "◆", prereqs: ["click_2", "golden_2"], desc: "タップ生産 +1500%(加算)、金獲得量 +30%。", effects: [{ type: "click", value: 15 }, { type: "goldenAmount", value: 0.3 }] },
-  { id: "click_4", name: "神経直結", branchId: "click", cost: 13500000, x: 1991, y: 1035, icon: "◆", prereqs: ["click_3"], desc: "タップ生産 +24%、全生産 +64000%(全生産系スキルと加算)。", effects: [{ type: "click", value: 0.24 }, { type: "all", value: 640 }] },
+  { id: "click_3", name: "焼き印タップ", branchId: "click", cost: 590, x: 1513, y: 487, icon: "◆", prereqs: ["click_2", "golden_2"], desc: "タップ生産 +1500%(加算)、金獲得量 +30%。", effects: [{ type: "click", value: 15 }, { type: "goldenAmount", value: 0.3 }] },
+  { id: "click_4", name: "神経直結", branchId: "click", cost: 27500, x: 1991, y: 1035, icon: "◆", prereqs: ["click_3"], desc: "タップ生産 +24%、全生産 +64000%(全生産系スキルと加算)。", effects: [{ type: "click", value: 0.24 }, { type: "all", value: 640 }] },
 
   // 左下：金クッキー型
   { id: "golden_1", name: "金色の匂い", branchId: "golden", cost: 5, x: 644, y: 738, icon: "✦", prereqs: ["core"], desc: "金クッキー出現間隔 -21%。", effects: [{ type: "goldenRate", value: 0.24 }] },
   // 方針入口の増幅スキル(2026-07-11): 分岐炉心の各方針入口を選んだ直後に、その方針の主役効果を安価に増幅する
-  { id: "click_amp", name: "速射の指", branchId: "click", cost: 8, x: 1619, y: -159, icon: "◆", prereqs: ["click_1"], desc: "タップ生産 +75%。", effects: [{ type: "click", value: 0.75 }] },
-  { id: "golden_amp", name: "金箔集め", branchId: "golden", cost: 15, x: 665, y: 966, icon: "✦", prereqs: ["golden_1"], desc: "金クッキー即時獲得量 +50%。", effects: [{ type: "goldenAmount", value: 0.5 }] },
+  { id: "click_amp", name: "速射の指", branchId: "click", cost: 1, x: 1619, y: -159, icon: "◆", prereqs: ["click_1"], desc: "タップ生産 +75%。", effects: [{ type: "click", value: 0.75 }] },
+  { id: "golden_amp", name: "金箔集め", branchId: "golden", cost: 1, x: 665, y: 966, icon: "✦", prereqs: ["golden_1"], desc: "金クッキー即時獲得量 +50%。", effects: [{ type: "goldenAmount", value: 0.5 }] },
   // おまけスキル(金は金を呼ぶ/編成の心得/土産の屋台/戦利品の行商)撤去(2026-07-22 ユーザー指示)。
-  { id: "monster_amp", name: "仕留めの一撃", branchId: "monster", cost: 20, x: 382, y: 959, icon: "◉", prereqs: ["monster_1"], desc: "モンスター最終ダメージ +60%。", effects: [{ type: "monsterDamageSkill", value: 0.6 }] },
-  { id: "auto_amp", name: "炉の熱気", branchId: "auto", cost: 35, x: 251, y: 2599, icon: "◇", prereqs: ["auto_1"], desc: "毎秒生産 +75%。", effects: [{ type: "cps", value: 0.75 }] },
-  { id: "golden_2", name: "金粉回収", branchId: "golden", cost: 1550, x: 869, y: 773, icon: "✦", prereqs: ["golden_1"], desc: "金クッキー即時獲得量 +75%。", effects: [{ type: "goldenAmount", value: 0.75 }] },
-  { id: "golden_3", name: "輝き増幅", branchId: "golden", cost: 550000, x: 1028, y: 858, icon: "✦", prereqs: ["golden_2"], desc: "金ブースト倍率 +2.1。", effects: [{ type: "goldenPower", value: 2.1 }] },
-  { id: "golden_analysis", name: "金色観測", branchId: "golden", cost: 190000, x: 1254, y: 757, icon: "✦", prereqs: ["golden_3"], desc: "金クッキーの出現間隔とブースト時間の目安を表示。", effects: [{ type: "unlockSystem", target: "goldenAnalysis" }] },
-  { id: "golden_4", name: "太陽反応", branchId: "golden", cost: 490000000, x: 1204, y: 963, icon: "✦", prereqs: ["golden_3"], desc: "金クッキー出現間隔 -38%、金獲得量 +125%。", effects: [{ type: "goldenRate", value: 0.48 }, { type: "goldenAmount", value: 1.25 }] },
+  { id: "monster_amp", name: "仕留めの一撃", branchId: "monster", cost: 1, x: 382, y: 959, icon: "◉", prereqs: ["monster_1"], desc: "モンスター最終ダメージ +60%。", effects: [{ type: "monsterDamageSkill", value: 0.6 }] },
+  { id: "auto_amp", name: "炉の熱気", branchId: "auto", cost: 1, x: 251, y: 2599, icon: "◇", prereqs: ["auto_1"], desc: "毎秒生産 +75%。", effects: [{ type: "cps", value: 0.75 }] },
+  { id: "golden_2", name: "金粉回収", branchId: "golden", cost: 60, x: 869, y: 773, icon: "✦", prereqs: ["golden_1"], desc: "金クッキー即時獲得量 +75%。", effects: [{ type: "goldenAmount", value: 0.75 }] },
+  { id: "golden_3", name: "輝き増幅", branchId: "golden", cost: 7150, x: 1028, y: 858, icon: "✦", prereqs: ["golden_2"], desc: "金ブースト倍率 +2.1。", effects: [{ type: "goldenPower", value: 2.1 }] },
+  { id: "golden_analysis", name: "金色観測", branchId: "golden", cost: 2500, x: 1254, y: 757, icon: "✦", prereqs: ["golden_3"], desc: "金クッキーの出現間隔とブースト時間の目安を表示。", effects: [{ type: "unlockSystem", target: "goldenAnalysis" }] },
+  { id: "golden_4", name: "太陽反応", branchId: "golden", cost: 53500, x: 1204, y: 963, icon: "✦", prereqs: ["golden_3"], desc: "金クッキー出現間隔 -38%、金獲得量 +125%。", effects: [{ type: "goldenRate", value: 0.48 }, { type: "goldenAmount", value: 1.25 }] },
 
   // 右上：自動焼成型
   { id: "auto_1", name: "火種", branchId: "auto", cost: 5, x: 1, y: 2083, icon: "◇", prereqs: ["core"], desc: "毎秒生産 +300%。", effects: [{ type: "cps", value: 3 }] },
-  { id: "auto_2", name: "炉の列", branchId: "auto", cost: 3850, x: 290, y: 2341, icon: "◇", prereqs: ["auto_1", "monster_2"], desc: "毎秒生産 +1000%(毎秒系スキルと加算)。", effects: [{ type: "cps", value: 10 }] },
-  { id: "auto_3", name: "同期炉", branchId: "auto", cost: 38500, x: 468, y: 2185, icon: "◇", prereqs: ["auto_2", "monster_2"], desc: "毎秒生産 +4000%(加算)、モンスターダメージ +60%。", effects: [{ type: "cps", value: 40 }, { type: "monsterDamageSkill", value: 0.6 }] },
-  { id: "auto_4", name: "無人ライン", branchId: "auto", cost: 3500000, x: 636, y: 1945, icon: "◇", prereqs: ["auto_3"], desc: "毎秒生産 +24%、全生産 +16000%(全生産系スキルと加算)。", effects: [{ type: "cps", value: 0.24 }, { type: "all", value: 160 }] },
+  { id: "auto_2", name: "炉の列", branchId: "auto", cost: 305, x: 290, y: 2341, icon: "◇", prereqs: ["auto_1", "monster_2"], desc: "毎秒生産 +1000%(毎秒系スキルと加算)。", effects: [{ type: "cps", value: 10 }] },
+  { id: "auto_3", name: "同期炉", branchId: "auto", cost: 1850, x: 468, y: 2185, icon: "◇", prereqs: ["auto_2", "monster_2"], desc: "毎秒生産 +4000%(加算)、モンスターダメージ +60%。", effects: [{ type: "cps", value: 40 }, { type: "monsterDamageSkill", value: 0.6 }] },
+  { id: "auto_4", name: "無人ライン", branchId: "auto", cost: 17500, x: 636, y: 1945, icon: "◇", prereqs: ["auto_3"], desc: "毎秒生産 +24%、全生産 +16000%(全生産系スキルと加算)。", effects: [{ type: "cps", value: 0.24 }, { type: "all", value: 160 }] },
 
   // 右下：怪物狩り型
   { id: "monster_1", name: "狩りの合図", branchId: "monster", cost: 5, x: 546, y: 1126, icon: "◉", prereqs: ["core"], desc: "モンスター出現間隔 -21%。", effects: [{ type: "monsterRate", value: 0.24 }] },
-  { id: "monster_2", name: "急所割り", branchId: "monster", cost: 2450, x: 560, y: 1684, icon: "◉", prereqs: ["monster_1", "golden_2"], desc: "モンスター最終ダメージ +160%。", effects: [{ type: "monsterDamageSkill", value: 1.6 }] },
-  { id: "monster_3", name: "砕ける皮", branchId: "monster", cost: 1350000, x: 278, y: 2107, icon: "◉", prereqs: ["monster_2"], desc: "モンスターHP -50%。", effects: [{ type: "monsterHpDown", value: 0.7000000000000001 }] },
+  { id: "monster_2", name: "急所割り", branchId: "monster", cost: 190, x: 560, y: 1684, icon: "◉", prereqs: ["monster_1", "golden_2"], desc: "モンスター最終ダメージ +160%。", effects: [{ type: "monsterDamageSkill", value: 1.6 }] },
+  { id: "monster_3", name: "砕ける皮", branchId: "monster", cost: 5600, x: 278, y: 2107, icon: "◉", prereqs: ["monster_2"], desc: "モンスターHP -50%。", effects: [{ type: "monsterHpDown", value: 0.7000000000000001 }] },
   // v2: 工房解放スキル(monster枝の序盤から分岐。x=1200列のy=1440/1600は空き)
-  { id: "workshop_1", name: "素材の嗅覚", branchId: "monster", cost: 105, x: 303, y: 1332, icon: "❖", prereqs: ["monster_1"], desc: "工房タブを解放。モンスターが素材を落とすようになる。", effects: [{ type: "unlockSystem", target: "workshop" }] },
-  { id: "workshop_2", name: "工房の拡張", branchId: "monster", cost: 170, x: 460, y: 1368, icon: "❖", prereqs: ["workshop_1"], desc: "装備の作成欄(ティア1)を解放。", effects: [{ type: "unlockSystem", target: "workshopCraft" }] },
+  { id: "workshop_1", name: "素材の嗅覚", branchId: "monster", cost: 7, x: 303, y: 1332, icon: "❖", prereqs: ["monster_1"], desc: "工房タブを解放。モンスターが素材を落とすようになる。", effects: [{ type: "unlockSystem", target: "workshop" }] },
+  { id: "workshop_2", name: "工房の拡張", branchId: "monster", cost: 10, x: 460, y: 1368, icon: "❖", prereqs: ["workshop_1"], desc: "装備の作成欄(ティア1)を解放。", effects: [{ type: "unlockSystem", target: "workshopCraft" }] },
   // 装備作成ティア解放(2026-07-15 ユーザー指示「作成のティア2以降をそれぞれスキル解放で作成欄が出る」)
-  { id: "eqcraft_t2", name: "上位工房I", branchId: "monster", cost: 5000, x: 397, y: 1559, icon: "❖", prereqs: ["workshop_2"], desc: "装備の作成欄(ティア2)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT2" }] },
-  { id: "eqcraft_t3", name: "上位工房II", branchId: "monster", cost: 800000, x: 348, y: 1748, icon: "❖", prereqs: ["eqcraft_t2"], desc: "装備の作成欄(ティア3)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT3" }] },
-  { id: "eqcraft_t4", name: "上位工房III", branchId: "monster", cost: 150000000, x: 261, y: 1924, icon: "❖", prereqs: ["eqcraft_t3"], desc: "装備の作成欄(ティア4)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT4" }] },
-  { id: "eqcraft_t5", name: "上位工房IV", branchId: "monster", cost: 20000000000, x: 198, y: 1732, icon: "❖", prereqs: ["eqcraft_t4"], desc: "装備の作成欄(ティア5)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT5" }] },
-  { id: "eqcraft_t6", name: "上位工房V", branchId: "monster", cost: 800000000000, x: 252, y: 1539, icon: "❖", prereqs: ["eqcraft_t5"], desc: "装備の作成欄(ティア6)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT6" }] },
-  { id: "hunt_analysis", name: "狩猟分析", branchId: "monster", cost: 470000, x: 146, y: 2000, icon: "◉", prereqs: ["monster_3"], desc: "HP表示に必要攻撃数を追加。", effects: [{ type: "unlockSystem", target: "huntAnalysis" }] },
-  { id: "monster_4", name: "群れ読み", branchId: "monster", cost: 1150000000, x: 1853, y: 1547, icon: "◉", prereqs: ["click_4"], desc: "モンスター滞在+6%。報酬解禁スキルの前提。", effects: [{ type: "monsterStay", value: 0.5 }] },
+  { id: "eqcraft_t2", name: "上位工房I", branchId: "monster", cost: 1, x: 397, y: 1559, icon: "❖", prereqs: ["workshop_2"], desc: "装備の作成欄(ティア2)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT2" }] },
+  { id: "eqcraft_t3", name: "上位工房II", branchId: "monster", cost: 1, x: 348, y: 1748, icon: "❖", prereqs: ["eqcraft_t2"], desc: "装備の作成欄(ティア3)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT3" }] },
+  { id: "eqcraft_t4", name: "上位工房III", branchId: "monster", cost: 1, x: 261, y: 1924, icon: "❖", prereqs: ["eqcraft_t3"], desc: "装備の作成欄(ティア4)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT4" }] },
+  { id: "eqcraft_t5", name: "上位工房IV", branchId: "monster", cost: 1, x: 198, y: 1732, icon: "❖", prereqs: ["eqcraft_t4"], desc: "装備の作成欄(ティア5)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT5" }] },
+  { id: "eqcraft_t6", name: "上位工房V", branchId: "monster", cost: 1, x: 252, y: 1539, icon: "❖", prereqs: ["eqcraft_t5"], desc: "装備の作成欄(ティア6)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT6" }] },
+  { id: "hunt_analysis", name: "狩猟分析", branchId: "monster", cost: 1950, x: 146, y: 2000, icon: "◉", prereqs: ["monster_3"], desc: "HP表示に必要攻撃数を追加。", effects: [{ type: "unlockSystem", target: "huntAnalysis" }] },
+  { id: "monster_4", name: "群れ読み", branchId: "monster", cost: 53500, x: 1853, y: 1547, icon: "◉", prereqs: ["click_4"], desc: "モンスター滞在+6%。報酬解禁スキルの前提。", effects: [{ type: "monsterStay", value: 0.5 }] },
 
   // 上：研究と設備解放。研究解放は1つずつ。
   { id: "economy_1", name: "仕入れ", branchId: "economy", cost: 50, x: 201, y: 2826, icon: "⬡", prereqs: ["auto_1"], desc: "アップグレード費用 -21%、研究費用 -21%。", effects: [{ type: "upgradeDiscount", value: 0.24 }, { type: "researchDiscount", value: 0.24 }] },
-  { id: "research_1", name: "研究机", branchId: "research", cost: 205000, x: 760, y: 3039, icon: "⌬", prereqs: ["economy_2"], desc: "研究費用 -38%。", effects: [{ type: "researchDiscount", value: 0.48 }] },
-  { id: "research_remodel", name: "研究改造室", branchId: "research", cost: 340000, x: 971, y: 2770, icon: "⌬", prereqs: ["research_1"], desc: "研究費用 -30%。", effects: [{ type: "researchDiscount", value: 0.36 }, { type: "unlockSystem", target: "researchRemodel" }] },
-  { id: "economy_2", name: "まとめ買い", branchId: "economy", cost: 6350, x: 526, y: 2835, icon: "⬡", prereqs: ["economy_1"], desc: "アップグレード費用 -45%。", effects: [{ type: "upgradeDiscount", value: 0.6 }] },
-  { id: "economy_analysis", name: "経済分析", branchId: "economy", cost: 2200, x: 502, y: 2514, icon: "⬡", prereqs: ["economy_2"], desc: "強化カードに価格あたりの増加量を表示。", effects: [{ type: "unlockSystem", target: "economyAnalysis" }] },
-  { id: "mastery_low", name: "職人の手", branchId: "economy", cost: 10500, x: 644, y: 2436, icon: "⚒", prereqs: ["economy_2"], desc: "下位設備に熟練: 買うほど1台の生産+0.3%(複利)。", effects: [{ type: "unlockSystem", target: "masteryLow" }] },
-  { id: "mastery_high", name: "工程の極み", branchId: "economy", cost: 150000000, x: 754, y: 2126, icon: "⚒", prereqs: ["mastery_low", "upgrade_galaxy"], desc: "上位設備に熟練: 買うほど1台の生産+0.5%(複利)。", effects: [{ type: "unlockSystem", target: "masteryHigh" }] },
-  { id: "order_board", name: "注文ボード", branchId: "economy", cost: 770, x: 616, y: 2200, icon: "⬡", prereqs: ["economy_analysis"], desc: "注文タブを解放。時間内に納品で報酬。", effects: [{ type: "unlockSystem", target: "orderBoard" }] },
+  { id: "research_1", name: "研究机", branchId: "research", cost: 2900, x: 760, y: 3039, icon: "⌬", prereqs: ["economy_2"], desc: "研究費用 -38%。", effects: [{ type: "researchDiscount", value: 0.48 }] },
+  { id: "research_remodel", name: "研究改造室", branchId: "research", cost: 4550, x: 971, y: 2770, icon: "⌬", prereqs: ["research_1"], desc: "研究費用 -30%。", effects: [{ type: "researchDiscount", value: 0.36 }, { type: "unlockSystem", target: "researchRemodel" }] },
+  { id: "economy_2", name: "まとめ買い", branchId: "economy", cost: 475, x: 526, y: 2835, icon: "⬡", prereqs: ["economy_1"], desc: "アップグレード費用 -45%。", effects: [{ type: "upgradeDiscount", value: 0.6 }] },
+  { id: "economy_analysis", name: "経済分析", branchId: "economy", cost: 165, x: 502, y: 2514, icon: "⬡", prereqs: ["economy_2"], desc: "強化カードに価格あたりの増加量を表示。", effects: [{ type: "unlockSystem", target: "economyAnalysis" }] },
+  { id: "mastery_low", name: "職人の手", branchId: "economy", cost: 750, x: 644, y: 2436, icon: "⚒", prereqs: ["economy_2"], desc: "下位設備に熟練: 買うほど1台の生産+0.3%(複利)。", effects: [{ type: "unlockSystem", target: "masteryLow" }] },
+  { id: "mastery_high", name: "工程の極み", branchId: "economy", cost: 68500, x: 754, y: 2126, icon: "⚒", prereqs: ["mastery_low", "upgrade_galaxy"], desc: "上位設備に熟練: 買うほど1台の生産+0.5%(複利)。", effects: [{ type: "unlockSystem", target: "masteryHigh" }] },
+  { id: "order_board", name: "注文ボード", branchId: "economy", cost: 55, x: 616, y: 2200, icon: "⬡", prereqs: ["economy_analysis"], desc: "注文タブを解放。時間内に納品で報酬。", effects: [{ type: "unlockSystem", target: "orderBoard" }] },
 
-{ id: "upgrade_moon", name: "月面許可", branchId: "upgrade", cost: 63500, x: 731, y: 2615, icon: "◌", prereqs: ["economy_2"], desc: "月面ベーカリーを解放。", effects: [{ type: "unlockUpgrade", target: "moonBakery" }] },
-  { id: "upgrade_time", name: "時空免許", branchId: "upgrade", cost: 865000, x: 900, y: 2355, icon: "◌", prereqs: ["upgrade_moon", "research_remodel"], desc: "時空オーブンを解放。", effects: [{ type: "unlockUpgrade", target: "timeOven" }] },
-  { id: "upgrade_galaxy", name: "銀河契約", branchId: "upgrade", cost: 53000000, x: 871, y: 1921, icon: "✺", prereqs: ["upgrade_time", "auto_4"], desc: "銀河工場を解放。", effects: [{ type: "unlockUpgrade", target: "galaxyFactory" }] },
-  { id: "upgrade_blackhole", name: "重力設備", branchId: "upgrade", cost: 3900000000, x: 1113, y: 1976, icon: "●", prereqs: ["upgrade_galaxy"], desc: "ブラックホールミキサーを解放。", effects: [{ type: "unlockUpgrade", target: "blackHoleMixer" }] },
-  { id: "research_analysis", name: "研究解析", branchId: "research", cost: 115000, x: 774, y: 2819, icon: "⌬", prereqs: ["research_remodel"], desc: "研究カードに現在効果・相性・弱点を表示。", effects: [{ type: "unlockSystem", target: "researchAnalysis" }] },
+{ id: "upgrade_moon", name: "月面許可", branchId: "upgrade", cost: 590, x: 731, y: 2615, icon: "◌", prereqs: ["economy_2"], desc: "月面ベーカリーを解放。", effects: [{ type: "unlockUpgrade", target: "moonBakery" }] },
+  { id: "upgrade_time", name: "時空免許", branchId: "upgrade", cost: 5600, x: 900, y: 2355, icon: "◌", prereqs: ["upgrade_moon", "research_remodel"], desc: "時空オーブンを解放。", effects: [{ type: "unlockUpgrade", target: "timeOven" }] },
+  { id: "upgrade_galaxy", name: "銀河契約", branchId: "upgrade", cost: 43500, x: 871, y: 1921, icon: "✺", prereqs: ["upgrade_time", "auto_4"], desc: "銀河工場を解放。", effects: [{ type: "unlockUpgrade", target: "galaxyFactory" }] },
+  { id: "upgrade_blackhole", name: "重力設備", branchId: "upgrade", cost: 165000, x: 1113, y: 1976, icon: "●", prereqs: ["upgrade_galaxy"], desc: "ブラックホールミキサーを解放。", effects: [{ type: "unlockUpgrade", target: "blackHoleMixer" }] },
+  { id: "research_analysis", name: "研究解析", branchId: "research", cost: 1550, x: 774, y: 2819, icon: "⌬", prereqs: ["research_remodel"], desc: "研究カードに現在効果・相性・弱点を表示。", effects: [{ type: "unlockSystem", target: "researchAnalysis" }] },
 
   // 下：報酬。選択肢数は有限スキルでのみ増える。
-  { id: "reward_1", name: "選択の目", branchId: "reward", cost: 400000000, x: 1685, y: 1239, icon: "✧", prereqs: ["monster_4"], desc: "モンスター報酬の選択肢 +1。", effects: [{ type: "rewardChoices", value: 1 }] },
-  { id: "reward_synergy", name: "報酬系統化", branchId: "reward", cost: 140000000, x: 1841, y: 1043, icon: "✧", prereqs: ["reward_1"], desc: "同系統の報酬を取るほどその系統が強化(+0.3%/枚・重ねるほど伸びは緩やか)。", effects: [{ type: "unlockSystem", target: "rewardSynergy" }] },
-  { id: "reward_choice_2", name: "選択の眼光", branchId: "reward", cost: 49000000, x: 1839, y: 1268, icon: "✧", prereqs: ["reward_synergy"], desc: "モンスター報酬の選択肢 +1(選択肢が増えるのはここまで)。", effects: [{ type: "rewardChoices", value: 1 }] },
-  { id: "reward_2", name: "強化圧縮", branchId: "reward", cost: 1200000000000, x: 1508, y: 2974, icon: "✧", prereqs: ["upgrade_singularity"], desc: "報酬『設備の個別強化』の効果+120%。", effects: [{ type: "upgradePerkPower", value: 1.2000000000000002 }] },
+  { id: "reward_1", name: "選択の目", branchId: "reward", cost: 18500, x: 1685, y: 1239, icon: "✧", prereqs: ["monster_4"], desc: "モンスター報酬の選択肢 +1。", effects: [{ type: "rewardChoices", value: 1 }] },
+  { id: "reward_synergy", name: "報酬系統化", branchId: "reward", cost: 6450, x: 1841, y: 1043, icon: "✧", prereqs: ["reward_1"], desc: "同系統の報酬を取るほどその系統が強化(+0.3%/枚・重ねるほど伸びは緩やか)。", effects: [{ type: "unlockSystem", target: "rewardSynergy" }] },
+  { id: "reward_choice_2", name: "選択の眼光", branchId: "reward", cost: 2250, x: 1839, y: 1268, icon: "✧", prereqs: ["reward_synergy"], desc: "モンスター報酬の選択肢 +1(選択肢が増えるのはここまで)。", effects: [{ type: "rewardChoices", value: 1 }] },
+  { id: "reward_2", name: "強化圧縮", branchId: "reward", cost: 4850000, x: 1508, y: 2974, icon: "✧", prereqs: ["upgrade_singularity"], desc: "報酬『設備の個別強化』の効果+120%。", effects: [{ type: "upgradePerkPower", value: 1.2000000000000002 }] },
 
-  { id: "unlock_reward_crackedFang", name: "割れた牙", branchId: "reward", cost: 7800000000, x: 1533, y: 1266, icon: "✧", prereqs: ["monster_4"], desc: "報酬カード『割れた牙』を解禁。", effects: [{ type: "unlockReward", target: "crackedFang" }] },
-  { id: "unlock_reward_chainPrep", name: "連戦準備", branchId: "reward", cost: 52000000000, x: 1703, y: 1028, icon: "✧", prereqs: ["unlock_reward_crackedFang"], desc: "報酬カード『連戦準備』を解禁。", effects: [{ type: "unlockReward", target: "chainPrep" }] },
-  { id: "unlock_reward_huntFocus", name: "狩猟集中", branchId: "reward", cost: 78000000000, x: 1573, y: 1516, icon: "✧", prereqs: ["unlock_reward_crackedFang"], desc: "報酬カード『狩猟集中』を解禁。", effects: [{ type: "unlockReward", target: "huntFocus" }] },
-  { id: "unlock_reward_biteRecovery", name: "甘噛み回収", branchId: "reward", cost: 3000000000000, x: 1691, y: 1765, icon: "✧", prereqs: ["unlock_reward_huntFocus"], desc: "報酬カード『甘噛み回収』を解禁。", effects: [{ type: "unlockReward", target: "biteRecovery" }] },
-  { id: "unlock_reward_beastHeatFerment", name: "獣熱発酵", branchId: "reward", cost: 4750000000000, x: 1493, y: 1790, icon: "✧", prereqs: ["unlock_reward_biteRecovery"], desc: "報酬カード『獣熱発酵』を解禁。", effects: [{ type: "unlockReward", target: "beastHeatFerment" }] },
-  { id: "unlock_reward_huntingCore", name: "狩猟炉心", branchId: "reward", cost: 7450000000000, x: 1650, y: 2133, icon: "✧", prereqs: ["unlock_reward_beastHeatFerment"], desc: "報酬カード『狩猟炉心』を解禁。", effects: [{ type: "unlockReward", target: "huntingCore" }] },
-  { id: "unlock_reward_brandHunt", name: "焼き印狩り", branchId: "reward", cost: 26000000000000, x: 1860, y: 1932, icon: "✧", prereqs: ["unlock_reward_biteRecovery"], desc: "報酬カード『焼き印狩り』を解禁。", effects: [{ type: "unlockReward", target: "brandHunt" }] },
-  { id: "unlock_reward_deepPursuit", name: "深追いの契約", branchId: "reward", cost: 71000000000000, x: 1420, y: 1984, icon: "✧", prereqs: ["unlock_reward_huntingCore"], desc: "報酬カード『深追いの契約』を解禁。", effects: [{ type: "unlockReward", target: "deepPursuit" }] },
+  { id: "unlock_reward_crackedFang", name: "割れた牙", branchId: "reward", cost: 265000, x: 1533, y: 1266, icon: "✧", prereqs: ["monster_4"], desc: "報酬カード『割れた牙』を解禁。", effects: [{ type: "unlockReward", target: "crackedFang" }] },
+  { id: "unlock_reward_chainPrep", name: "連戦準備", branchId: "reward", cost: 510000, x: 1703, y: 1028, icon: "✧", prereqs: ["unlock_reward_crackedFang"], desc: "報酬カード『連戦準備』を解禁。", effects: [{ type: "unlockReward", target: "chainPrep" }] },
+  { id: "unlock_reward_huntFocus", name: "狩猟集中", branchId: "reward", cost: 510000, x: 1573, y: 1516, icon: "✧", prereqs: ["unlock_reward_crackedFang"], desc: "報酬カード『狩猟集中』を解禁。", effects: [{ type: "unlockReward", target: "huntFocus" }] },
+  { id: "unlock_reward_biteRecovery", name: "甘噛み回収", branchId: "reward", cost: 24000000, x: 1691, y: 1765, icon: "✧", prereqs: ["unlock_reward_huntFocus"], desc: "報酬カード『甘噛み回収』を解禁。", effects: [{ type: "unlockReward", target: "biteRecovery" }] },
+  { id: "unlock_reward_beastHeatFerment", name: "獣熱発酵", branchId: "reward", cost: 46500000, x: 1493, y: 1790, icon: "✧", prereqs: ["unlock_reward_biteRecovery"], desc: "報酬カード『獣熱発酵』を解禁。", effects: [{ type: "unlockReward", target: "beastHeatFerment" }] },
+  { id: "unlock_reward_huntingCore", name: "狩猟炉心", branchId: "reward", cost: 46500000, x: 1650, y: 2133, icon: "✧", prereqs: ["unlock_reward_beastHeatFerment"], desc: "報酬カード『狩猟炉心』を解禁。", effects: [{ type: "unlockReward", target: "huntingCore" }] },
+  { id: "unlock_reward_brandHunt", name: "焼き印狩り", branchId: "reward", cost: 37500000, x: 1860, y: 1932, icon: "✧", prereqs: ["unlock_reward_biteRecovery"], desc: "報酬カード『焼き印狩り』を解禁。", effects: [{ type: "unlockReward", target: "brandHunt" }] },
+  { id: "unlock_reward_deepPursuit", name: "深追いの契約", branchId: "reward", cost: 145000000, x: 1420, y: 1984, icon: "✧", prereqs: ["unlock_reward_huntingCore"], desc: "報酬カード『深追いの契約』を解禁。", effects: [{ type: "unlockReward", target: "deepPursuit" }] },
 
-  { id: "unlock_reward_goldenChain", name: "黄金連鎖", branchId: "reward", cost: 21000000000, x: 1412, y: 920, icon: "✧", prereqs: ["golden_4", "unlock_reward_crackedFang"], desc: "報酬カード『黄金連鎖』を解禁。", effects: [{ type: "unlockReward", target: "goldenChain" }] },
-  { id: "unlock_reward_goldenTarget", name: "金色標的", branchId: "reward", cost: 205000000000, x: 1528, y: 698, icon: "✧", prereqs: ["unlock_reward_goldenChain"], desc: "報酬カード『金色標的』を解禁。", effects: [{ type: "unlockReward", target: "goldenTarget" }] },
-  { id: "unlock_reward_goldenFirstHit", name: "金粉の初撃", branchId: "reward", cost: 500000000000, x: 1550, y: 1002, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『金粉の初撃』を解禁。", effects: [{ type: "unlockReward", target: "goldenFirstHit" }] },
-  { id: "unlock_reward_beastScent", name: "獣の嗅覚", branchId: "reward", cost: 790000000000, x: 1650, y: 822, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『獣の嗅覚』を解禁。", effects: [{ type: "unlockReward", target: "beastScent" }] },
-  { id: "unlock_reward_goldenBeastMutation", name: "金獣変異", branchId: "reward", cost: 110000000000000, x: 1524, y: 2256, icon: "✧", prereqs: ["unlock_reward_deepPursuit"], desc: "報酬カード『金獣変異』を解禁。", effects: [{ type: "unlockReward", target: "goldenBeastMutation" }] },
-  { id: "unlock_reward_crushedMill", name: "砕粉ミル", branchId: "reward", cost: 44500000000000, x: 1653, y: 2591, icon: "✧", prereqs: ["reward_2", "unlock_reward_huntingCore"], desc: "報酬カード『砕粉ミル』を解禁。", effects: [{ type: "unlockReward", target: "crushedMill" }] },
+  { id: "unlock_reward_goldenChain", name: "黄金連鎖", branchId: "reward", cost: 415000, x: 1412, y: 920, icon: "✧", prereqs: ["golden_4", "unlock_reward_crackedFang"], desc: "報酬カード『黄金連鎖』を解禁。", effects: [{ type: "unlockReward", target: "goldenChain" }] },
+  { id: "unlock_reward_goldenTarget", name: "金色標的", branchId: "reward", cost: 2500000, x: 1528, y: 698, icon: "✧", prereqs: ["unlock_reward_goldenChain"], desc: "報酬カード『金色標的』を解禁。", effects: [{ type: "unlockReward", target: "goldenTarget" }] },
+  { id: "unlock_reward_goldenFirstHit", name: "金粉の初撃", branchId: "reward", cost: 6200000, x: 1550, y: 1002, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『金粉の初撃』を解禁。", effects: [{ type: "unlockReward", target: "goldenFirstHit" }] },
+  { id: "unlock_reward_beastScent", name: "獣の嗅覚", branchId: "reward", cost: 4850000, x: 1650, y: 822, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『獣の嗅覚』を解禁。", effects: [{ type: "unlockReward", target: "beastScent" }] },
+  { id: "unlock_reward_goldenBeastMutation", name: "金獣変異", branchId: "reward", cost: 360000000, x: 1524, y: 2256, icon: "✧", prereqs: ["unlock_reward_deepPursuit"], desc: "報酬カード『金獣変異』を解禁。", effects: [{ type: "unlockReward", target: "goldenBeastMutation" }] },
+  { id: "unlock_reward_crushedMill", name: "砕粉ミル", branchId: "reward", cost: 230000000, x: 1653, y: 2591, icon: "✧", prereqs: ["reward_2", "unlock_reward_huntingCore"], desc: "報酬カード『砕粉ミル』を解禁。", effects: [{ type: "unlockReward", target: "crushedMill" }] },
 
   // 周回支援
-  { id: "start_1", name: "帰還貯蔵", branchId: "start", cost: 170000000, x: 1033, y: 1091, icon: "▣", prereqs: ["golden_4"], desc: "転生後75万クッキーで開始。", effects: [{ type: "startCookies", value: 750000 }] },
-  { id: "offline_1", name: "長期保存", branchId: "start", cost: 1200000, x: 705, y: 1593, icon: "▣", prereqs: ["auto_4"], desc: "放置上限 +4時間。", effects: [{ type: "offlineHours", value: 4 }] },
-  { id: "start_2", name: "帰還神殿", branchId: "start", cost: 59500000, x: 816, y: 1263, icon: "▣", prereqs: ["start_1", "offline_1"], desc: "転生後 計1475万クッキーで開始、放置上限+4時間。", effects: [{ type: "startCookies", value: 14000000 }, { type: "offlineHours", value: 4 }] },
-  { id: "endless_oven", name: "終わらぬ焼窯", branchId: "start", cost: 20500000, x: 902, y: 983, icon: "▣", prereqs: ["start_2"], desc: "放置生産の時間上限を撤廃。", effects: [{ type: "unlockSystem", target: "offlineInfinite" }] },
+  { id: "start_1", name: "帰還貯蔵", branchId: "start", cost: 18500, x: 1033, y: 1091, icon: "▣", prereqs: ["golden_4"], desc: "転生後75万クッキーで開始。", effects: [{ type: "startCookies", value: 750000 }] },
+  { id: "offline_1", name: "長期保存", branchId: "start", cost: 6100, x: 705, y: 1593, icon: "▣", prereqs: ["auto_4"], desc: "放置上限 +4時間。", effects: [{ type: "offlineHours", value: 4 }] },
+  { id: "start_2", name: "帰還神殿", branchId: "start", cost: 6450, x: 816, y: 1263, icon: "▣", prereqs: ["start_1", "offline_1"], desc: "転生後 計1475万クッキーで開始、放置上限+4時間。", effects: [{ type: "startCookies", value: 14000000 }, { type: "offlineHours", value: 4 }] },
+  { id: "endless_oven", name: "終わらぬ焼窯", branchId: "start", cost: 2250, x: 902, y: 983, icon: "▣", prereqs: ["start_2"], desc: "放置生産の時間上限を撤廃。", effects: [{ type: "unlockSystem", target: "offlineInfinite" }] },
 
   // 後半設備
-  { id: "upgrade_universe", name: "宇宙炉心", branchId: "upgrade", cost: 33000000000, x: 1160, y: 2415, icon: "✺", prereqs: ["upgrade_blackhole"], desc: "宇宙焼成炉を解放。", effects: [{ type: "unlockUpgrade", target: "universeOven" }] },
-  { id: "upgrade_godfinger", name: "神指契約", branchId: "upgrade", cost: 130000000000, x: 1007, y: 2134, icon: "◆", prereqs: ["upgrade_universe"], desc: "神の指を解放。", effects: [{ type: "unlockUpgrade", target: "godFinger" }] },
-  { id: "upgrade_singularity", name: "特異点管理", branchId: "upgrade", cost: 320000000000, x: 1226, y: 2878, icon: "◎", prereqs: ["upgrade_universe"], desc: "クッキー特異点を解放、全生産 +255000%(加算)。", effects: [{ type: "unlockUpgrade", target: "cookieSingularity" }, { type: "all", value: 2550 }] },
-  { id: "upgrade_quantum", name: "量子厨房", branchId: "upgrade", cost: 1900000000000, x: 1410, y: 2789, icon: "✺", prereqs: ["upgrade_singularity"], desc: "量子ベーカリーを解放。", effects: [{ type: "unlockUpgrade", target: "quantumBakery" }] },
-  { id: "upgrade_antimatter", name: "反物質炉", branchId: "upgrade", cost: 11500000000000, x: 1501, y: 2580, icon: "✹", prereqs: ["upgrade_quantum"], desc: "反物質オーブンを解放。", effects: [{ type: "unlockUpgrade", target: "antimatterOven" }] },
+  { id: "upgrade_universe", name: "宇宙炉心", branchId: "upgrade", cost: 650000, x: 1160, y: 2415, icon: "✺", prereqs: ["upgrade_blackhole"], desc: "宇宙焼成炉を解放。", effects: [{ type: "unlockUpgrade", target: "universeOven" }] },
+  { id: "upgrade_godfinger", name: "神指契約", branchId: "upgrade", cost: 1600000, x: 1007, y: 2134, icon: "◆", prereqs: ["upgrade_universe"], desc: "神の指を解放。", effects: [{ type: "unlockUpgrade", target: "godFinger" }] },
+  { id: "upgrade_singularity", name: "特異点管理", branchId: "upgrade", cost: 3950000, x: 1226, y: 2878, icon: "◎", prereqs: ["upgrade_universe"], desc: "クッキー特異点を解放、全生産 +255000%(加算)。", effects: [{ type: "unlockUpgrade", target: "cookieSingularity" }, { type: "all", value: 2550 }] },
+  { id: "upgrade_quantum", name: "量子厨房", branchId: "upgrade", cost: 15000000, x: 1410, y: 2789, icon: "✺", prereqs: ["upgrade_singularity"], desc: "量子ベーカリーを解放。", effects: [{ type: "unlockUpgrade", target: "quantumBakery" }] },
+  { id: "upgrade_antimatter", name: "反物質炉", branchId: "upgrade", cost: 59500000, x: 1501, y: 2580, icon: "✹", prereqs: ["upgrade_quantum"], desc: "反物質オーブンを解放。", effects: [{ type: "unlockUpgrade", target: "antimatterOven" }] },
 
-  { id: "master_final", name: "超越体", branchId: "master", cost: 175000000000000, x: 1337, y: 2384, icon: "✹", prereqs: ["upgrade_antimatter", "unlock_reward_goldenBeastMutation"], desc: "全生産 +1000000%(加算)、タップ +20%、毎秒 +20%、モンスター報酬の獲得量(報酬Lv)の期待値 +80%。", effects: [{ type: "all", value: 10000 }, { type: "click", value: 0.2 }, { type: "cps", value: 0.2 }, { type: "rewardBonus", value: 0.8 }] }
+  { id: "master_final", name: "超越体", branchId: "master", cost: 565000000, x: 1337, y: 2384, icon: "✹", prereqs: ["upgrade_antimatter", "unlock_reward_goldenBeastMutation"], desc: "全生産 +1000000%(加算)、タップ +20%、毎秒 +20%、モンスター報酬の獲得量(報酬Lv)の期待値 +80%。", effects: [{ type: "all", value: 10000 }, { type: "click", value: 0.2 }, { type: "cps", value: 0.2 }, { type: "rewardBonus", value: 0.8 }] }
 ];
 
 const SKILLS = SKILL_NODES.map(skill => ({
@@ -6893,7 +6893,7 @@ function freshState() {
     awaitingSkillChoice: false,
     skillChoiceStartCount: 0,
     seenPrestigeUnlockNotice: false,
-    prestigeUnlockedEver: false, // 所持クッキーが初めて1億を超えたら立つ、転生解放のラッチ
+    prestigeUnlockedEver: false, // 所持クッキーが初めて500万を超えたら立つ、転生解放のラッチ
 
     upgrades,
     research,
@@ -6950,6 +6950,13 @@ function freshState() {
     deepLayer: 1,
     prevMaxQuotaStage: 0,       // 提案8: 前回周回の最高到達層(=再登坂の天井)。層の試練を新規開拓層基準へ相対化する。表示層数(maxQuotaStage)は絶対累積のまま不変更。
     prevDuration: 0,            // 提案9(到達連動ノルマ): 前回周回の長さ(秒)。未達判定の進行比 ρ=経過秒/前回長 の分母。
+    prevRunCookies: D(0),       // ㉚節目解放(2026-07-25): 前周回の総生産(転生時に保存)。ステージ進出アンカーの基準
+    stageAnchorIdx: 0,          // ㉚節目解放: 今周回で通過済みの進行量アンカー数(周回内変数=転生で0)
+    lifeRewardCat: {},          // ㉚通算報酬カウント(golden/hunt/equipment/risk): 報酬系統ボーナスの基準。転生でリセットしない
+    everUpgrades: {},           // 生涯初購入の記録(設備): 初号機固定価格と解放イベントの基準。転生でリセットしない
+    everResearch: {},           // 生涯初購入の記録(研究): 初回開発費の基準。転生でリセットしない
+    everStage: {},              // 生涯初購入の記録(研究段階): 段階カード絶対額コストの基準。転生でリセットしない
+    everMs: {},                 // 生涯初購入の記録(実績研究): 初回固定コスト表の基準。転生でリセットしない
     totalPlaySec: 0,
     portalChainKills: 0,
     nextOrderAt: 0,
@@ -7055,6 +7062,17 @@ function ensureState() {
   state.prevMaxQuotaStage = Math.max(0, Math.floor(Number(state.prevMaxQuotaStage) || 0));
   // 提案9(第12次H): 前回周回の長さ(到達連動ノルマの進行比の分母)。旧セーブは0補完。
   state.prevDuration = Math.max(0, Number(state.prevDuration) || 0);
+  // ㉚節目解放(2026-07-25): 前周回総生産(Decimal)と今周回のアンカー通過数。旧セーブは0補完。
+  state.prevRunCookies = D(state.prevRunCookies || 0);
+  state.stageAnchorIdx = Math.max(0, Math.floor(Number(state.stageAnchorIdx) || 0));
+  // ㉚通算報酬カウント(転生でリセットしない)。旧セーブは現周回カウントから引き継いで補完
+  state.lifeRewardCat = state.lifeRewardCat && typeof state.lifeRewardCat === "object" ? state.lifeRewardCat : { ...(state.rewardCategoryCounts || {}) };
+  ["golden", "hunt", "equipment", "risk"].forEach(k => state.lifeRewardCat[k] = Math.max(0, Math.floor(Number(state.lifeRewardCat[k]) || 0)));
+  // ㉚生涯初購入の記録(設備/研究/段階/実績研究): コストのはしごの「初回だけ固定額」判定。転生でリセットしない
+  state.everUpgrades = state.everUpgrades && typeof state.everUpgrades === "object" ? state.everUpgrades : {};
+  state.everResearch = state.everResearch && typeof state.everResearch === "object" ? state.everResearch : {};
+  state.everStage = state.everStage && typeof state.everStage === "object" ? state.everStage : {};
+  state.everMs = state.everMs && typeof state.everMs === "object" ? state.everMs : {};
   // 討伐連鎖(第12次D)
   state.chainN = Math.max(0, Math.floor(Number(state.chainN) || 0));
   state.chainLastKillEl = Number.isFinite(Number(state.chainLastKillEl)) ? Number(state.chainLastKillEl) : null;
@@ -7957,7 +7975,7 @@ const MILESTONE_RESEARCH = (() => {
   };
   // スキル解放研究のコストは全て二倍以上違う(2026-07-16 ユーザー指示): スキルの深さ(コスト順位)で6ティアに割った
   // 比3の階段(隣接≥2倍)。応用=そのティア、奥義=1段上(=同一スキルでも応用<奥義)。実コストは焼き込み表
-  // (MS_COST_TABLE)が権威=全msk網羅済み。下の固定costは表欠落時のフォールバック兼・定義の意図明示。
+  // (旧MS_COST_TABLE)が権威だった。㉚2026-07-25: 初回=MS_FIRST_COST_TABLE・再購入=cps×15秒へ変更(msk_系は撤去済み)。
   const skResLadder = [100, 300, 900, 2700, 8100, 24300, 72900]; // 比3=隣接≥2倍
   const skResTier = {};
   (function () {
@@ -8058,19 +8076,19 @@ function msDiverseUpgradeMul(u) {
 }
 function msCpsAdd() { let a = 0; const b = state.msResearch || {}; for (const ms of MILESTONE_RESEARCH) if (b[ms.id] && ms.fx.cpsAdd) a += ms.fx.cpsAdd; return a + skillGrowth().cpsAdd; }
 function msCritAdd() { let a = 0; const b = state.msResearch || {}; for (const ms of MILESTONE_RESEARCH) if (b[ms.id] && ms.fx.critAdd) a += ms.fx.critAdd; return a + skillGrowth().critAdd; }
-// コストはゲーム内で固定(2026-07-11 ユーザー指示): sim/ms_costs.json(10方針100h測定の初回購入額の中央値・丸め済み)と同期。
-// 表に無い研究のみ動的(解放時点の毎秒×costSec)。
-const MS_COST_TABLE = {"ms_taps_p1":100,"ms_stage_s1":100,"ms_taps_p2":100,"ms_golden_g1":100,"ms_kills_k1":100,"ms_finger_t1":100,"ms_taps_p3":62000,"ms_golden_g2":41000,"ms_oven_t1":1550000,"ms_grandma_t1":5400000,"ms_spiceRack_t1":130000000,"msk_core":100,"ms_kills_k2":38000,"ms_kills_k3":81500000,"ms_factory_t1":145000000,"ms_bank_t1":155000000,"ms_portal_t1":195000000,"ms_oven_t2":1300000000,"ms_finger_t2":2750000000,"ms_prestige_r1":100,"msk_click_1":300,"msk2_click_1":900,"msk_click_amp":100,"msk2_click_amp":300,"msk_click_stall":100,"msk2_click_stall":300,"ms_grandma_t2":13500000000,"ms_factory_t2":45000000000,"ms_golden_g3":28000000000,"ms_spiceRack_t2":1050000000000,"msk_golden_1":300,"msk2_golden_1":900,"msk_golden_amp":100,"msk2_golden_amp":300,"ms_stage_s2":170000000000,"ms_taps_p4":16000000000000,"ms_bank_t2":4050000000000,"ms_portal_t2":2750000000000,"ms_oven_t3":33500000000000,"ms_kills_k4":650000000000,"ms_factory_t3":87000000000000,"msk_monster_1":300,"msk2_monster_1":900,"ms_golden_g4":1550000000000000,"ms_finger_t3":135000000000000000,"ms_prestige_r2":100,"msk_monster_amp":100,"msk2_monster_amp":300,"msk_monster_peddler":100,"msk2_monster_peddler":300,"msk_auto_1":300,"msk2_auto_1":900,"ms_spiceRack_t3":605000000000000000,"ms_grandma_t3":4400000000000000000,"ms_kills_k5":15500000000000000000,"msk_auto_amp":100,"msk2_auto_amp":300,"msk_economy_1":900,"msk2_economy_1":2700,"ms_portal_t3":1.6e+21,"ms_oven_t4":6.45e+22,"ms_stage_s3":8.15e+21,"ms_factory_t4":3.1e+22,"ms_bank_t3":5.1e+22,"msk_click_2":300,"msk2_click_2":900,"msk_workshop_1":100,"msk_workshop_2":100,"ms_spiceRack_t4":4.05e+27,"msk_golden_2":300,"msk2_golden_2":900,"ms_kills_k6":4.2999999999999994e+30,"ms_finger_t4":5.3e+32,"msk_monster_2":300,"msk2_monster_2":900,"ms_grandma_t4":5.050000000000001e+34,"ms_prestige_r3":100,"msk_auto_2":900,"msk2_auto_2":2700,"msk_economy_2":900,"msk2_economy_2":2700,"msk_economy_analysis":300,"msk2_economy_analysis":900,"ms_portal_t4":1.5999999999999997e+38,"msk_mastery_low":900,"msk_order_board":300,"msk2_order_board":900,"ms_bank_t4":2.6500000000000002e+41,"ms_stage_s4":1.5e+43,"msk_click_3":900,"msk2_click_3":2700,"ms_kills_k7":4.35e+44,"msk_upgrade_moon":900,"msk2_upgrade_moon":2700,"ms_moonBakery_t1":1000000000000,"ms_moonBakery_t2":2050000000000000,"ms_moonBakery_t3":5.7e+22,"ms_moonBakery_t4":3.95e+42,"msk_auto_3":900,"msk2_auto_3":2700,"msk_research_1":900,"msk_research_remodel":2700,"msk_research_analysis":900,"msk_golden_3":2700,"msk2_golden_3":8100,"msk_golden_analysis":900,"msk2_golden_analysis":2700,"msk_upgrade_time":2700,"msk2_upgrade_time":8100,"ms_timeOven_t1":51500000000000,"ms_timeOven_t2":80000000000000000,"ms_timeOven_t3":6.55e+24,"ms_timeOven_t4":2.35e+43,"ms_prestige_r4":100,"msk_monster_3":2700,"msk2_monster_3":8100,"msk_auto_4":2700,"msk2_auto_4":8100,"msk_hunt_analysis":900,"msk2_hunt_analysis":2700,"ms_stage_s5":2.0500000000000002e+73,"msk_click_4":2700,"msk2_click_4":8100,"msk_offline_1":2700,"msk_upgrade_galaxy":2700,"msk2_upgrade_galaxy":8100,"ms_galaxyFactory_t1":6850000000000000000,"ms_galaxyFactory_t2":945000000000000000000,"ms_galaxyFactory_t3":2.8e+29,"ms_galaxyFactory_t4":6.949999999999999e+44,"msk_mastery_high":2700,"ms_kills_k8":9.8e+90,"msk_golden_4":8100,"msk2_golden_4":24300,"ms_golden_g5":1.4500000000000001e+96,"msk_monster_4":8100,"msk2_monster_4":24300,"msk_start_1":2700,"msk_start_2":2700,"msk_upgrade_blackhole":8100,"msk2_upgrade_blackhole":24300,"msk_reward_1":2700,"msk2_reward_1":8100,"msk_reward_synergy":2700,"msk2_reward_synergy":8100,"msk_reward_choice_2":900,"msk2_reward_choice_2":2700,"ms_blackHoleMixer_t1":53500000000000000000,"ms_blackHoleMixer_t2":4.3e+21,"ms_blackHoleMixer_t3":7.15e+29,"ms_blackHoleMixer_t4":2.3e+45,"ms_golden_g6":1.5500000000000001e+94,"ms_stage_s6":2.85e+112,"msk_unlock_reward_crackedFang":8100,"msk2_unlock_reward_crackedFang":24300,"msk_unlock_reward_goldenChain":8100,"msk2_unlock_reward_goldenChain":24300,"msk_upgrade_universe":8100,"msk2_upgrade_universe":24300,"ms_universeOven_t1":635000000000000000000,"ms_universeOven_t2":3.5e+22,"ms_universeOven_t3":1.1499999999999998e+30,"ms_universeOven_t4":3.6999999999999996e+47,"msk_unlock_reward_chainPrep":8100,"msk2_unlock_reward_chainPrep":24300,"msk_unlock_reward_huntFocus":8100,"msk2_unlock_reward_huntFocus":24300,"msk_upgrade_godfinger":8100,"msk2_upgrade_godfinger":24300,"ms_godFinger_t1":1.7e+21,"ms_godFinger_t2":9.9e+22,"ms_godFinger_t3":4.7499999999999996e+30,"ms_godFinger_t4":1.8e+49,"msk_unlock_reward_goldenTarget":8100,"msk2_unlock_reward_goldenTarget":24300,"msk_upgrade_singularity":8100,"msk2_upgrade_singularity":24300,"ms_cookieSingularity_t1":1.65e+23,"ms_cookieSingularity_t2":4.3999999999999995e+26,"ms_cookieSingularity_t3":1.3e+31,"ms_cookieSingularity_t4":2.5e+49,"msk_unlock_reward_goldenFirstHit":8100,"msk2_unlock_reward_goldenFirstHit":24300,"msk_unlock_reward_beastScent":24300,"msk2_unlock_reward_beastScent":72900,"msk_reward_2":24300,"msk2_reward_2":72900,"msk_upgrade_quantum":24300,"msk2_upgrade_quantum":72900,"ms_quantumBakery_t1":3.0499999999999995e+24,"ms_quantumBakery_t2":4.95e+27,"ms_quantumBakery_t3":1.2e+32,"ms_quantumBakery_t4":6.75e+49,"msk_unlock_reward_biteRecovery":24300,"msk2_unlock_reward_biteRecovery":72900,"msk_unlock_reward_beastHeatFerment":24300,"msk2_unlock_reward_beastHeatFerment":72900,"msk_unlock_reward_huntingCore":24300,"msk2_unlock_reward_huntingCore":72900,"msk_upgrade_antimatter":24300,"msk2_upgrade_antimatter":72900,"ms_antimatterOven_t1":5.0999999999999995e+25,"ms_antimatterOven_t2":2.2000000000000001e+27,"ms_antimatterOven_t3":4.3e+32,"ms_antimatterOven_t4":2.4500000000000002e+51,"msk_unlock_reward_brandHunt":24300,"msk2_unlock_reward_brandHunt":72900,"msk_unlock_reward_crushedMill":24300,"msk2_unlock_reward_crushedMill":72900,"msk_unlock_reward_deepPursuit":24300,"msk2_unlock_reward_deepPursuit":72900,"msk_unlock_reward_goldenBeastMutation":24300,"msk2_unlock_reward_goldenBeastMutation":72900,"msk_master_final":24300,"ms_taps_p5":null,"ms_taps_p6":null};
+// ㉚コストのはしご(2026-07-25 sim msResearch.costTable同期): 実績研究の**生涯初**の取得だけ固定コスト表
+// (はしごの段)。再購入(毎周回)と表に無い研究は「毎秒生産×15秒」の安い量産価格(旧costSecの重税は廃止)。
+const MS_FIRST_COST_TABLE = { ms_taps_p1: 2500000000, ms_stage_s1: 19000000000, ms_kills_k1: 1100000000000, ms_golden_g1: 8400000000000, ms_eqmastery_t1: 64000000000000, ms_taps_p2: 3.75e+15, ms_kills_k2: 1.75e+18, ms_stage_s2: 1.05e+20, ms_golden_g2: 6.60e+21, ms_eqmastery_t2: 4.15e+23, ms_taps_p3: 2.65e+25, ms_kills_k3: 1.40e+28, ms_stage_s3: 9.85e+29, ms_golden_g3: 6.85e+31, ms_eqmastery_t3: 4.90e+33, ms_kills_k4: 3.10e+36, ms_taps_p4: 5.35e+41, ms_stage_s4: 1.40e+45, ms_kills_k5: 1.20e+47, ms_eqmastery_t4: 1.10e+48, ms_golden_g4: 1.05e+49, ms_kills_k6: 2.65e+53, ms_golden_g5: 2.60e+55, ms_prestige_r1: 2.55e+56, ms_kills_k7: 3.80e+60, ms_golden_g6: 4.15e+62, ms_prestige_r2: 4.35e+63, ms_eqmastery_t5: 9.75e+66, ms_kills_k8: 1.05e+68, ms_prestige_r3: 8.50e+70, ms_prestige_r4: 1.10e+75 };
 function msResearchCost(ms) {
-  if (MS_COST_TABLE[ms.id] != null) return MS_COST_TABLE[ms.id];
-  if (ms && ms.cost != null) return ms.cost; // スキル解放研究の固定階段コスト(≥2倍間隔・毎秒生産非依存)
-  return Math.max(100, Math.floor(currentCps() * (ms && ms.costSec != null ? ms.costSec : 30)));
+  // 生涯初の取得=固定コスト表(コストのはしご)。everMs は転生を跨いで持ち越し(セーブ対象)。
+  if (MS_FIRST_COST_TABLE[ms.id] != null && !((state.everMs || {})[ms.id])) return MS_FIRST_COST_TABLE[ms.id];
+  // 再購入・表に無い研究=毎秒生産×15秒の量産価格(sim msCostOf rebuySec=15 と同式)
+  return Math.max(100, Math.floor(currentCps() * 15));
 }
 function buyMilestone(id) {
   const ms = MILESTONE_RESEARCH.find(m => m.id === id);
   // デバッグON中はトリガ未達成でも購入できる(通常研究のデバッグ購入と同じ扱い)
   if (!ms || msBought(id) || (!debugMode && !ms.trig())) return;
-  const msNovel = !((state.msResearch || {})[id]);
   const cost = msResearchCost(ms);
   if (!debugMode) {
     if (state.cookies.lt(cost)) { showMessage("クッキーが足りない"); return; }
@@ -8082,7 +8100,9 @@ function buyMilestone(id) {
     state.msRepeatAt = state.msRepeatAt || {};
     state.msRepeatAt[id] = Date.now();
   } else state.msResearch[id] = true;
-  if (msNovel) markUnlock();
+  // ㉚生涯初の取得判定(everMs): 初回固定コストと解放イベント(markUnlock)の基準。転生を跨いで持ち越し
+  state.everMs = state.everMs && typeof state.everMs === "object" ? state.everMs : {};
+  if (!state.everMs[id]) { state.everMs[id] = true; markUnlock(); }
   playSound("research");
   showMessage(`実績研究「${ms.name}」: ${ms.fxText}`);
   saveGame(); updateTopOnly(); renderActiveTab();
@@ -8164,15 +8184,21 @@ function stageExpGrowth(count, rate) {
   return Math.exp(Math.min(600, Math.max(0, count) * Math.log1p(Math.max(0, rate))));
 }
 
-// 段階購入コスト: 段階2=基礎cost×1,500、段階3=基礎cost×2,250,000(研究割引を適用)
+// ㉚コストのはしご(2026-07-25 sim resStageCostAbs同期): 段階カード(段2/段3)の**生涯初**の開発だけ
+// 絶対額の固定コスト(はしごの段)。再購入(2周目以降)は段1コスト×倍率=各周回の序盤で安く再取得。
+const RES_STAGE_COST_ABS = { "cpsStrike:2": 140000000000, "ovenBatch:2": 490000000000000, "fingerTechnique:2": 2.90e+16, "spiceBlend:2": 2.25e+17, "grandmaCrowd:2": 1.35e+19, "bankClickDividend:2": 8.35e+20, "factoryNetwork:2": 5.20e+22, "portalNetwork:2": 3.30e+24, "cpsStrike:3": 2.15e+26, "ovenBatch:3": 1.75e+27, "spiceBlend:3": 1.15e+29, "fingerTechnique:3": 8.20e+30, "grandmaCrowd:3": 5.75e+32, "bankClickDividend:3": 4.20e+34, "factoryNetwork:3": 3.60e+35, "portalNetwork:3": 2.70e+37, "moonGlobalYeast:2": 9.60e+42, "moonGlobalYeast:3": 8.00e+40, "galaxyAssembly:2": 2.60e+54, "blackHoleCompression:2": 3.95e+61, "galaxyAssembly:3": 8.95e+65, "blackHoleCompression:3": 9.85e+73, "quantumProofing:2": 3.00e+82, "antimatterRecipe:2": 1.00e+90, "portalGlobalFold:2": 1.00e+90, "quantumProofing:3": 1.00e+90, "antimatterRecipe:3": 1.00e+90, "portalGlobalFold:3": 1.00e+90 };
 // 段階コストの研究別倍率(値段割りD'・sim weave_costs.json と同期)
-const RESEARCH_STAGE_COST = {"fingerTechnique":{"s2":8.75e74,"s3":2.8e211},"grandmaCrowd":{"s2":6.4e87,"s3":2.55e157},"ovenBatch":{"s2":300000000,"s3":9e165},"factoryNetwork":{"s2":2.55e178,"s3":1.3e190},"spiceBlend":{"s2":4.35e65,"s3":2.4e125},"portalNetwork":{"s2":9.7e198,"s3":2.45e231},"bankClickDividend":{"s2":7.1e99,"s3":2.25e108},"moonGlobalYeast":{"s2":2.6e137,"s3":6.3e148},"portalGlobalFold":{"s2":7.55e263,"s3":7.55e263},"galaxyAssembly":{"s2":1.6e252,"s3":7.55e263},"blackHoleCompression":{"s2":7.55e263,"s3":7.55e263},"quantumProofing":{"s2":1.5e264,"s3":1.5e264},"antimatterRecipe":{"s2":1.5e264,"s3":1.5e264}};
+const RESEARCH_STAGE_MULT = {"fingerTechnique":{"s2":1500,"s3":2250000},"grandmaCrowd":{"s2":1500,"s3":2250000},"ovenBatch":{"s2":1000,"s3":2250000},"factoryNetwork":{"s2":1500,"s3":2250000},"spiceBlend":{"s2":1500,"s3":2250000},"portalNetwork":{"s2":1500,"s3":2250000},"bankClickDividend":{"s2":1500,"s3":2250000},"moonGlobalYeast":{"s2":1500,"s3":2250000},"portalGlobalFold":{"s2":1500,"s3":2250000},"galaxyAssembly":{"s2":1500,"s3":2250000},"blackHoleCompression":{"s2":1500,"s3":2250000},"quantumProofing":{"s2":1500,"s3":2250000},"antimatterRecipe":{"s2":1500,"s3":2250000},"cpsStrike":{"s2":1500,"s3":2250000}};
 
 function researchStageCost(r, stageNo) {
-  // 研究コストはゲーム内固定(2026-07-14 ユーザー指示): 段2/3も絶対値の固定表(倍率式をやめ、simと同値)。
-  const t = RESEARCH_STAGE_COST[r.id] || { s2: r.cost * 1500, s3: r.cost * 2250000 };
-  const abs = stageNo >= 3 ? t.s3 : t.s2;
-  return q5cost(abs * researchDiscount());
+  // 生涯初の段階開発=絶対額固定(コストのはしご)。再購入=段1コスト×倍率(段2=×1500・段3=×2,250,000が既定)。
+  const key = r.id + ":" + stageNo;
+  if (!((state.everStage || {})[key]) && RES_STAGE_COST_ABS[key] != null) {
+    return q5cost(RES_STAGE_COST_ABS[key] * researchDiscount());
+  }
+  const t = RESEARCH_STAGE_MULT[r.id] || { s2: 1500, s3: 2250000 };
+  const mult = stageNo >= 3 ? t.s3 : t.s2;
+  return q5cost(r.cost * mult * researchDiscount());
 }
 
 // 段階カードの説明。簡潔な専用文(s2/s3)を優先し、式はカードに出さない(式は図鑑=研究解析で開示)
@@ -8429,9 +8455,13 @@ function intervalReduction(level, rate) {
 
 function rewardCategoryBonus(category) {
   if (!rewardSynergyUnlocked()) return 0;
-  const count = Math.max(0, Number((state.rewardCategoryCounts || {})[category]) || 0);
-  // 逓減式。取るほど伸びるが、1Lvごとの寄与は徐々に下がる。
-  return additiveLevelGrowth(count / (1 + count / 400), 0.003);
+  // ㉚リスケール(2026-07-25 sim同期): 周回内カウント→**通算カウント**(lifeRewardCat=転生でリセットしない)
+  // +**対数逓減** lv_eff = half×ln(1+lv/half)(half=400)。周回内リセットの指数は成長を周回の最後の30-90秒に
+  // 集中させるスプリントの主因だった。通算化で成長が周回間に分散する(sim rewardCategoryBonus と同式)。
+  const count = Math.max(0, Number((state.lifeRewardCat || {})[category]) || Number((state.rewardCategoryCounts || {})[category]) || 0);
+  const half = 400;
+  const lvEff = half * Math.log1p(count / half);
+  return additiveLevelGrowth(lvEff, 0.003);
 }
 
 
@@ -8495,14 +8525,15 @@ function orderScale() {
     * levelGrowth(kills, 0.025);
 }
 
-// 転生コスト(2026-07-11 ユーザー仕様・確定形): 完成版の測定(基準方針100hシム)で「第n回が転生した時点の
+// 転生コスト(2026-07-11 ユーザー仕様・確定形): 完成版の測定で「第n回が転生した時点の
 // 毎秒生産×500」を10のべき乗に切り捨てた固定テーブル(全プレイヤー共通)。sim/prestige_costs.json と同期。
-// テーブルを超えた周回は末尾の桁ステップで自動延長。初回は1億(2026-07-11)。
-const PRESTIGE_COST_TABLE = [1e+9, 1e+17, 1e+25, 1e+31, 1e+40, 1e+50, 1e+66, 1e+91, 1e+99, 1e+110, 1e+114, 1e+122, 1e+120, 1e+147, 1e+174, 1e+182, 1e+180, 1e+186, 1e+194, 1e+209, 1e+214, 1e+227, 1e+246, 1e+259, 1e+272, 1e+285, 1e+298];
+// ㉚2026-07-25: min-envelope焼き(全16方針の実走の下限包絡・116本)へ更新。初回は500万固定(ユーザー仕様2026-07-09)。
+// テーブルを超えた周回は末尾の桁ステップで自動延長。
+const PRESTIGE_COST_TABLE = [5000000,5000000,10000000000,100000000000,100000000000,100000000000,1000000000000,10000000000000,10000000000000000,1000000000000000000,10000000000000000000,100000000000000000000,1e+21,1e+23,1e+24,1e+24,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,1e+30,1e+30,1e+30,1e+30,1e+30,1e+32,1e+35,1e+37,1e+38,1.0000000000000001e+39,1e+46,1e+50,1e+51,1e+51,1e+51,1e+51,1e+52,1e+52,1e+52,1e+54,1e+54,1e+55,1e+55,1e+55,1e+55,1e+55,1e+55,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+57,1e+57,1e+57,1e+57,1e+57,1e+57,1e+62,1e+64,1e+64,1e+73,1e+74,1e+78,1e+81,1e+83,1e+85,1e+87,1e+89,1e+91,1e+93,9.999999999999999e+94,1e+97,1e+99,1e+101,1e+103,1e+105,1e+107,1e+109,1.0000000000000001e+111,1e+113,1e+115,1e+117,1e+119,1e+121,1e+123,1e+125,1e+127,1e+129,1e+131];
 function prestigeCookieCost() {
   const runs = Math.max(0, Math.floor(Number(state.prestigeRuns) || 0));
-  if (PRESTIGE_COST_TABLE[runs] != null) return PRESTIGE_COST_TABLE[runs]; // 初回もテーブル(10のべき乗・調整対象)
-  if (runs === 0) return 100000000;
+  if (PRESTIGE_COST_TABLE[runs] != null) return PRESTIGE_COST_TABLE[runs]; // 初回もテーブル(初回500万・調整対象)
+  if (runs === 0) return 5000000;
   // テーブル外: 末尾の桁ステップ(3桁/回)で延長
   const last = PRESTIGE_COST_TABLE[PRESTIGE_COST_TABLE.length - 1] || 1e7;
   const over = runs - (PRESTIGE_COST_TABLE.length - 1);
@@ -9055,7 +9086,8 @@ function galaxyAssemblyMultiplier() {
   const types = ownedUpgradeTypeCount();
   const galaxy = state.upgrades.galaxyFactory || 0;
 
-  return levelGrowth(types, 0.5) * levelGrowth(galaxy, 0.0096);
+  // ㉚sim同期: galaxyTypes 0.07 / galaxyOwn 0.002(解放時台数ジャンプ圧縮)
+  return levelGrowth(types, 0.07) * levelGrowth(galaxy, 0.002);
 }
 
 // 銀河分業 段階2: 編成ボーナス(全生産)。バランス係数 = 所持数の幾何平均 / 算術平均
@@ -10213,14 +10245,16 @@ function goldenBoostActive() {
   return activeGoldenBoosts.length > 0;
 }
 
+// ㉚リスケール(2026-07-25 sim同期): 同時ブーストの重なりは**リフレッシュ合成**(最大倍率のみ・期間は各ブーストの
+// 残時間で自然に延長)へ変更(旧=乗算合成)。乗算重なりは実測でe30の断層を作り、はしご項目を秒で飛ぶ主因だった。
 function goldenBoostMultiplier() {
   purgeGoldenBoosts();
-  return activeGoldenBoosts.reduce((m, b) => m * b.multiplier, 1);
+  return activeGoldenBoosts.reduce((m, b) => Math.max(m, b.multiplier), 1);
 }
 
 function goldenAfterheatMultiplier() {
   purgeGoldenBoosts();
-  return activeGoldenAfterheats.reduce((m, b) => m * b.multiplier, 1);
+  return activeGoldenAfterheats.reduce((m, b) => Math.max(m, b.multiplier), 1);
 }
 
 function timeOvenAfterheatDurationMs() {
@@ -10494,7 +10528,7 @@ function spiceRackMultiplier() {
   let m = levelGrowth(owned, 0.008) * policyBonus;
 
   if (goldenActive) {
-    m *= 8 * levelGrowth(owned, 0.006);
+    m *= 4 * levelGrowth(owned, 0.0012); // ㉚2026-07-25 sim同期: spiceGold 4 / spiceGoldOwn 0.0012(香料窓バースト圧縮)
   }
 
   m *= orderSpiceMultiplier();
@@ -10506,13 +10540,14 @@ function researchUpgradeMultiplier(u) {
   let m = 1;
 
   // おばあちゃん台数スケール(×1.02^台数)は撤去(2026-07-15 ユーザー訂正「設備は生産固定で増やすだけ・研究前に倍率かけない」)=台数×固定1/秒。増幅は研究/報酬/熟練から
-  if (u.id === "grandma" && state.research.grandmaCrowd) m *= 12; // 9→12(sim grandmaSelf 30→40同期・シム比1/3スケール維持。①希釈対策 2026-07-12)
-  if (u.id === "oven" && state.research.ovenBatch) m *= 9 * ovenStageMultiplier();
+  // ㉚効果量の桁圧縮(2026-07-25 sim同期): grandmaSelf 6 / ovenSelf 6 / factorySelf 5 / portalSelf 3
+  if (u.id === "grandma" && state.research.grandmaCrowd) m *= 6;
+  if (u.id === "oven" && state.research.ovenBatch) m *= 6 * ovenStageMultiplier();
   if (u.id === "oven") m *= 1 + 0.12 * equipLv("ovenMitt"); // 断熱オーブン手袋(焼き加減廃止で再係留・sim同期)
   m *= msMulOf("up", u.id); // 実績研究(設備の熟練/極み)
-  if (u.id === "factory" && state.research.factoryNetwork) m *= 9 * factoryNetworkMultiplier();
+  if (u.id === "factory" && state.research.factoryNetwork) m *= 5 * factoryNetworkMultiplier();
   if (u.id === "spiceRack" && state.research.spiceBlend) m *= spiceRackMultiplier();
-  if (u.id === "portal" && state.research.portalNetwork) m *= 9;
+  if (u.id === "portal" && state.research.portalNetwork) m *= 3;
   if (u.id === "galaxyFactory" && state.research.galaxyAssembly) m *= galaxyAssemblyMultiplier();
   if (u.id === "quantumBakery" && state.research.quantumProofing) m *= quantumProofingMultiplier();
 
@@ -10599,9 +10634,10 @@ function portalGlobalFoldMultiplier() {
 
   const portal = state.upgrades.portal || 0;
   const activeMonsterCount = monsters.length;
-  const goldenM = goldenBoostActive() ? 5 : 1;
+  const goldenM = goldenBoostActive() ? 3 : 1; // ㉚sim foldGold 3同期
 
-  let m = levelGrowth(portal, 0.002) * levelGrowth(activeMonsterCount, 2.5) * goldenM;
+  // ㉚sim同期: foldPortal 0.0008(初回解放時の台数積み上がりジャンプ圧縮)・foldMonster 1.8
+  let m = levelGrowth(portal, 0.0008) * levelGrowth(activeMonsterCount, 1.8) * goldenM;
   // 段階2: 折込連鎖 — ノルマ中討伐数が全生産の「指数」になる
   if (resStage2("portalGlobalFold")) m *= stageExpGrowth(Math.max(0, state.quotaMonsterKills || 0), 0.058);
   // 段階3: 最高到達ノルマ層
@@ -10615,7 +10651,8 @@ function quantumProofingMultiplier() {
   const researchCount = RESEARCH.filter(r => state.research[r.id]).length;
   const quantum = state.upgrades.quantumBakery || 0;
 
-  let m = levelGrowth(researchCount, 0.30) * levelGrowth(quantum, 0.0096);
+  // ㉚sim同期: quantumRes 0.062 / quantumOwn 0.002
+  let m = levelGrowth(researchCount, 0.062) * levelGrowth(quantum, 0.002);
   // 段階2: 観測ゆらぎ(90秒周期の波。山でのみ増幅、谷はx1)
   if (resStage2("quantumProofing")) {
     let amp = 0.5 + 0.05 * researchCount;
@@ -10630,7 +10667,8 @@ function antimatterRecipeMultiplier() {
   if (!state.research.antimatterRecipe) return 1;
 
   const antimatter = state.upgrades.antimatterOven || 0;
-  let m = levelGrowth(antimatter, 0.0032) * levelGrowth(boughtSkillCount(), 0.032);
+  // ㉚sim同期: antimatterOwn 0.0015 / antimatterSkill 0.008
+  let m = levelGrowth(antimatter, 0.0015) * levelGrowth(boughtSkillCount(), 0.008);
   // 段階2: 最高到達ノルマ層
   if (resStage2("antimatterRecipe")) m *= 1 + 0.0008 * maxQuotaStage();
   // 段階3: 対消滅(転生回数で恒久的に伸びる)
@@ -10641,7 +10679,7 @@ function antimatterRecipeMultiplier() {
 function globalResearchMultiplier() {
   let m = 1;
 
-  if (state.research.moonGlobalYeast) m *= 9 * moonLayerGlobalMultiplier();
+  if (state.research.moonGlobalYeast) m *= 1.8 * moonLayerGlobalMultiplier(); // ㉚sim moonBase 1.8同期
   if (state.research.portalGlobalFold) m *= portalGlobalFoldMultiplier();
   // 量産波及(2026-07-14 sim同期): 一括焼成=オーブン台数・工場ネットワーク=工場台数で全生産が僅かに伸びる
   if (state.research.ovenBatch) m *= Math.pow(1.00012, state.upgrades.oven || 0);
@@ -10651,7 +10689,7 @@ function globalResearchMultiplier() {
     m *= state.spiceBurstM || 1;
   }
   if (state.research.blackHoleCompression) {
-    m *= 5;
+    m *= 1.8; // ㉚sim bhGlobal 1.8同期
     if (Date.now() < (state.bhBoostUntil || 0)) m *= state.bhBoostMult || 1; // 段階2: 圧縮解放中
   }
   if (state.research.antimatterRecipe) m *= antimatterRecipeMultiplier();
@@ -10701,7 +10739,8 @@ function goldenAmountMultiplier() {
   const msG = msMulOf("golden"); // 実績研究(金運)
   const gaLv = Math.max(0, state.perks.goldenAmount) / (1 + Math.max(0, state.perks.goldenAmount) / 45);
   // ステージ補正: チョコレート火山は金クッキー獲得×1.10
-  return (1 + gaLv * 0.45 + skillEffect("goldenAmount") + rewardCategoryBonus("golden") + (runPolicyIs("golden") ? 0.10 : 0))
+  // ㉚sim同期(2026-07-25): amountPerLv 0.45→0.08(金即時獲得の跳躍圧縮=1クリック1桁の主因)
+  return (1 + gaLv * 0.08 + skillEffect("goldenAmount") + rewardCategoryBonus("golden") + (runPolicyIs("golden") ? 0.10 : 0))
     * (currentStageInfo().goldenGainMul || 1) * msG;
 }
 
@@ -10792,13 +10831,24 @@ function bumpSurge(id) {
   sg.peak = Math.pow(1 + SURGE_PER_BUY, sg.h);
 }
 
+// ㉚コストのはしご(2026-07-25 sim upCost.firstUnitCost同期): 後半設備(スキル解放組)の初号機は
+// 「特注の固定価格」(はしごの段)。生涯初の1台だけこの固定額で、以後(同周回の2台目も後周回の再購入も)は式価格。
+const UP_FIRST_UNIT_COST = { grandma: 10000, moonBakery: 2.40e+38, timeOven: 8.70e+43, galaxyFactory: 1.00e+50, blackHoleMixer: 2.60e+57, universeOven: 4.65e+64, godFinger: 1.15e+69, cookieSingularity: 4.80e+72, quantumBakery: 3.35e+76, antimatterOven: 3.00e+82 };
+
 function costOf(u, ownedOverride, extraHeat) {
   const owned = ownedOverride == null ? state.upgrades[u.id] : ownedOverride;
 
+  // 生涯初の1台=固定価格(割引・割増なし。コスト=貯金の目標)
+  if (owned === 0 && !((state.everUpgrades || {})[u.id]) && UP_FIRST_UNIT_COST[u.id] != null) {
+    return UP_FIRST_UNIT_COST[u.id];
+  }
+
+  // ㉚100%リスケール(2026-07-25 sim同期): ownPow 0.27→0.33・knee 2600→400・ownPow2 0.72→0.60
+  // (台数400以降は急勾配=所有数指数効果の複利ループを台数側で断つ)
   return q5cost(
     1100
     * Math.pow(u.base, 0.60)
-    * Math.pow(u.growth, owned <= 2600 ? owned * 0.27 : 2600 * 0.27 + (owned - 2600) * 0.72)
+    * Math.pow(u.growth, owned <= 400 ? owned * 0.33 : 400 * 0.33 + (owned - 400) * 0.60)
     * surgeMultiplier(u.id, extraHeat)
     * upgradeDiscount()
   );
@@ -10831,7 +10881,14 @@ function multiBuyPlan(u) {
   return { count: want, totalCost: total, affordable: state.cookies.gte(total), isMax: false };
 }
 
+// ㉚コストのはしご(2026-07-25 sim resFirstCost同期): 研究の「初回開発費」(生涯初のみ)。
+// 再購入(毎周回)は従来の resCost=安い固定価格。初回開発=特注の大きい目標 / 再購入=開発済みの量産価格。
+const RES_FIRST_COST = { bankClickDividend: 4000000, portalNetwork: 200000000, spiceBlend: 200000000, cpsStrike: 200000000, moonGlobalYeast: 2.10e+39, galaxyAssembly: 1.00e+50, blackHoleCompression: 1.30e+58, quantumProofing: 1.25e+77, antimatterRecipe: 3.00e+82, portalGlobalFold: 1.00e+90 };
+
 function researchCost(r) {
+  if (!((state.everResearch || {})[r.id]) && RES_FIRST_COST[r.id] != null) {
+    return q5cost(RES_FIRST_COST[r.id] * researchDiscount());
+  }
   return q5cost(r.cost * researchDiscount());
 }
 
@@ -10936,7 +10993,7 @@ function currentCps() {
 // 旧・屋台/行商の簡易式(タップ力×0.05×20×√層 / 金相場×0.002×20×枚数×√層)を置換=sim(判定基準)と同じ経済に。
 // ==== 新装備システム+固定クエスト(2026-07-13 ユーザー確定仕様・sim同期) ====
 const EQUIP2_CFG = { tiers: 6, allMulPerTier: 2.0, layerBand: 5, oreDropPerKill: 5, oreNeed: 3, stageMatNeed: 3, dropAllMul: 1, craftPerRunCap: 5 };
-const QUEST_KILLS_NEED = [100, 130, 170, 220, 280]; // ステージ1→2 … 5→6(sim quest2同期)
+const QUEST_KILLS_NEED = [205, 190, 250, 350, 410]; // ステージ1→2 … 5→6(㉚sim quest2.killsNeed同期 2026-07-25: 狩猟型がクエストを周回1-2で駆け抜けないよう「3周回相当」へ再係留)
 const EQUIP2_SLOTS = ["weapon", "shield", "armorTop", "armorBottom", "hands", "hat", "shoes", "accA", "accB"];
 const EQUIP2_CATS = ["weapon", "shield", "armorTop", "armorBottom", "hands", "hat", "shoes", "accA", "accB"]; // 9カテゴリ×各54種(2026-07-14)
 const EQUIP2_CAT_NAMES = { weapon: "武器", shield: "盾", armorTop: "防具上", armorBottom: "防具下", hands: "手", hat: "帽子", shoes: "靴", accA: "アクセサリー甲", accB: "アクセサリー乙" };
@@ -11178,43 +11235,81 @@ function equip2Fx() {
 function equip2Mult() { return equip2Fx().allMul; } // 互換(生産チェーンはclick/cps個別も適用)
 function equip2HoldMul() { const fx = equip2Fx(); return (!state.quotaFailed && fx.holdBonus > 1) ? fx.holdBonus : 1; } // 盾: ノルマ維持中全生産
 // 固定クエスト: フロンティアステージでの累計討伐(周回持ち越し)。
-// ステージ解放は自動でなく「注文ボードで達成後その欄をタップ」で行う(2026-07-22 ユーザー指示)。
+// ㉚節目解放(2026-07-25 sim wsReleasePendingStage同期): クエスト達成の瞬間(キル数駆動=コスト外の時刻)には
+// 解放せず「達成済み(pending)」のみ。解放は「今周回の総生産が前周回総生産×アンカー(未通過の次の値)を
+// 越えた瞬間」に行う=解放イベントが開発バッチのモーメントに融合し、他の解放とΔ30秒未満で並ばない。
+// run0(前周回なし)は即時解放。前周回総生産(prevRunCookies)は転生時に保存(セーブフィールド)。
+const STAGE_UNLOCK_ANCHORS = [0.05, 0.32, 1.6, 8, 40]; // sim BP同期(5アンカー・隣接比×4.6-7)
+function stageQuestAchieved() {
+  const st = state.stageUnlocked || 1;
+  if (st >= MAX_STAGE_NO) return false;
+  return ((state.questKills || {})[st] || 0) >= (QUEST_KILLS_NEED[st - 1] || Infinity);
+}
+function releasePendingStage() {
+  const st = state.stageUnlocked || 1;
+  if (st >= MAX_STAGE_NO) return;
+  markUnlock();
+  state.stageUnlocked = st + 1;
+  playScreenTransition();
+  showMessage(`新ステージ「${stageInfo(st + 1).name}」解放！`);
+  saveGame();
+  renderOrder();
+  renderActiveTab();
+}
+// 毎秒(メインループ): 進行量アンカーの通過を検出し、達成済み(pending)のステージ進出をその瞬間に解放する
+function processStageAnchorUnlock() {
+  const pending = stageQuestAchieved();
+  const prev = state.prevRunCookies;
+  if (!prev || !prev.gt || !prev.gt(0)) {
+    if (pending) releasePendingStage(); // run0(前周回なし)は即時解放
+    return;
+  }
+  let bi = Math.max(0, Math.floor(Number(state.stageAnchorIdx) || 0));
+  let crossed = false;
+  while (bi < STAGE_UNLOCK_ANCHORS.length && state.runCookies.gte(prev.mul(STAGE_UNLOCK_ANCHORS[bi]))) {
+    bi += 1;
+    crossed = true;
+  }
+  state.stageAnchorIdx = bi;
+  if (crossed && pending) releasePendingStage();
+}
 function questProgressOnKill(stageNo, units) {
   if (stageNo !== (state.stageUnlocked || 1) || stageNo >= MAX_STAGE_NO) return;
   state.questKills = state.questKills || {};
   const before = state.questKills[stageNo] || 0;
   state.questKills[stageNo] = before + (units || 1);
   const need = QUEST_KILLS_NEED[stageNo - 1] || Infinity;
-  // 達成した瞬間だけ通知(解放は注文ボードのタップ待ち)
+  // 達成した瞬間だけ通知(解放は次の節目=アンカー通過時。run0は毎秒判定で即時解放される)
   if (before < need && state.questKills[stageNo] >= need) {
-    showMessage(`クエスト達成！ 注文ボードで「${stageInfo(stageNo + 1).name}」を解放できます`);
+    showMessage(`クエスト達成！ 次の節目(今周回の成長)で「${stageInfo(stageNo + 1).name}」が解放される`);
   }
 }
-// 注文ボードのクエスト欄タップでステージ解放(達成済みのときのみ)
+// 注文ボードのクエスト欄タップ(達成済みのときのみ)。㉚節目解放: タップでは前倒しせず案内のみ(run0は即時)
 function claimStageUnlock(stageNo) {
   stageNo = Number(stageNo);
   if (stageNo !== (state.stageUnlocked || 1) || stageNo >= MAX_STAGE_NO) return;
   const need = QUEST_KILLS_NEED[stageNo - 1] || Infinity;
   if (((state.questKills || {})[stageNo] || 0) < need) return;
-  markUnlock();
-  state.stageUnlocked = stageNo + 1;
-  playScreenTransition();
-  showMessage(`新ステージ「${stageInfo(stageNo + 1).name}」解放！`);
-  saveGame();
-  renderOrder();
-  renderActiveTab();
+  if (state.prevRunCookies && state.prevRunCookies.gt && state.prevRunCookies.gt(0)) {
+    showMessage("クエスト達成済み！ 次の節目(今周回の成長)でステージが解放される");
+    return;
+  }
+  releasePendingStage();
 }
 function currentQuestText() {
   const st = state.stageUnlocked || 1;
   if (st >= MAX_STAGE_NO) return "全ステージ解放済み";
   const got = (state.questKills || {})[st] || 0;
   const need = QUEST_KILLS_NEED[st - 1] || 0;
+  if (need > 0 && got >= need) return `クエスト達成済み: 次の節目(今周回の成長)で「${stageInfo(st + 1).name}」が解放される`;
   return `クエスト: 「${stageInfo(st).name}」でモンスターを ${need} 体討伐(${Math.min(got, need)}/${need}) → 「${stageInfo(st + 1).name}」解放`;
 }
 const DIRECT_CFG = {
   equip:  { coef: 0.06, stagePow: 0.5, countPow: 2,   ref: 70,  startStage: 5, satMax: 50, otherMul: { click: 0.08, default: 0.2 }, anchorGolden: 0.15 },
-  golden: { coef: 0.15, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 10, otherMul: { click: 0.3, balanced: 0.3, hunt: 0.3, default: 1 } },
-  hunt:   { coef: 0.15, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 12, otherMul: { click: 0.08, balanced: 0.22, golden: 0.9, default: 0.3 }, peddlerFrac: 0.06, rateBonus: 0.45, rateHalf: 25 },
+  // ㉚2026-07-25 sim同期: golden coef 0.4/satMax 60(金バースト圧縮の代償に滑らかな金投資直送で持続成長を返す)
+  golden: { coef: 0.4, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 60, otherMul: { click: 0.3, balanced: 0.3, hunt: 0.3, default: 1 } },
+  // ㉚2026-07-25 sim同期: hunt coef 0.12/satMax 8/otherMul.balanced 0.7
+  hunt:   { coef: 0.12, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 8, otherMul: { click: 0.08, balanced: 0.7, golden: 0.9, default: 0.3 }, peddlerFrac: 0.06, rateBonus: 0.45, rateHalf: 25 },
   tap:    { coef: 0.01, stagePow: 0.5, countPow: 2,   ref: 20,  startStage: 5, clickBonus: 5.6, clickBonusLate: 31, satMax: 150, satMaxLate: 3700, anchorGolden: 0.5, stallFrac: 0.05, otherMul: { golden: 0.6, balanced: 8.0, default: 1 } },
   bank:   { coef: 0.42, ownRate: 0.5, savedCoef: 0.05, clickBonus: 2.8, countCoef: 0.9, countPow: 1.8, ref: 150, anchorGolden: 0.12, otherMul: 0.5 }
 };
@@ -13619,7 +13714,7 @@ function codexOrderHtml() {
 const PERK_FORMULA = {
   goldenRate: "金クッキー出現間隔 ×e^(−0.075 × Lv/(1+Lv/80))。Lvが上がるほど間隔が短くなり、1Lvの効果は徐々に緩やか。",
   goldenPower: "金ブースト倍率 = 基準2.1 + 0.25 × Lv/(1+Lv/60)。Lvが高いほど1Lvの伸びは緩やか。",
-  goldenAmount: "金クッキー即時獲得量 ×(1 + 0.45 × Lv/(1+Lv/45))。Lvが高いほど1Lvの伸びは緩やか。",
+  goldenAmount: "金クッキー即時獲得量 ×(1 + 0.08 × Lv/(1+Lv/45))。Lvが高いほど1Lvの伸びは緩やか。",
   monsterDamage: "モンスターダメージ倍率に +5.5×Lv を加算（他のダメージ報酬と合算。Lvに比例、＝+550%×Lv相当）。",
   monsterRate: "モンスター出現間隔 ×e^(−0.18 × Lv/(1+Lv/80))。Lvが上がるほど間隔が短くなり、徐々に緩やか。",
   monsterStay: "モンスターの画面滞在時間 ×e^(0.04×Lv)。Lvごとに滞在が延びる。",
@@ -13651,8 +13746,8 @@ function codexMonsterRewardHtml() {
   // 報酬系統ボーナスはスキルで解放されて初めて存在する効果なので、解放後のみ表示する
   if (rewardSynergyUnlocked()) {
     parts.push(codexItem("報酬系統ボーナス",
-      `<div>同じ系統の報酬を多く取るほど、その系統の効果が少しずつ伸びる。</div><div>式：補正 = 1.003^枚数(枚数が増えるほど1枚の寄与は逓減)。</div>`
-      + catOrder.map(c => `<div class="codexSub">${catName[c]}：取得 ${fmt((state.rewardCategoryCounts || {})[c] || 0)} → 補正 x${(1 + rewardCategoryBonus(c)).toFixed(3)}</div>`).join(""),
+      `<div>同じ系統の報酬を多く取るほど、その系統の効果が少しずつ伸びる(通算枚数=転生後も持ち越し)。</div><div>式：補正 = 1.003^(400×ln(1+通算枚数/400))(枚数が増えるほど1枚の寄与は逓減)。</div>`
+      + catOrder.map(c => `<div class="codexSub">${catName[c]}：通算 ${fmt((state.lifeRewardCat || {})[c] || (state.rewardCategoryCounts || {})[c] || 0)} → 補正 x${(1 + rewardCategoryBonus(c)).toFixed(3)}</div>`).join(""),
       monsterIcon));
   }
 
@@ -14625,10 +14720,11 @@ function totalPrestigeFromCookies(totalCookies) {
 
   // double 範囲内(〜1e301)は従来式そのまま=到達可能域のPTを完全一致させる。
   // それを超える場合のみ、指数部から対数形で算出(値は常に double 内に収まる)
+  // ㉚経済リスケール(2026-07-25 sim同期): pB 11→14・pG 0.075→0.085(段間隔=log10(1.57)/pG≈2.3桁/周回)
   if (total.e <= 300) {
-    return Math.max(1, Math.floor(11 * Math.pow(total.toNumber() / 10000, 0.075)));
+    return Math.max(1, Math.floor(14 * Math.pow(total.toNumber() / 10000, 0.085)));
   }
-  return Math.max(1, Math.floor(11 * Math.pow(10, 0.075 * (total.log10() - 4))));
+  return Math.max(1, Math.floor(14 * Math.pow(10, 0.085 * (total.log10() - 4))));
 }
 
 function quotaPrestigeBonusFactor() {
@@ -14648,7 +14744,7 @@ function prestigeGain() {
 }
 
 function prestigeUnlocked() {
-  // 所持クッキーが初めて1億を超えた時点で解放し、以後は消費して下回っても解放のまま(ラッチ)
+  // 所持クッキーが初めて500万を超えた時点で解放し、以後は消費して下回っても解放のまま(ラッチ)
   return Boolean(state.prestigeUnlockedEver) || state.prestigeTotal > 0 || state.prestigeRuns > 0;
 }
 
@@ -14660,8 +14756,8 @@ function updatePrestigeTabLabel() {
 }
 
 function checkPrestigeUnlockNotice() {
-  // 所持クッキーが初めて1億を超えたら転生を解放する
-  if (!state.prestigeUnlockedEver && state.cookies.gte(100000000)) {
+  // 所持クッキーが初めて500万を超えたら転生を解放する(㉚2026-07-25 sim firstCost=5e6同期)
+  if (!state.prestigeUnlockedEver && state.cookies.gte(5000000)) {
     state.prestigeUnlockedEver = true;
     state.seenPrestigeUnlockNotice = true;
     showMessage("新たな機能が解放されます");
@@ -14680,7 +14776,7 @@ function renderPrestige() {
     box.innerHTML = `
       <div class="infoBox">
         <h3>？？？</h3>
-        <div class="desc">1億クッキーで新たな機能が解放されます。</div>
+        <div class="desc">500万クッキーで新たな機能が解放されます。</div>
         <button id="resetBtn" class="item danger">完全リセット</button>
       </div>
     `;
@@ -15358,8 +15454,16 @@ function buildRunStartFromCurrent() {
   s.deepLayer = Math.max(1, Math.floor(Number(cur.deepLayer) || 1));
   s.stageKills = { ...(cur.stageKills || {}) };
   s.bossKills = { ...(cur.bossKills || {}) };
+  s.questKills = { ...(cur.questKills || {}) };
   s.totalPlaySec = Math.max(0, Number(cur.totalPlaySec) || 0);
   s.maxQuotaStageEver = Math.max(1, Math.floor(Number(cur.maxQuotaStageEver) || 1));
+  // ㉚生涯記録(転生でリセットしない項目)も周回開始相当へ引き継ぐ
+  s.prevRunCookies = cur.prevRunCookies;
+  s.everUpgrades = { ...(cur.everUpgrades || {}) };
+  s.everResearch = { ...(cur.everResearch || {}) };
+  s.everStage = { ...(cur.everStage || {}) };
+  s.everMs = { ...(cur.everMs || {}) };
+  s.lifeRewardCat = { ...(cur.lifeRewardCat || {}) };
   s.awaitingSkillChoice = true;
   return s;
 }
@@ -15467,6 +15571,14 @@ function prestigeReset() {
   const keepPrevDuration = (Number(state.prevDuration) || 0) > 0
     ? 0.65 * Number(state.prevDuration) + 0.35 * quotaElapsedSeconds()
     : quotaElapsedSeconds();
+  // ㉚節目解放(2026-07-25): 前周回総生産=この周回のrunCookiesを保存(次周回のステージ進出アンカーの基準)
+  const keepPrevRunCookies = state.runCookies;
+  // ㉚生涯記録(転生でリセットしない): 初回固定コスト判定と通算報酬カウント
+  const keepEverUpgrades = { ...(state.everUpgrades || {}) };
+  const keepEverResearch = { ...(state.everResearch || {}) };
+  const keepEverStage = { ...(state.everStage || {}) };
+  const keepEverMs = { ...(state.everMs || {}) };
+  const keepLifeRewardCat = { ...(state.lifeRewardCat || {}) };
 
   state = freshState();
 
@@ -15512,6 +15624,12 @@ function prestigeReset() {
   state.prevMaxQuotaStage = keepPrevMaxQuotaStage;
   state._prevMaxStage1 = keepPrevMaxStage1;
   state.prevDuration = keepPrevDuration;
+  state.prevRunCookies = keepPrevRunCookies; // ㉚節目解放: 前周回総生産(stageAnchorIdxはfreshStateで0=周回内変数)
+  state.everUpgrades = keepEverUpgrades;
+  state.everResearch = keepEverResearch;
+  state.everStage = keepEverStage;
+  state.everMs = keepEverMs;
+  state.lifeRewardCat = keepLifeRewardCat;
   state.runStart = Date.now();
   resetRunLimitedEffects();
   applyStageTheme();
@@ -16394,16 +16512,17 @@ function hideGoldenCookie(shouldReschedule) {
 }
 
 // 序盤ブースト(2026-07-11): 金クッキーの即時獲得は駆け出しほどおいしい。
-// ×(1+9×0.5^(転生回数/0.7)) = 初周回×10・第1回×4.4・第2回×2.3・第4回×1.2と減衰(sim同期)。
+// ×(1+9×0.5^(転生回数/0.4)) = 初周回×10と速い減衰(㉚sim earlyHalfRuns 0.7→0.4同期 2026-07-25:
+// firstCost500万でrun1の金初期ブーストがはしごを1跳びで通過するため減衰を速める。run0の×10は不変)。
 // 金クッキーのタップ換算アンカー(sim同期2026-07-12「タップ数回ぶんの金は雑魚すぎる」):
-// 第0回=25タップぶん→半減期約1周回で基礎2.5へ減衰。序盤の1枚を重くし、中盤以降の稼ぎ口バランスに触れない
+// 第0回=25タップぶん→半減期 earlyHalfRuns×clickAnchorHalfMul=0.4×0.8=0.32周回で基礎2.5へ減衰(㉚同期)。
 function clickAnchorCoef() {
   const runs = Math.max(0, Math.floor(Number(state.prestigeRuns) || 0));
-  return 2.5 + (25 - 2.5) * Math.pow(0.5, runs / 0.98);
+  return 2.5 + (25 - 2.5) * Math.pow(0.5, runs / 0.32);
 }
 function goldenEarlyMultiplier() {
   const runs = Math.max(0, Math.floor(Number(state.prestigeRuns) || 0));
-  return 1 + 9 * Math.pow(0.5, runs / 0.7);
+  return 1 + 9 * Math.pow(0.5, runs / 0.4);
 }
 function collectGoldenCookie() {
   if (!goldenVisible) return;
@@ -17273,6 +17392,9 @@ function chooseReward(choice) {
 
   state.rewardCategoryCounts = state.rewardCategoryCounts || {};
   state.rewardCategoryCounts[category] = Math.max(0, Math.floor(Number(state.rewardCategoryCounts[category]) || 0)) + gained;
+  // ㉚通算カウント(2026-07-25 sim lifeRewardCat同期): 報酬系統ボーナスの基準。転生でリセットしない
+  state.lifeRewardCat = state.lifeRewardCat && typeof state.lifeRewardCat === "object" ? state.lifeRewardCat : {};
+  state.lifeRewardCat[category] = Math.max(0, Math.floor(Number(state.lifeRewardCat[category]) || 0)) + gained;
 
   $("rewardModal").style.display = "none";
   finishQuotaPause();
@@ -17779,6 +17901,8 @@ setInterval(() => {
         const revealedBefore = state.lastRevealAt;
         processContentReveals();
         if (state.lastRevealAt !== revealedBefore) renderActiveTab();
+        // ㉚節目解放(毎秒1回): 達成済みステージ進出を進行量アンカー通過の瞬間に解放
+        processStageAnchorUnlock();
       }
       // 提案13「編成の心得」(2026-07-11 承認・通常型限定): 4稼ぎ口のそろい具合(毎秒更新の遅延値=再帰回避)
       if (hasSkill("ensemble") && runPolicyIs("balanced")) {
