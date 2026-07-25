@@ -3567,7 +3567,8 @@ function tryBuyResearchStage(sim, id, stage, budgetRatio) {
     sim._portalSnapPending = true;
     // ⑬延長狩り測定修正(2026-07-25): 取得周回の末期(quotaFailed後=湧きゼロ)でsnapすると900s窓に討伐が無く
     // 全方針1.000に死ぬ。snapは「次の周回の最初のkill」(ノルマ新鮮=討伐が濃い)まで遅延する。
-    sim._portalSnapAfterRuns = sim.runs.length;
+    // 注: 段2は周回ごとに買い直されるため、基準周回は初回取得時のみ記録(毎回更新すると永遠に1周先へ逃げる)。
+    if (sim._portalSnapAfterRuns == null) sim._portalSnapAfterRuns = sim.runs.length;
   }
   const key = id + ':' + stage;
   if (sim.firstStageBuy[key] === undefined) sim.firstStageBuy[key] = sim.t;
