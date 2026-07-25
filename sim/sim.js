@@ -1284,9 +1284,13 @@ function wsDropMaterials(sim, mon, overkill) {
   // 制限時間なし・周回を跨いで累積・達成で解放イベント+次クエスト(注文ボードに常設表示=ゲーム側UI)
   if (P.quest2 && wsStageNo(sim) === ws.stageUnlocked && ws.stageUnlocked < 6) {
     const stNo = ws.stageUnlocked;
-    ws.questKills[stNo] = (ws.questKills[stNo] || 0) + units;
+    const beforeKills = ws.questKills[stNo] || 0;
+    ws.questKills[stNo] = beforeKills + units;
     const need = P.quest2.killsNeed[stNo - 1] || Infinity;
-    if (ws.questKills[stNo] >= need && unlockGateOk(sim)) {
+    // 守護ボス(R35・ゲーム同期): ノルマ到達で即解放せず、"次の討伐"=守護ボス撃破で解放。
+    // ゲームはpending→次出現が必ず守護ボス(HP×2)→撃破で解放。simは「到達後の次killイベント」で近似
+    // (守護は即時湧き・撃破前提=中盤以降の実挙動と一致。序盤の弱火力で逃す分の遅れはモデル外と明記)。
+    if (beforeKills >= need && unlockGateOk(sim)) {
       ws.stageUnlocked++;
       pushUnlock(sim, 'ws', 'stage:' + ws.stageUnlocked);
       wsRevealRecipes(sim); // 新ステージの素材で作れるレシピを同秒で開示

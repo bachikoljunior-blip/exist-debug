@@ -7231,6 +7231,7 @@ function freshState() {
     nextOrderAt: 0,
     stageKills: {},
     bossKills: {},
+    frontierBossPending: 0, // 守護ボス(R35): クエスト達成→守護ボス撃破でステージ解放。待機中のステージ番号(0=なし)
     stageChangedAt: 0,
 
     lastSave: Date.now()
@@ -7401,6 +7402,7 @@ function ensureState() {
   // 深層(S6+)の討伐カウントも数値に正規化
   Object.keys(state.stageKills).forEach(no => state.stageKills[no] = Math.max(0, Math.floor(Number(state.stageKills[no]) || 0)));
   Object.keys(state.bossKills).forEach(no => state.bossKills[no] = Math.max(0, Math.floor(Number(state.bossKills[no]) || 0)));
+  state.frontierBossPending = Math.max(0, Math.floor(Number(state.frontierBossPending) || 0));
   state.stageChangedAt = Math.max(0, Number(state.stageChangedAt) || 0);
   // v4: 総プレイ秒(転生持ち越し)・条件ドロップ・注文間隔の正規化(追跡ノルマは廃止=2026-07-06)
   state.totalPlaySec = Math.max(0, Number(state.totalPlaySec) || 0);
@@ -9806,6 +9808,8 @@ function stageKillsUntilBoss(stageNo) {
 function pickMonsterTypeId() {
   const stage = currentStageInfo();
 
+  // 守護ボス(R35): クエスト達成後は次の出現を必ず守護ボスに(逃したら再出現=再挑戦)
+  if ((state.frontierBossPending || 0) === currentStageNo() && currentStageNo() < MAX_STAGE_NO) return "boss";
   if (forceBossNext || bossReady(currentStageNo())) return "boss";
 
   // 黄金獣: 金ブースト中のみ通常出現枠を置換(基本35%、S4は+15%)。v4で方針補正は全廃
@@ -9977,6 +9981,16 @@ function grantMonsterDrops(typeId, level, overkill, colorTier) {
   if (typeId === "boss") {
     const first = !(Math.floor(Number(state.bossKills[stageNo]) || 0) > 0);
     state.bossKills[stageNo] = Math.floor(Number(state.bossKills[stageNo]) || 0) + 1;
+
+    // 守護ボス撃破(R35 hard-won): クエスト達成後のボスを倒して初めてステージ解放=戦って勝ち取る節目。
+    if ((state.frontierBossPending || 0) === stageNo && stageNo < MAX_STAGE_NO) {
+      state.frontierBossPending = 0;
+      markUnlock();
+      state.stageUnlocked = stageNo + 1;
+      playScreenTransition();
+      celebrateStageUnlock(stageInfo(stageNo + 1).name);
+      parts.push(`守護ボス撃破！ 新ステージ「${stageInfo(stageNo + 1).name}」解放！`);
+    }
 
     if (dropsEnabled) {
       const coreId = stageNo >= MAX_STAGE_NO ? "deepCore" : "bossCore" + stageNo;
@@ -11512,14 +11526,12 @@ function questProgressOnKill(stageNo, units) {
   state.questKills = state.questKills || {};
   state.questKills[stageNo] = (state.questKills[stageNo] || 0) + (units || 1);
   const need = QUEST_KILLS_NEED[stageNo - 1] || Infinity;
-  if (state.questKills[stageNo] >= need && unlockGateOk()) {
-    markUnlock();
-    state.stageUnlocked = stageNo + 1;
-    playScreenTransition();
-    celebrateStageUnlock(stageInfo(stageNo + 1).name); // 祝祭バナー(hard-wonのpayoff・R35動機)
-    // dropMatは別関数内のローカル変数でここでは未定義だったため、グローバルのshowMessageに修正
-    // (クエスト達成時に必ず落ちていた不具合の修正・2026-07-13)
-    showMessage(`クエスト達成！ 新ステージ「${stageInfo(stageNo + 1).name}」解放！`);
+  // 守護ボス(R35 hard-won): ノルマ達成で即解放せず、守護ボスを召喚。撃破して初めて解放(grantMonsterDrops側)。
+  // 逃してもpending維持=次の出現で再挑戦(ハードロック無し)。討伐数だけでは開かない=「戦って勝ち取る」。
+  if (state.questKills[stageNo] >= need && unlockGateOk() && (state.frontierBossPending || 0) !== stageNo) {
+    state.frontierBossPending = stageNo;
+    playSound("golden");
+    showMessage(`討伐ノルマ達成！ ⋯守護ボスが現れる！ 倒して「${stageInfo(stageNo + 1).name}」を解放せよ！`);
   }
 }
 function currentQuestText() {
@@ -11527,7 +11539,8 @@ function currentQuestText() {
   if (st >= MAX_STAGE_NO) return "全ステージ解放済み";
   const got = (state.questKills || {})[st] || 0;
   const need = QUEST_KILLS_NEED[st - 1] || 0;
-  return `クエスト: 「${stageInfo(st).name}」でモンスターを ${need} 体討伐(${Math.min(got, need)}/${need}) → 「${stageInfo(st + 1).name}」解放`;
+  if ((state.frontierBossPending || 0) === st) return `クエスト: 👑 守護ボスを倒して「${stageInfo(st + 1).name}」を解放！(討伐ノルマ達成済み)`;
+  return `クエスト: 「${stageInfo(st).name}」でモンスターを ${need} 体討伐(${Math.min(got, need)}/${need}) → 守護ボス出現 → 撃破で「${stageInfo(st + 1).name}」解放`;
 }
 // クエストの進捗データ(表示用・純参照): 次のステージ解放という長期目標を felt にする。
 // 全ステージ解放後(エンドゲーム)は「深層の自己ベスト更新」を perpetual な目標に切替=動機が全編で途切れない。
@@ -13181,6 +13194,14 @@ function updateQuestHud() {
       : (q.toBest <= 2
           ? "🎯 自己ベストまで あと " + fmt(q.toBest) + " 層 — もうすぐ新記録！"
           : "🎯 自己ベスト第" + fmt(q.best) + "層まで あと " + fmt(q.toBest) + " 層");
+    box.style.display = "";
+    return;
+  }
+  // 守護ボス待機中(R35): 「あとN体」でなく「ボスを倒せ」が今やること
+  if ((state.frontierBossPending || 0) === (state.stageUnlocked || 1)) {
+    box.classList.add("near");
+    if (fill) fill.style.transform = "scaleX(1)";
+    if (nEl) nEl.textContent = "👑 守護ボスを倒して「" + q.nextName + "」を解放！";
     box.style.display = "";
     return;
   }
@@ -15966,6 +15987,7 @@ function buildRunStartFromCurrent() {
   s.deepLayer = Math.max(1, Math.floor(Number(cur.deepLayer) || 1));
   s.stageKills = { ...(cur.stageKills || {}) };
   s.bossKills = { ...(cur.bossKills || {}) };
+  s.frontierBossPending = Math.max(0, Math.floor(Number(cur.frontierBossPending) || 0));
   s.totalPlaySec = Math.max(0, Number(cur.totalPlaySec) || 0);
   s.maxQuotaStageEver = Math.max(1, Math.floor(Number(cur.maxQuotaStageEver) || 1));
   s.awaitingSkillChoice = true;
@@ -16060,6 +16082,7 @@ function prestigeReset() {
   const keepEq2Seen = { ...(state.eq2Seen || {}) };
   const keepQuestKills = { ...(state.questKills || {}) };
   const keepBossKills = { ...(state.bossKills || {}) };
+  const keepFrontierBossPending = Math.max(0, Math.floor(Number(state.frontierBossPending) || 0)); // 守護ボス待機も持ち越し(クエスト進捗と同格)
   const keepTotalPlaySec = Math.max(0, Number(state.totalPlaySec) || 0);
   const keepMaxQuotaStageEver = Math.max(1, Math.floor(Number(state.maxQuotaStageEver) || 1));
   // ㉚解放ドリップ: 「生涯すでに棚に並んだ」記録は転生を跨いで持ち越す(=再購入は待たされない)
@@ -16107,6 +16130,7 @@ function prestigeReset() {
   state.eq2Equipped = keepEq2Equipped;
   state.eq2Seen = keepEq2Seen;
   state.questKills = keepQuestKills;
+  state.frontierBossPending = keepFrontierBossPending;
   state.eq2MadeThisRun = {};
   state.eq2CraftTotalThisRun = 0; // 周回の作成総数リセット(0〜5上限)
   state.deepLayer = keepDeepLayer;
@@ -17236,7 +17260,9 @@ function showMonster(forcedTypeId) {
   const level = monsterLevel();
   const colorTier = typeId === "boss" ? layerOreTier() : pickMonsterColorTier(); // 色(強さ段)=ノルマ層の確率分布(2026-07-15)
   const colorHp = Math.pow(1.08, colorTier - 1); // 上位色ほど一段強い(控えめ・sim同期)
-  const hpMulShared = (state.nextMonsterHpMultiplier || 1) * type.hpMul * (stage.hpMul || 1) * colorHp;
+  // 守護ボス(R35): ステージ解放を懸けたボスはHP×2=節目の大物感(報酬は通常ボス同等=経済中立)
+  const guardian = typeId === "boss" && (state.frontierBossPending || 0) === currentStageNo() && currentStageNo() < MAX_STAGE_NO;
+  const hpMulShared = (state.nextMonsterHpMultiplier || 1) * type.hpMul * (stage.hpMul || 1) * colorHp * (guardian ? 2 : 1);
   // ボスは60秒固定。それ以外は従来式×type滞在倍率×ステージ滞在倍率
   const stayMs = typeId === "boss"
     ? 60000

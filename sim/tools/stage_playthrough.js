@@ -131,9 +131,10 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     if(moved) await rec(`ステージ「${moved}」へ移動`,1);
     for(let step=0; step<HUNT_STEPS; step++){ // quota壁(quotaFailed)まで長めに狩る=1窓の討伐数を最大化し転生回数を減らす
       await p.clock.fastForward(FF_STEP);
-      // まずボス出現を検出(倒す前に=ボスが画面に居る瞬間を撮る)
-      const boss=await p.evaluate(()=>{ try{ return !!(typeof monsters!=='undefined'&&monsters&&monsters.some(m=>m&&m.typeId==='boss')); }catch(e){return false;} });
-      if(boss){ await flush(); await rec('👑 ボスが出現',1); bossSeen++; }
+      // まずボス出現を検出(倒す前に=ボスが画面に居る瞬間を撮る)。守護ボス(解放を懸けた戦い)は別格で見せる。
+      const boss=await p.evaluate(()=>{ try{ const has=!!(typeof monsters!=='undefined'&&monsters&&monsters.some(m=>m&&m.typeId==='boss'));
+        return {has, guardian: has && (state.frontierBossPending||0)===currentStageNo()}; }catch(e){return {has:false};} });
+      if(boss.has){ await flush(); await rec(boss.guardian?'👑 守護ボスが現れた！(倒せばステージ解放)':'👑 ボスが出現',1); bossSeen++; }
       const r=await p.evaluate(()=>{
         const before=state.stageUnlocked||1; const bBoss=Object.values(state.bossKills||{}).reduce((a,b)=>a+(Number(b)||0),0); let rew=0;
         for(let n=0;n<12;n++){if(!(typeof rewardModalOpen==='function'&&rewardModalOpen()))break;revealRewardChoices&&revealRewardChoices();if(pendingRewardChoices&&pendingRewardChoices.length){chooseReward(pendingRewardChoices[0]);rew++;}else break;}
@@ -145,7 +146,7 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         return {k, rew, bossK:Math.max(0,aBoss-bBoss), gold, up:(after>before?after:null), qf:!!state.quotaFailed};
       });
       killed+=r.k; rewards+=r.rew; if(r.gold)goldCount++;
-      if(r.bossK>0){ await rec('👑 ボスを撃破',r.bossK); pendKills+=Math.max(0,r.k-r.bossK); pendRew+=r.rew; }
+      if(r.bossK>0){ if(r.up)await flush(); await rec(r.up?'👑 守護ボスを撃破！！':'👑 ボスを撃破',r.bossK); pendKills+=Math.max(0,r.k-r.bossK); pendRew+=r.rew; }
       else { pendKills+=r.k; pendRew+=r.rew; }
       if(r.up){ await flush(); stageUp=r.up; break; } // 解放の瞬間で止めてスクショ
       if(r.qf){ await flush(); break; } // quota壁=この周回のハント終了→転生へ
@@ -186,7 +187,7 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     // huntPhaseが通常討伐/ボス/報酬をrec済み(=ボスを別ブロックで surface)。
     const h=await huntPhase();
     if(h.stageUp){ const snm=await p.evaluate(n=>stageInfo(n).name,h.stageUp);
-      await rec(`クエスト達成！ステージ${h.stageUp}「${snm}」解放`,1);
+      await rec(`守護ボス撃破！ステージ${h.stageUp}「${snm}」解放`,1);
       console.log(`*** STAGE ${h.stageUp} 「${snm}」 unlocked at cyc=${cyc} wall=${((now()-wall0)/1000).toFixed(0)}s`);
       if(h.stageUp>=TARGET_STAGE){
         // 到達ステージの中身を「味見」: 新ステージへ移動し、同一周回のまま少しだけ狩る(=転生を増やさず時間ラベルを保つ)。

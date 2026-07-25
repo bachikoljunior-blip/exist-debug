@@ -8,6 +8,7 @@ let ops=JSON.parse(fs.readFileSync(DIR+'/ops.json','utf8'));
 const b64=n=>'data:image/jpeg;base64,'+fs.readFileSync(DIR+'/'+n+'.jpg').toString('base64');
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const kind=op=>{
+  if(/守護ボス撃破！ステージ/.test(op))return['ステージ','stg']; // 解放の瞬間はステージ扱い(強調枠)
   if(/ボス/.test(op))return['ボス','boss'];
   if(/会心/.test(op))return['会心','crit'];
   if(/実績/.test(op))return['実績','ach'];
