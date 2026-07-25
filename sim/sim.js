@@ -51,11 +51,19 @@ const RES_IDX = {}; RESEARCH.forEach((x, i) => { RES_IDX[x.id] = i; }); // ㉚�
 // +k 周回後」に解禁する。金・台数・層・自己ベストは終盤の買い戻し連鎖(1tickで収入×100・ノルマ+5〜10層)で全て
 // 一瞬で越えられる(実測でゲート4種が全滅)が、転生回数だけはブリッツ不能(T1=1周回≥20分)。k はカード毎に個別=
 // 同じ瞬間に複数カードが揃っても別々の周回に散り、周回単位(≥20分)で間隔が保証される。無指定は 段2=0・段3=1。
+// 全カード k≥1(2026-07-25 実測修正): k=0だと研究の初開発と同周回の連鎖でΔ1になる(段2のアーミング周回=研究初購入
+// の周回のため)。また貯金プレミアム(凍結)との併用は、貯蓄型の膨れた財布基準の凍結が周回を跨いで k ゲートと同じ
+// 収入回復点に再同期しΔ1を生むため、段階カードのプレミアムは廃止(firstBuySecStage=0)し k ゲートに一本化。
 const STAGE_K = {
-  'portalGlobalFold:2': 0, 'blackHoleCompression:2': 1, 'galaxyAssembly:3': 2,
-  'quantumProofing:2': 0, 'antimatterRecipe:2': 1,
-  'portalGlobalFold:3': 1, 'blackHoleCompression:3': 2, 'quantumProofing:3': 2, 'antimatterRecipe:3': 3
+  'portalGlobalFold:2': 1, 'blackHoleCompression:2': 2, 'galaxyAssembly:3': 2,
+  'quantumProofing:2': 1, 'antimatterRecipe:2': 2,
+  'portalGlobalFold:3': 1, 'blackHoleCompression:3': 1, 'quantumProofing:3': 2, 'antimatterRecipe:3': 2,
+  // 中盤系列のゲートスキルが同時期に揃う組の分割(実測: run12に grandmaCrowd:3/ovenBatch:3/factoryNetwork:2 が同周回衝突)
+  'ovenBatch:3': 2, 'factoryNetwork:2': 2
 };
+// ㉚研究の初回開発の周回オフセット(第14版): 後半設備の初号機→その研究がΔ1連発する系列(実測: blackHoleMixer→
+// blackHoleCompression等)は、研究の生涯初開発を「対応設備の初開発が揃った周回から+1周回後」に。再購入は無条件。
+const RES_K = { moonGlobalYeast: 1, galaxyAssembly: 1, blackHoleCompression: 1, quantumProofing: 1 };
 
 // ==== 段階式研究: 対応設備(その回で購入済みのみ表示/購入可)と段階解放スキル ====
 const RES_EQUIP = {
@@ -2708,8 +2716,7 @@ function researchStageUnlocked(sim, id, stage) {
   // 買い戻し連鎖(1tickで収入×100・ノルマ+5〜10層)で全て貫通された(実測4種全滅)。転生回数だけはブリッツ不能
   // (T1=1周回≥20分)なので、同じ瞬間に複数カードが揃っても k の差で別々の周回に散る=周回単位の間隔が保証される。
   // 段2/3は増幅でありエンジンではないので1〜3周回の遅延で成長は止まらない。再購入(開発済み)は無条件=無税。
-  const kDef = stage === 2 ? 0 : 1;
-  const k = (P.upCost && P.upCost.stageRunGate === false) ? 0 : (STAGE_K[key] != null ? STAGE_K[key] : kDef);
+  const k = (P.upCost && P.upCost.stageRunGate === false) ? 0 : (STAGE_K[key] != null ? STAGE_K[key] : 1);
   if (stage === 2) {
     if (!sim.skills[RES_STAGE2[id]]) return false;
     if (!sim.everStage[key] && !armRunGate(sim, 'st:' + key, k)) return false;
@@ -3675,6 +3682,7 @@ function tryBuyResearch(sim, id, budgetRatio) {
   // 無効化(disableResearch)でも購入行動は同じ: 効果だけがゼロになる
   const def = RESEARCH.find(x => x.id === id);
   if (!def || !researchUnlocked(sim, def)) return false;
+  if (!sim.everResearch[id] && !armRunGate(sim, 'res:' + id, RES_K[id] || 0)) return false; // ㉚: 初回開発の周回オフセット
   let cost = researchCostOf(sim, id);
   // 初回開発の貯金プレミアム(㉚): 生涯初のみ「凍結時の所持クッキー+sec×cps」を下限に(=解放から≥sec秒 貯める)。
   // sec は研究の深さ(RESEARCH内の並び順)で階段化——同じ瞬間に複数の研究が視界に入っても要求貯金秒数が違うため
