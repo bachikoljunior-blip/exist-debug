@@ -2826,9 +2826,11 @@ function defeatMonster(sim, mon) {
   const typeId = mon.typeId || 'normal';
   const M = P.mtype;
   // ⑬延長狩りのsnap(measurement専用): 段2取得後の最初の討伐時に取る=モンスターが生きている窓から測る
+  // 追加条件(2026-07-25): 窓加速が実効的な地点(ir(portal)≤0.9=加速≥10%)で取る。周回頭はportal≈0で
+  // 窓効果が構造的に×1.0=全方針exactly 1.000に死ぬのを実測(freezeBuys枝はportalが凍結されるため特に)。
   if (sim._portalSnapPending && sim.opt.timingSnaps && resStage2(sim, 'portalNetwork')
-      && sim.runs.length > (sim._portalSnapAfterRuns == null ? -1 : sim._portalSnapAfterRuns)) {
-    // 次の周回に入ってからの最初のkillでsnap(取得周回末期の湧きゼロ地帯を避ける・2026-07-25)
+      && sim.runs.length > (sim._portalSnapAfterRuns == null ? -1 : sim._portalSnapAfterRuns)
+      && ir(sim.run.upgrades.portal || 0, P.res.portalHuntSpawn) <= 0.9) {
     (sim.timingSnaps || (sim.timingSnaps = {})).portalNetwork = takeSnapshot(sim);
     sim._portalSnapPending = false;
   }

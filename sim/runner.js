@@ -734,7 +734,10 @@ function judgeAcqWindowTiming(hours, W) {
       const sim = G.simulate(s, { hours, timingSnaps: true });
       const snap = sim.timingSnaps && sim.timingSnaps[rid];
       if (!snap) continue;
-      const cap = (snap.run.startT != null ? (snap.t - snap.run.startT) : 0) + win; // 取得地点から win 秒
+      // 圧縮チャージだけ窓=1発動周期(bhBoostDur240+余白)。900s窓だと発動後の報酬EMA連鎖
+      // (報酬∝直近稼ぎ率→報酬が稼ぎ率を押し上げる乗法feedback)が複利発散し帯で測れない(S5=6.8e6実測)
+      const winF = f.key === 'bhCharge' ? Math.min(win, 300) : win;
+      const cap = (snap.run.startT != null ? (snap.t - snap.run.startT) : 0) + winF; // 取得地点から winF 秒
       const baseC = (snap.run && snap.run.runCookies) || 0;
       const on = G.replayRun(s, snap, { hours, freezeBuys: true }, cap);
       const off = G.replayRun(s, snap, { hours, idleTiming: f.key, freezeBuys: true }, cap);
