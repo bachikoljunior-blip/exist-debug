@@ -30,19 +30,19 @@ const items = src.filter(s => Math.log10(s.v) >= 9).sort((a, b) => a.v - b.v);
 // 跳躍幅ぶん余計に離す(大物研究=own指数の積み上がり解放でe1.2前後・跳躍源の設備初号機=+0.3)。
 const EXTRA = {
   'resFirst:moonGlobalYeast': 0.9, 'resFirst:galaxyAssembly': 0.9, 'resFirst:blackHoleCompression': 0.9,
-  'resFirst:quantumProofing': 0.9, 'resFirst:antimatterRecipe': 0.9, 'resFirst:portalGlobalFold': 1.2,
-  'firstUnit:moonBakery': 0.4, 'firstUnit:timeOven': 0.25, 'firstUnit:galaxyFactory': 0.4,
-  'firstUnit:blackHoleMixer': 0.25, 'firstUnit:universeOven': 0.25, 'firstUnit:godFinger': 0.25,
+  'resFirst:quantumProofing': 0.9, 'resFirst:antimatterRecipe': 1.1, 'resFirst:portalGlobalFold': 1.6,
+  'firstUnit:moonBakery': 0.55, 'firstUnit:timeOven': 0.25, 'firstUnit:galaxyFactory': 0.55,
+  'firstUnit:blackHoleMixer': 0.25, 'firstUnit:universeOven': 0.25, 'firstUnit:godFinger': 0.8,
   'firstUnit:cookieSingularity': 0.25, 'firstUnit:quantumBakery': 0.25, 'firstUnit:antimatterOven': 0.25,
-  'ms:ms_prestige_r3': 0.5, 'ms:ms_prestige_r4': 0.4, 'ms:ms_taps_p4': 0.3
+  'ms:ms_prestige_r3': 0.7, 'ms:ms_prestige_r4': 0.4, 'ms:ms_taps_p4': 0.3
 };
 const N = items.length;
-let d = 9.0;
+let d = 9.4;
 const pos = [d];
 for (let i = 1; i < N; i++) {
   const t = i / (N - 1);
   const prev = items[i - 1];
-  d += 0.88 + (1.18 - 0.88) * Math.pow(t, 1.6) + (EXTRA[prev.tbl + ':' + prev.k] || 0);
+  d += 0.88 + (1.12 - 0.88) * Math.pow(t, 1.6) + (EXTRA[prev.tbl + ':' + prev.k] || 0);
   pos.push(d);
 }
 console.log('// はしご第2版: ' + N + '項目 e9〜e' + d.toFixed(1));
