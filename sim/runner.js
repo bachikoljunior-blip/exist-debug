@@ -721,7 +721,11 @@ function judgeWindowTiming(hours, W) {
 function judgeAcqWindowTiming(hours, W) {
   const win = W || 900;
   let ok = 0;
-  console.log(`⑬ タイミング機能v4(取得直後snap→同窓${win}s枝分かれの窓内クッキー比の中央値, 要求[1.05,2.00])`);
+  console.log(`⑬ タイミング機能v4(取得直後snap→同窓${win}s枝分かれ・購入/転生凍結・窓内増分クッキー比, 要求[1.05,2.00])`);
+  // 凍結+増分化(2026-07-25): (1)freezeBuys=窓内の購入・転生を両枝で止める。末期複利レジームでは
+  // 僅かな枝差が購入閾値跨ぎで数万倍に発散(圧縮チャージS3=36226実測)=タイミングの直接効果が測れない。
+  // (2)比は総runCookiesでなく窓内増分(snap時点からの増加分)。総額比はsnap前の共有蓄積で1.0側へ希釈され
+  // ラベルの「窓内クッキー比」と不一致だった。増分比=操作の巧拙そのもの。measurement専用=経済不変。
   for (const f of TIMING_FEATURES) {
     const rid = f.stage.split(':')[0];
     const rows = [];
@@ -731,10 +735,13 @@ function judgeAcqWindowTiming(hours, W) {
       const snap = sim.timingSnaps && sim.timingSnaps[rid];
       if (!snap) continue;
       const cap = (snap.run.startT != null ? (snap.t - snap.run.startT) : 0) + win; // 取得地点から win 秒
-      const on = G.replayRun(s, snap, { hours }, cap);
-      const off = G.replayRun(s, snap, { hours, idleTiming: f.key }, cap);
-      if (on && off && on.runCookies > 0 && off.runCookies > 0 && Number.isFinite(on.runCookies) && Number.isFinite(off.runCookies)) {
-        const ratio = Math.min(BRANCH_CAP, on.runCookies / off.runCookies);
+      const baseC = (snap.run && snap.run.runCookies) || 0;
+      const on = G.replayRun(s, snap, { hours, freezeBuys: true }, cap);
+      const off = G.replayRun(s, snap, { hours, idleTiming: f.key, freezeBuys: true }, cap);
+      const onW = on ? on.runCookies - baseC : 0;
+      const offW = off ? off.runCookies - baseC : 0;
+      if (on && off && onW > 0 && offW > 0 && Number.isFinite(onW) && Number.isFinite(offW)) {
+        const ratio = Math.min(BRANCH_CAP, onW / offW);
         const inBand = ratio >= 1.05 && ratio <= 2.0;
         if (inBand) feature = true;
         rows.push(`${s.id}=${ratio.toFixed(3)}${inBand ? '✓' : ''}`);

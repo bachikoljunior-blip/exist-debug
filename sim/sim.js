@@ -3338,11 +3338,14 @@ function advanceTick(sim, strategy) {
     }
 
     // 購入(戦略)
-    strategy.buy(sim, prod);
+    // freezeBuys(⑬v4測定専用・2026-07-25): 枝分かれ窓内の購入・転生を両枝で凍結する。
+    // 末期の複利レジーム(研究コストe+23..e+263)では僅かな枝差が窓内の購入閾値跨ぎで
+    // 数万倍に発散する(圧縮チャージS3=36226実測)。凍結=タイミング操作の直接効果だけを測る。
+    if (!sim.opt.freezeBuys) strategy.buy(sim, prod);
 
     // 転生判断。解放ゲート(30秒)が閉じている間は転生も待つ(転生時のスキル取得=解放イベントが
     // 直前の解放と30秒未満で並ぶのを防ぐ。遅延は最大30秒=経済影響なし)
-    if (prestigeUnlockedFn(sim) && unlockGateOk(sim) && strategy.shouldPrestige(sim)) {
+    if (!sim.opt.freezeBuys && prestigeUnlockedFn(sim) && unlockGateOk(sim) && strategy.shouldPrestige(sim)) {
       // ⑧の保証(2026-07-16・到達連動ノルマの極限形): 終盤の成長はイベント(金・報酬)で塊状に跳ぶため、
       // gain基準の未達(reachGainFrac)を1イベントで飛び越えて「未達と転生が同秒」になる周回が残る。
       // 転生準備が済んだ瞬間=到達連動ノルマの未達点なので、まだ未達でなければ先に未達を立て、
