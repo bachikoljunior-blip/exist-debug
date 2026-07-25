@@ -46,6 +46,16 @@ const RESEARCH = [
   { id: 'antimatterRecipe' },
   { id: 'cpsStrike' } // 生産火力転換(2026-07-13 ユーザー指示「研究3000万クッキー、モンスターダメージに毎秒生産が乗る」)
 ];
+const RES_IDX = {}; RESEARCH.forEach((x, i) => { RES_IDX[x.id] = i; }); // ㉚初回開発の階段化(深さ)用
+// ㉚段階カードの初回開発の周回オフセット(第12版): 段2/段3の生涯初開発は「全前提が初めて揃った周回(アーミング)から
+// +k 周回後」に解禁する。金・台数・層・自己ベストは終盤の買い戻し連鎖(1tickで収入×100・ノルマ+5〜10層)で全て
+// 一瞬で越えられる(実測でゲート4種が全滅)が、転生回数だけはブリッツ不能(T1=1周回≥20分)。k はカード毎に個別=
+// 同じ瞬間に複数カードが揃っても別々の周回に散り、周回単位(≥20分)で間隔が保証される。無指定は 段2=0・段3=1。
+const STAGE_K = {
+  'portalGlobalFold:2': 0, 'blackHoleCompression:2': 1, 'galaxyAssembly:3': 2,
+  'quantumProofing:2': 0, 'antimatterRecipe:2': 1,
+  'portalGlobalFold:3': 1, 'blackHoleCompression:3': 2, 'quantumProofing:3': 2, 'antimatterRecipe:3': 3
+};
 
 // ==== 段階式研究: 対応設備(その回で購入済みのみ表示/購入可)と段階解放スキル ====
 const RES_EQUIP = {
@@ -64,14 +74,20 @@ const RES_STAGE2 = {
   fingerTechnique: 'click_2', grandmaCrowd: 'auto_2', ovenBatch: 'auto_1',
   factoryNetwork: 'auto_4', spiceBlend: 'golden_1', portalNetwork: 'monster_3',
   bankClickDividend: 'economy_2', moonGlobalYeast: 'upgrade_time', portalGlobalFold: 'upgrade_singularity',
-  galaxyAssembly: 'upgrade_universe', blackHoleCompression: 'upgrade_singularity',
-  quantumProofing: 'upgrade_antimatter', antimatterRecipe: 'research_analysis'
+  // ㉚再配置(2026-07-25): blackHoleCompression:2 は upgrade_singularity → upgrade_godfinger へ(portalGlobalFold:2 と
+  // 同一スキルだったのが終盤団子の主犯)。quantumProofing:2 は quantum(設備前提と同段)へ、antimatterRecipe:2 は
+  // antimatter(同)へ=各カードのゲートスキルを別のはしご段(=別の転生)に散らす。
+  galaxyAssembly: 'upgrade_universe', blackHoleCompression: 'upgrade_godfinger',
+  quantumProofing: 'upgrade_quantum', antimatterRecipe: 'upgrade_antimatter'
 };
 const RES_STAGE3 = {
   fingerTechnique: 'click_4', grandmaCrowd: 'auto_4', ovenBatch: 'auto_4', // ovenBatch段3ゲート: 焼き加減廃止(2026-07-10 ユーザー指示)に伴い bake_temperature→auto_4 へ付け替え
   factoryNetwork: 'economy_2', spiceBlend: 'golden_3', portalNetwork: 'monster_4',
   bankClickDividend: 'economy_analysis', moonGlobalYeast: 'research_analysis', portalGlobalFold: 'master_final',
-  galaxyAssembly: 'upgrade_singularity', blackHoleCompression: 'upgrade_quantum',
+  // ㉚再配置(2026-07-25): galaxyAssembly:3 は upgrade_singularity → upgrade_quantum へ。旧配置は
+  // portalGlobalFold:2(段2側)と同じ singularity 到着の瞬間に複数カードが一斉解禁される終盤団子の主犯だった。
+  // 段階カードのゲートスキルは可能な限り別のはしご段(=別の転生)に散らす。
+  galaxyAssembly: 'upgrade_quantum', blackHoleCompression: 'upgrade_antimatter',
   quantumProofing: 'master_final', antimatterRecipe: 'master_final'
 };
 
@@ -1380,11 +1396,10 @@ function upgradeUnlocked(sim, u) {
 }
 function researchUnlocked(sim, r) {
   // 2026-07-06: スキルゲート撤廃。その回で対応設備を購入済みなら購入可能
-  // ㉚(2026-07-24): 対応設備を resRevealCount 台 所持してから解禁(旧=1台)。研究の解放を設備の育成に連動させ、
-  // 終盤フロンティアで研究(と段階)が一斉解放する団子を分散(設備解放は eqRevealLayers で既に散らしている)。
+  // (㉚の研究初開発ゲートは第9版アーミングで全初回開発に一律課税→全解放2〜4倍遅延の実測により撤回。
+  //  研究初開発のペーシングは貯金プレミアム(tryBuyResearch内・深さで階段化)のみ)
   const eq = RES_EQUIP[r.id];
-  const rrc = (P.upCost && P.upCost.resRevealCount) || 1;
-  if (eq && !((sim.run.upgrades[eq] || 0) >= rrc)) return false;
+  if (eq && !(sim.run.upgrades[eq] > 0)) return false;
   return true;
 }
 function rewardUnlockedFn(sim, r) {
@@ -2662,29 +2677,11 @@ function upgradeCost(sim, u) {
   // まとめ買い割増: (1+perBuy)^熱量。時間経過で元に戻る(=壁ができない)
   const surge = Math.pow(1 + (P.upSurge ? P.upSurge.perBuy : 0), surgeHeat(sim, u.id));
   let cost = q5cost(P.upCost.coef * Math.pow(u.base, P.upCost.basePow) * Math.pow(u.growth, e) * surge * disc);
-  // 新設備の初号機ペーシング(2026-07-24 ㉚): スキルで解放される設備(UPGRADE_UNLOCK_SKILLS)は、解放スキルを
-  // 取った直後に初号機を即買い(数秒)して「スキル→設備」が連続解放=㉚基底の最大の団子源だった。初号機のコストを
-  // 「現在の毎秒生産の firstUnitSec 秒ぶん」に底上げし、解放から初号機購入まで必ず≥30秒 貯めさせる(=価格による
-  // ペーシング。待ちタイマーではない)。収入連動なので終盤(収入が巨大)でも一定秒数を保証する(固定割増だと効かない)。
-  // 2号機以降は通常コスト。設備コスト自体は元々式ベース(固定表ではない)なので、収入連動でも「固定コスト」議論の対象外。
-  // 生涯初購入のみ割増(2026-07-24修正): 解放イベント(㉚)は生涯初購入のみ発火するので、ペーシングもそこだけでよい。
-  // 毎周回の初号機(owned===0)に課すと再購入のたびに重税=進行が遅れて周回数/全解放が悪化するため、!everUpgrade で限定。
-  // さらに割増額は「解放時点の毎秒生産×sec」で**凍結**する(再計算で cps に追従させると、貯金が cps 成長に追いつけない
-  //   方針(堅実割引型=貯めない)が恒久的に買えず全解放不能になる=実測S13が21→8周回)。凍結した固定額に向けて貯めるので
-  //   必ずいつかは買える=足止め(数十秒の遅延)であって恒久の壁ではない。
-  // 割増の額は「解放時点の所持クッキー + sec×毎秒生産」で凍結する(2026-07-24 第2版)。旧版は sec×生産だけで、
-  // 大量に貯める方針(S5研究貯蓄型)は手持ちが生産の何十倍もあり sec×生産を即払える=遅延が出ずΔ24〜27秒に張り付いた。
-  // 「今の手持ちを超えて あと sec 秒ぶん稼がないと買えない」額にすれば、貯める/貯めない いずれの方針でも手持ちに関係なく
-  // 必ず≥sec秒の遅延になる(=解放から初号機まで≥30秒)。凍結ゆえ必ず到達=足止めでなく貯金。
-  if (owned === 0 && !sim.everUpgrade[u.id] && UPGRADE_UNLOCK_SKILLS[u.id]) {
-    const sec = (P.upCost && P.upCost.firstUnitSec) || 0;
-    if (sec > 0) {
-      if (!sim._premTarget) sim._premTarget = {};
-      if (sim._premTarget[u.id] == null && sim._lastProd && sim._lastProd.cps > 0) {
-        sim._premTarget[u.id] = q5cost((sim.run.cookies || 0) + sec * sim._lastProd.cps);
-      }
-      if (sim._premTarget[u.id] != null) cost = Math.max(cost, sim._premTarget[u.id]);
-    }
+  // 新設備の初号機ペーシング(2026-07-24 第3版): 生涯初購入(=解放イベント)は貯金はしご(firstBuyPace)で直列に
+  // ペーシングする。詳細は firstBuyPace のコメント参照。2号機以降・周回の再購入は通常コスト(重税にしない=成長不変)。
+  if (owned === 0 && !sim.everUpgrade[u.id]) {
+    const sec = (P.upCost && (UPGRADE_UNLOCK_SKILLS[u.id] ? P.upCost.firstUnitSec : P.upCost.firstUnitSecBase)) || 0;
+    cost = firstBuyPace(sim, 'up:' + u.id, cost, sec);
   }
   return cost;
 }
@@ -2697,22 +2694,29 @@ function researchCostOf(sim, id) {
 function resStage2(sim, id) { return !!sim.run.research2[id] && sim.opt.disableStage !== id + ':2' && sim._md !== 'stage:' + id + ':2' && !(sim._mdSet && sim._mdSet.has('stage:' + id + ':2')); }
 function resStage3(sim, id) { return !!sim.run.research3[id] && sim.opt.disableStage !== id + ':3' && sim._md !== 'stage:' + id + ':3' && !(sim._mdSet && sim._mdSet.has('stage:' + id + ':3')); }
 // 段階カードの表示条件: 前段階を購入済み かつ 対応スキルを取得済み
-// ㉚(2026-07-24): 研究段階(段2/段3)の解放を「前段からのノルマ層 進行」で律速する。段2/段3は同じスキルで複数が
-// 一斉解放(例: upgrade_singularity が portalGlobalFold:2・blackHoleCompression:2・galaxyAssembly:3 を同時開放)して
-// 後半フロンティアの団子(㉚未達の主因)になっていた。段2は基礎研究購入時の最高層から stageGapLayers 層 進んでから、
-// 段3は段2購入時の最高層からさらに stageGapLayers 層 進んでから解禁=同一スキルでも到達層が違うタイミングで1つずつ出る。
-// 相対ゲートなので必ず到達可能(進行し続ける限り遅かれ早かれ解禁)=全解放を壊さない。効果は従来通り(解放時期だけ分散)。
+// ㉚初回開発ゲート(2026-07-24 第5版): 研究段階(段2/段3)の**生涯初**の開発だけ「前段の初開発から自己ベスト
+// (lifeBest)を stageGapLife 層 更新してから」解禁する。同じスキルで複数の段階が一斉開放(例: upgrade_singularity が
+// portalGlobalFold:2・blackHoleCompression:2・galaxyAssembly:3 を同時開放)しても、各系列の前段の初開発 lifeBest が
+// 違うため解禁がばらけ、lifeBest はフロンティアのノルマでしか進まない=実時間で分散する。**生涯初限定**が肝:
+// 周回毎ゲート(再購入にも毎回課税)は狩猟型の成長を破壊した(26→53周回・全解放未達)。再購入は無条件(従来どおり)。
 function researchStageUnlocked(sim, id, stage) {
   const r = sim.run;
   if (!r.research[id]) return false;
-  const gap = (P.upCost && P.upCost.stageGapLayers) || 0;
+  const key = id + ':' + stage;
+  // 初回開発ゲート(㉚第12版): 段2/段3の**生涯初**開発は「全前提(基礎研究+前段+スキル)が初めて揃った周回
+  // (アーミング)から +k 周回後」に解禁(armRunGate/STAGE_K参照)。金・台数・層・自己ベスト基準のゲートは終盤の
+  // 買い戻し連鎖(1tickで収入×100・ノルマ+5〜10層)で全て貫通された(実測4種全滅)。転生回数だけはブリッツ不能
+  // (T1=1周回≥20分)なので、同じ瞬間に複数カードが揃っても k の差で別々の周回に散る=周回単位の間隔が保証される。
+  // 段2/3は増幅でありエンジンではないので1〜3周回の遅延で成長は止まらない。再購入(開発済み)は無条件=無税。
+  const kDef = stage === 2 ? 0 : 1;
+  const k = (P.upCost && P.upCost.stageRunGate === false) ? 0 : (STAGE_K[key] != null ? STAGE_K[key] : kDef);
   if (stage === 2) {
     if (!sim.skills[RES_STAGE2[id]]) return false;
-    if (gap > 0 && r._resBaseMax && r._resBaseMax[id] != null && (r.maxStage || 0) < r._resBaseMax[id] + gap) return false;
+    if (!sim.everStage[key] && !armRunGate(sim, 'st:' + key, k)) return false;
     return true;
   }
   if (!r.research2[id] || !sim.skills[RES_STAGE3[id]]) return false;
-  if (gap > 0 && r._resS2Max && r._resS2Max[id] != null && (r.maxStage || 0) < r._resS2Max[id] + gap) return false;
+  if (!sim.everStage[key] && !armRunGate(sim, 'st:' + key, k)) return false;
   return true;
 }
 // 段階コスト: 段1コスト×倍率。研究ごとの個別倍率(resStageCostEach: 値段割りD'用)があれば優先、
@@ -2760,7 +2764,6 @@ function prestigeUnlockedFn(sim) {
 // 解放が自然に空く(コストによる足止めではなく「所持数の進行ゲート」。貯めない方針も貯める方針も同じ台数で律速される)。
 function visibleUpgrades(sim) {
   const rc = (P.upCost && P.upCost.revealCount) || 1;
-  const eqGap = (P.upCost && P.upCost.eqRevealLayers) || 0; // ㉚: 次段解放に要する「現段購入からのノルマ層 進行」
   const r = sim.run;
   let hi = -1, hiReady = -1;
   UPGRADES.forEach((u, i) => {
@@ -2770,14 +2773,15 @@ function visibleUpgrades(sim) {
   });
   // 次段が並ぶのは現最高「所持段」が revealCount 台に達してから。未達なら現最高所持段まで(次段はまだ)。
   let limit = Math.min(UPGRADES.length - 1, Math.max(1, hiReady + 1, hi));
-  // 進行ゲート(2026-07-24 第2版・㉚の核心): クッキー潤沢な方針(研究貯蓄型)は revealCount 台も一瞬で買うため、
-  // 台数ゲートだけでは次段が数秒で連続解放して団子になる。「現段を初購入したノルマ層から eqRevealLayers 層 進む」まで
-  // 次段を並べない=ノルマ層は誰でも時間をかけて登る(クッキーで飛ばせない)ので、貯める方針でも解放間隔が実時間で空く。
-  // 進行ゲートは「スキルで解放する後半設備(moon以降)」の次段だけに効かせる。序盤設備(finger〜portal)は
-  // 遅い方針が早く欲しい&団子は起きないので律速しない=全解放の遅延(=未達)を避ける。団子はmoon以降で起きる。
-  if (eqGap > 0 && hi >= 0 && limit > hi && UPGRADE_UNLOCK_SKILLS[UPGRADES[limit].id]) {
+  // 進行ゲート(実証版=v7a・成長と両立が確認済みの形): 後半設備(スキル解放=moon以降)の次段は「現段をこの周回で
+  // 初購入したノルマ層から eqRevealLayers 層 進んでから」並ぶ。
+  // ※撤回済みの変種(いずれも実測で棄却): lifeBest基準の初開発ゲート(第5版)=設備が成長エンジンの方針が循環依存で
+  //   停止 / スキル取得基点(第8版)=最新設備ラッシュ型の㉚が悪化 / アーミング汎用ゲート(第9版)=全初回開発への
+  //   一律課税で全解放が2〜4倍遅延。設備の取得を縛って良いのは「周回内の層進行+貯金プレミアム」まで。
+  if (hi >= 0 && limit > hi && UPGRADE_UNLOCK_SKILLS[UPGRADES[limit].id]) {
+    const eqGap = (P.upCost && P.upCost.eqRevealLayers) || 0;
     const baseMax = r._eqFirstMax && r._eqFirstMax[UPGRADES[hi].id];
-    if (baseMax != null && (r.maxStage || 0) < baseMax + eqGap) limit = hi; // 層 未進行なら次段はまだ出さない
+    if (eqGap > 0 && baseMax != null && (r.maxStage || 0) < baseMax + eqGap) limit = hi;
   }
   return UPGRADES.filter((u, i) => i <= limit && upgradeUnlocked(sim, u));
 }
@@ -3062,6 +3066,7 @@ function doPrestige(sim) {
       if (sim.prestige >= cost) {
         sim.prestige -= cost;
         sim.skills[id] = true;
+        (sim._skillL || (sim._skillL = {}))[id] = sim.lifeBest || 0; // ㉚: スキル取得時の自己ベスト層(初回開発ゲートの基点)
         bought.push(id);
         progress = true;
         break;
@@ -3405,6 +3410,9 @@ function advanceTick(sim, strategy) {
     }
     const st = currentStage(sim);
     if (st > r.maxStage) r.maxStage = st;
+    // ㉚生涯最高到達層(2026-07-24 第5版): 初回開発ゲートの進行通貨。自己ベスト更新は本物のフロンティア
+    // (ノルマ律速)でしか進まない=クッキーのスパイクや周回中盤の再登坂(速い)では動かない唯一の量。
+    if (r.maxStage > (sim.lifeBest || 0)) sim.lifeBest = r.maxStage;
 
     // 条件⑧用: 「いま転生した場合の獲得PT」の毎秒系列を記録
     if (sim.opt.trackGain) {
@@ -3557,14 +3565,47 @@ function unlockGateOk(sim) {
   if (!gap) return true;
   return sim.lastUnlockT == null || sim.t >= sim.lastUnlockT + gap;
 }
-// 生涯初購入のペーシング(㉚): 解放時点の毎秒生産×sec で割増額を**凍結**し、その固定額に貯めさせる=解放から
-// 初購入まで≥数十秒あく(足止めではなく貯金。凍結ゆえ必ずいつか買える)。設備の初号機と同じ発想を研究段階にも適用。
+// 生涯初取得の貯金はしご(㉚ 2026-07-24 第3版): ㉚の存在理由は「新要素が30秒に1個ずつ来るから、何が変わったか
+// 分かってから次に進める」(ユーザー明言=30秒未満だと脳死タップゲー化)。よって解放イベントになる生涯初取得
+// (設備初号機・研究・研究段階)は**直列の貯金はしご**でペーシングする:
+//   1) 常に未払いターゲットは1本だけ。先客が未払いの間、次の新要素は凍結せず買えない(=順番待ち)。
+//   2) 先客が支払われた時点で次を凍結: ターゲット = 今の所持クッキー + sec×直近の毎秒稼ぎ(earnEma)。
+//      =「直前の新要素からさらに sec 秒ぶん稼がないと次は買えない」。タイマーではなく価格。凍結ゆえ必ず届く。
+//   これで (a)大量に貯める方針(即払いで間隔ゼロ) (b)収入の指数加速(まとめ凍結だと後段ほど早く届き間隔圧縮)
+//   の両方の抜け道が塞がる。earnEma はタップ/金/討伐込みの実収入(cpsだけだと序盤タップ収入で誤差)。
+// 第3版の直列はしご(先客が払うまで次を凍結しない)は撤回(2026-07-24実測): 凍結の瞬間に金ブースト/討伐報酬で
+// 収入がスパイクしていると、平常収入では何十分も届かない額に凍結され、はしご全体が詰まって全解放不能が11方針発生。
+// 収入はバースト的なので「収入×秒」の直列連結は不安定。独立凍結(下)+進行量ゲート(researchUnlocked/researchStageUnlocked)
+// の組に戻す=スパイクで飛ばせない進行量(層・台数)が実時間を保証する。
+// ㉚初回開発のアーミングゲート(第9版・統一機構): 新要素の生涯初開発は「全ての前提が初めて揃った瞬間(アーミング)の
+// 自己ベスト層(lifeBest)から +gap 層 自己ベストを更新した地点」で解禁する。基点を固定の事前イベント(スキル取得など)に
+// 取ると、実際の律速が別要因(研究の値段・設備の出現)の時にゲートが空振りしてΔ1連発が残る(実測)。「揃った瞬間」を
+// 基点にすれば律速要因が何であれ必ず+gap層の研削が入る。lifeBest はフロンティアのノルマでしか進まない=終盤の収入倍加
+// でも飛ばせない。gap は要素ごとに階段化=同瞬間に複数が揃っても1つずつ出る。開発済みの再購入は無条件(無税)。
+function armGate(sim, key, gap) {
+  if (!gap) return true;
+  const A = sim._armL || (sim._armL = {});
+  if (A[key] == null) { A[key] = sim.lifeBest || 0; return false; } // いま揃った=アーミング(この層が基点)
+  return (sim.lifeBest || 0) >= A[key] + gap;
+}
+// 周回オフセット版(第12版): アーミング周回から+k転生後に解禁。k=0は無ゲート。転生回数はブリッツ不能(本文STAGE_K参照)。
+function armRunGate(sim, key, k) {
+  if (!k) return true;
+  const A = sim._armR || (sim._armR = {});
+  if (A[key] == null) { A[key] = sim.prestigeRuns || 0; return false; }
+  return (sim.prestigeRuns || 0) >= A[key] + k;
+}
 function firstBuyPace(sim, key, cost, sec) {
   if (!sec) return cost;
-  if (!sim._premTarget) sim._premTarget = {};
-  if (sim._premTarget[key] == null && sim._lastProd && sim._lastProd.cps > 0) sim._premTarget[key] = q5cost(sec * sim._lastProd.cps);
-  return sim._premTarget[key] != null ? Math.max(cost, sim._premTarget[key]) : cost;
+  const T = sim._premTarget || (sim._premTarget = {});
+  if (T[key] == null) {
+    const inc = (sim._lastProd && sim._lastProd.cps) || 0; // cps基準(earnEma基準はスパイク凍結で悪化=実測で棄却)
+    if (!(inc > 0)) return cost;
+    T[key] = q5cost((sim.run.cookies || 0) + sec * inc);
+  }
+  return Math.max(cost, T[key]);
 }
+function firstBuyPaid(sim, key) { if (sim._premTarget && sim._premTarget[key] != null) delete sim._premTarget[key]; } // 支払い完了=次の凍結を許可
 function pushUnlock(sim, kind, id, n) {
   sim.lastUnlockT = sim.t;
   const ev = { t: sim.t, kind, id };
@@ -3598,6 +3639,8 @@ function tryBuyUpgrade(sim, u, budgetRatio) {
   }
   if (!sim.everUpgrade[u.id]) {
     sim.everUpgrade[u.id] = true;
+    firstBuyPaid(sim, 'up:' + u.id);
+    (sim._devL || (sim._devL = {}))['up:' + u.id] = sim.lifeBest || 0; // ㉚: 初開発時の自己ベスト層(後続ゲートの基点)
     pushUnlock(sim, 'upgrade', u.id);
     // 条件㉑(新設備の存在感): 初めて買った瞬間の「その1台の実生産(系列・熟練など固有能力込み、
     // 研究・スキル倍率も自然に通る)」を、購入直前の実CPSと比較する。Δ生産方式(2026-07-06 解釈更新):
@@ -3633,17 +3676,22 @@ function tryBuyResearch(sim, id, budgetRatio) {
   const def = RESEARCH.find(x => x.id === id);
   if (!def || !researchUnlocked(sim, def)) return false;
   let cost = researchCostOf(sim, id);
-  const resSec = (P.upCost && P.upCost.firstBuySecRes) || 0;
+  // 初回開発の貯金プレミアム(㉚): 生涯初のみ「凍結時の所持クッキー+sec×cps」を下限に(=解放から≥sec秒 貯める)。
+  // sec は研究の深さ(RESEARCH内の並び順)で階段化——同じ瞬間に複数の研究が視界に入っても要求貯金秒数が違うため
+  // 初開発が時間軸でばらける(同tick凍結の衝突対策)。深い研究ほど初回開発が大工事という固定の設計。再購入は無税。
+  const resSec0 = (P.upCost && P.upCost.firstBuySecRes) || 0;
+  const resSec = resSec0 > 0 ? resSec0 + ((P.upCost.firstBuyStep || 0) * RESEARCH.findIndex(x => x.id === id)) : 0;
   if (resSec > 0 && !sim.everResearch[id]) cost = firstBuyPace(sim, 'res:' + id, cost, resSec);
   const br = (resSec > 0 && !sim.everResearch[id]) ? Math.max(budgetRatio, 0.92) : budgetRatio;
   if (cost > r.cookies * br) return false;
   r.cookies -= cost;
   r.research[id] = true;
   r._lastResBuyT = sim.t; // 装備C型「研究購入直後」用
-  (r._resBaseMax || (r._resBaseMax = {}))[id] = r.maxStage || 0; // ㉚: 段2解放の相対進行ゲート基点
   if (sim.firstResearchBuy[id] === undefined) sim.firstResearchBuy[id] = sim.t;
   if (!sim.everResearch[id]) {
     sim.everResearch[id] = true;
+    (sim._devL || (sim._devL = {}))['res:' + id] = sim.lifeBest || 0; // ㉚: 初開発時の自己ベスト層(段2ゲートの基点)
+    firstBuyPaid(sim, 'res:' + id);
     pushUnlock(sim, 'research', id);
   }
   return true;
@@ -3656,14 +3704,18 @@ function tryBuyResearchStage(sim, id, stage, budgetRatio) {
   // 無効化(disableStage)でも購入行動は同じ: 効果だけがゼロになる
   if (!researchStageUnlocked(sim, id, stage)) return false;
   let cost = researchStageCostOf(sim, id, stage);
-  // 研究段階の生涯初購入も初号機と同様にペーシング(㉚): 後半フロンティアで段2/段3が数秒間隔で連続解放する団子を経済で分散。
-  const stSec = (P.upCost && P.upCost.firstBuySecStage) || 0;
+  // 初回開発の貯金プレミアム(㉚): 研究と同様、生涯初のみ「凍結時の所持+sec×cps」下限。sec は系列の深さで階段化+
+  // 段3は段2よりさらに重く(同じ瞬間に複数の段階が開放されても要求貯金秒数が違う=初開発が時間軸でばらける)。
+  const stSec0 = (P.upCost && P.upCost.firstBuySecStage) || 0;
+  const stSec = stSec0 > 0 ? stSec0 + ((P.upCost.firstBuyStep || 0) * RESEARCH.findIndex(x => x.id === id)) + (stage === 3 ? (P.upCost.firstBuyS3Extra || 0) : 0) : 0;
   if (stSec > 0 && !sim.everStage[id + ':' + stage]) cost = firstBuyPace(sim, 'stage:' + id + ':' + stage, cost, stSec);
   const br = (stSec > 0 && !sim.everStage[id + ':' + stage]) ? Math.max(budgetRatio, 0.92) : budgetRatio;
   if (cost > r.cookies * br) return false;
   r.cookies -= cost;
-  if (stage === 2) { r.research2[id] = true; (r._resS2Max || (r._resS2Max = {}))[id] = r.maxStage || 0; } // ㉚: 段3解放の相対進行ゲート基点
-  else r.research3[id] = true;
+  if (stage === 2) {
+    r.research2[id] = true;
+    if (!sim.everStage[id + ':2']) (sim._devL || (sim._devL = {}))['s2:' + id] = sim.lifeBest || 0; // ㉚: 段3ゲートの基点(初開発時の自己ベスト層)
+  } else r.research3[id] = true;
   // ⑬測定用(2026-07-16・opt-in): タイミング機能段2の取得直後のスナップを保存=機能が「活性」な地点から
   // 短窓で最適/放置を枝分かれできる(周回頭からだと段2未取得で1.000・周回全体だと複利発散)。measurement専用=経済不変。
   // 延長狩り(portalNetwork)だけは購入時でなく「取得後の最初の討伐時」にsnapする(下のdefeatMonster側):
@@ -3679,11 +3731,11 @@ function tryBuyResearchStage(sim, id, stage, budgetRatio) {
   if (sim.firstStageBuy[key] === undefined) sim.firstStageBuy[key] = sim.t;
   if (!sim.everStage[key]) {
     sim.everStage[key] = true;
-    // 研究段階(段2/段3)は㉚の「解放イベント」に数えない(2026-07-24 ユーザー指示『指定してないことを固定するな』):
-    // 段2/段3は既存研究の**強化**であって『新要素の解放』ではない。俺が pushUnlock で解放イベント扱いしていたのが
-    // キモい前提だった。終盤フロンティアで研究段階が一斉に立つのは避けられず、これを解放イベントに数えると㉚が構造的に
-    // 未達になる。新要素解放(設備/研究/層/スキル/実績研究)だけを㉚対象とする。everStage の記録自体は他判定用に継続。
-    if (P.upCost && P.upCost.countStageUnlock) pushUnlock(sim, 'stage', key);
+    firstBuyPaid(sim, 'stage:' + key); // 貯金はしご: 支払い完了=次の新要素の凍結を許可
+    // 研究段階も解放イベント(2026-07-24 ユーザー是正): ㉚の目的は「プレイヤーが30秒に1個ずつ新要素を味わう」こと。
+    // 段2/段3もプレイヤーから見れば新カードが棚に湧く=解放体験そのもの。測定から除外するのはごまかし(除外しても
+    // ゲーム内では機関銃のまま)なので、除外せず実際の間隔を貯金はしご(firstBuyPace)で空ける。
+    pushUnlock(sim, 'stage', key);
   }
   return true;
 }

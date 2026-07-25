@@ -158,7 +158,7 @@ module.exports = {
   // タイマー(待ち)は一切使わない。実績研究は達成済み・未取得の最安を所持クッキーの msBudgetRatio 以内で
   // 1tick1件だけ取得=熟慮購入。次の1件はクッキーが貯まるまで買えない=解放間隔は**経済**で自然に空く。
   // minGap=0=設備/研究/段階も待ちゼロ。
-  reveal: { minGap: 0, msBudgetRatio: 0.5 },
+  reveal: { minGap: 0, msBudgetRatio: 0.15 },
 
   // ㉛ スキル取得数(合格条件・2026-07-22 ユーザー指示「一度に取るスキルは5個まで=合格条件・仕様にしない」):
   // simに強制上限は設けず、1転生あたりの取得数が自然に≤この値に収まるようスキルコスト/PT獲得で調整する。
@@ -416,7 +416,14 @@ module.exports = {
   // ---- アップグレードコスト式 ----  cost = coef * base^basePow * growth^(owned*ownPow)
   // 2026-07-06 第8次: 新帯域(周回25〜90分)へ向けownPow 0.25→0.27(再登坂・開拓の全体減速)、
   // 膝4300/1.0→900/0.55(深部の周回短縮を抑制。㉒単調増加と⑦後半帯域用)
-  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, firstUnitSec: 70, firstBuySecRes: 0, firstBuySecStage: 0, revealCount: 25, eqRevealLayers: 5, stageGapLayers: 0 },
+  // ㉚初回開発ペーシング(第5版): 生涯初の取得(=解放イベント)だけを重くし、再購入(毎周回)は無税。
+  // 進行通貨は**自己ベスト層(lifeBest=生涯最高到達ノルマ層)**——フロンティアのノルマでしか進まず、クッキーの
+  // スパイクでも周回中盤の再登坂(速い)でも飛ばせない=初開発イベントが実時間で分散する唯一の量。
+  //  firstUnitSec=スキル解放設備の初号機の凍結割増(解放時点の所持+cps×sec)
+  //  revealCount=次設備が店に並ぶ現設備の所持数 / eqRevealLayers(後半)・eqRevealLayersBase(序盤)=未開発の次設備が
+  //  並ぶまでの自己ベスト更新層数 / resFirstLayers=研究の初開発(対応設備の初開発から) / stageGapLife=研究段階の
+  //  初開発(前段の初開発から)。
+  upCost: { coef: 1100, basePow: 0.60, ownPow: 0.27, knee: 2600, ownPow2: 0.72, firstUnitSec: 70, firstUnitSecBase: 0, firstBuySecRes: 40, firstBuySecStage: 50, firstBuyStep: 12, firstBuyS3Extra: 25, revealCount: 25, eqRevealLayers: 5, eqRevealLayersBase: 0, stageGapLayers: 0, resFirstLayers: 0, stageGapLife: 2 },
 
   // ---- 個別強化(報酬) ----
   upPerk: { base: 0.22, slope: 0.010, floor: 0.055 },
