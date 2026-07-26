@@ -317,6 +317,7 @@ module.exports = {
     biteRecoveryKill: 0.000002, crushedMillProd: 0.03, goldenBeastMutationProd: 0.05, brandHuntProd: 0.1,
     beastScent: 0.5,
     deepPursuitSpawn: 0.045, deepPursuitHp: 1.035, deepPursuitReward: 1.6,
+    riskSoft: 1.0, // 危険系統の系統化: 深追いHP指数を 1/(1+補正×この値) 倍に緩める(危険報酬50枚で指数×0.875)
     mutationBase: 0.9, mutationPerLv: 0.18, // 0.5/0.1→0.9/0.18(2026-07-11 ③: 取得n=1の単発判定が1.087-1.203で振動=期待発動率を厚くして閾値1.1から離す)
     categoryBonusRate: 0.003, categoryHalf: 400,
     // 第12次K(2026-07-08 ③再テーマ・増加方向のみ): 金報酬トリオ+獣の匂いを飽和しない金の稼ぎ(金即時獲得量=amount)へ

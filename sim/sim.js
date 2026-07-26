@@ -1992,7 +1992,11 @@ function monsterHpValue(sim, level) {
   let hp = M.hpBase * Math.pow(M.hpGrowth, Math.max(0, level - 1)) * timePressure;
   hp *= Math.exp(-Math.max(0, skillEffect(sim, 'monsterHpDown')));
   hp *= ((sim.run.ms && sim.run.ms.hp) || 1); // 実績研究「弱点看破」(2026-07-11)
-  hp *= Math.pow(P.rw.deepPursuitHp, rwOff(sim, 'deepPursuit') ? 0 : (sim.run.perks.deepPursuit || 0));
+  // 危険系統の系統化(報酬系統化スキル): 危険報酬を重ねるほど深追いのHP増を少し扱いやすくする。
+  // 危険系統だけ rewardCategoryBonus を読む箇所が無く常に効果ゼロだった(金色/狩猟/設備は既に配線済み)。
+  // 報酬獲得数側は整数 floor で潰れるので、連続量であるHP指数が唯一効く経路。
+  const riskSoft = 1 / (1 + rewardCategoryBonus(sim, 'risk') * (P.rw.riskSoft || 0));
+  hp *= Math.pow(P.rw.deepPursuitHp, (rwOff(sim, 'deepPursuit') ? 0 : (sim.run.perks.deepPursuit || 0)) * riskSoft);
   // ステージHP補正(工房統合): S1=×1〜S5=×60・深層=60×4^層
   if (P.ws) {
     const st = wsStageDef(sim);
