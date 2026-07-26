@@ -14010,11 +14010,17 @@ function renderStageChoiceScreen() {
   // カードで明示する(R35e): 示さないと弱い敵の楽なステージを選び、HUDの「あとN体」が永久に動かない罠になる。
   const frontier = state.stageUnlocked || 1;
   const questStage = frontier < MAX_STAGE_NO ? frontier : 0;
+  // R35n: 「どれを選ぶとクエストが進むか」だけでなく「今どこまで進んでいるか/守護ボスが待っているか」も
+  // この画面で出す。選択は周回に1度で、直前の周回の進捗はここでしか思い出せない(HUDは選択後に出る)。純表示。
+  const q = questStage ? questProgress() : null;
+  const guardianAt = (state.frontierBossPending || 0);
   for (let no = 1; no <= maxUnlockedStageNo(); no++) {
     const s = stageInfo(no);
     const tag = questStage === 0 ? ""
       : (no === questStage
-        ? `<i class="stageQuestTag">🎯 クエスト進行</i>`
+        ? (guardianAt === no
+          ? `<i class="stageQuestTag">👑 守護ボスが待機中</i>`
+          : `<i class="stageQuestTag">🎯 クエスト進行 ${fmt(q.got)}/${fmt(q.need)}</i>`)
         : `<i class="stageQuestTag off">クエスト加算なし</i>`);
     rows.push(`
       <button type="button" class="policyChoiceBtn" data-runstage="${no}">
