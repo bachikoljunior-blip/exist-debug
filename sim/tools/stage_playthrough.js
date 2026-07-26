@@ -83,14 +83,42 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     if(s.unlocked&&s.gain>0){ break; } // 初転生の条件が立ったら周回ループへ
   }
 
-  // 会心の一撃を1つ捕捉=タップの"気持ちよさ"(面白さF1)を実況に写す。指先の型が要る・一過性なのでフロートが出た瞬間を撮る。
-  await p.evaluate(()=>{ try{ if(!state.research.fingerTechnique && state.cookies.gte(D(2500))) buyResearch('fingerTechnique'); }catch(e){} });
-  { let caught=false;
+  // 会心の一撃を1つ捕捉=タップの"気持ちよさ"(面白さF1)を実況に写す。一過性なのでフロートが出た瞬間を撮る。
+  // 2026-07-26 修正: 会心の前提「指先の型」は researchUnlocked が「その周回で強い指を1台以上所持」を
+  // 要求する(RES_EQUIP.fingerTechnique='finger')。転生直後は所持0なので研究が買えず会心率0=
+  // 220タップ叩いても永久に捕まらなかった(旧ログの「crit not caught」の正体。旧ルールでも同じ)。
+  // 実プレイヤも会心を楽しむなら先に強い指を数台買うので、その順序に直す。捕まらなかった場合は
+  // 会心率と前提の状態を出す(「捕まらない」だけでは原因が分からない=判定の空振りと同じ)。
+  const critSetup=await p.evaluate(()=>{
+    // 会心を見るには「強い指を1台以上(研究の解放条件)+指先の型(研究費)」の両方が要る。
+    // 転生直後は所持クッキーが少なく研究費に届かないので、実プレイヤと同じく少し稼いでから買う
+    // (このドライバの稼ぎ方=ゲーム自身のoffline式 earn(baseCps×秒))。届かなければ状態を報告する。
+    const rs=(typeof RESEARCH!=='undefined')?RESEARCH.find(r=>r.id==='fingerTechnique'):null;
+    let banked=0;
+    try{
+      const fu=UPGRADES.find(u=>u.id==='finger');
+      for(let iter=0; iter<48; iter++){
+        for(let i=0;i<5;i++){ if(!fu)break; let c; try{c=costOf(fu);}catch(e){break;} if(!state.cookies.gte(c))break; buyUpgrade('finger'); }
+        if(!state.research.fingerTechnique && rs){
+          const need=(typeof researchCost==='function')?researchCost(rs):D(rs.cost);
+          if(state.cookies.gte(need)){ buyResearch('fingerTechnique'); }
+        }
+        if(state.research.fingerTechnique && (state.upgrades.finger||0)>0) break;
+        const bc=Math.max(1,Number(baseCps().toString()));
+        const sec=3600; earn(D(bc).mul(sec)); state.totalPlaySec=(state.totalPlaySec||0)+sec; banked+=sec;
+      }
+    }catch(e){}
+    return { fingers:state.upgrades.finger||0, tech:!!state.research.fingerTechnique, bankedH:Math.round(banked/3600),
+      cost:(rs&&typeof researchCost==='function')?String(researchCost(rs)):null,
+      rate:(typeof fingerCritChance==='function')?+(fingerCritChance()*100).toFixed(2):null };
+  });
+  { let caught=false, taps=0;
     for(let t=0; t<220 && !caught; t++){
       const crit=await p.evaluate(()=>{ const fa=document.getElementById('floatArea'); if(fa)fa.innerHTML=''; tapCookie(); return document.querySelectorAll('.critFloat').length>0; });
+      taps++;
       if(crit){ await p.clock.runFor(120); await rec('会心の一撃！(タップの手応え)',1); caught=true; }
     }
-    if(!caught) console.log('   (crit not caught in 220 taps)');
+    console.log(`   会心: ${caught?('捕捉('+taps+'タップ目)'):'捕まらず'} 強い指${critSetup.fingers}台・指先の型${critSetup.tech?'有':'無'}(費用${critSetup.cost})・研究費のために${critSetup.bankedH}h稼ぎ・会心率${critSetup.rate}%`);
   }
 
   // offline式で放置生産→設備/研究を建て直し。runCookiesを厚く積む(=討伐窓を延ばし転生回数を減らす=実プレイヤの立ち回り)。
@@ -164,9 +192,25 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   };
 
   const doPrestige=async()=>p.evaluate(()=>{
-    // 「転生できるまで放置」を offline式で忠実補填(balance>=cost)→転生
+    // 「転生できるまで放置」の補填(2026-07-26 修正)。旧実装は「今のcpsで cost×2 に届くまでの秒数」を
+    // 一度に足していた=待つ間に何も買わない模型。cpsが低い局面ではこれ1回で天文学的な時間になり
+    // (実測: stage3狙いで 7.4e11日)、プレイの良し悪しでなく模型の粗さが結果を支配していた。
+    // 実プレイヤは長い待ちの間に設備を伸ばして待ち時間そのものを縮めるので、
+    // 「残りの5%だけ進める→回収が残り時間より速い買い物だけする→cps再評価」の反復にする。
     const cost=D(prestigeCookieCost());
-    if(state.cookies.lt(cost)){ const bc=Math.max(1,Number(baseCps().toString())); const need=cost.mul(2).sub(state.cookies); const sec=Math.max(0,Number(need.div(bc).toString())); earn(D(bc).mul(Math.ceil(sec))); state.totalPlaySec=(state.totalPlaySec||0)+Math.ceil(sec); }
+    let guard=0;
+    while(state.cookies.lt(cost)&&guard<20000){ guard++;
+      let bc=Math.max(1,Number(baseCps().toString()));
+      let need=Number(cost.sub(state.cookies).toString());
+      if(!isFinite(need)||need<=0)break;
+      const remain=need/bc;
+      try{ window.__investForDeadline(remain); }catch(e){}
+      bc=Math.max(1,Number(baseCps().toString()));
+      need=Number(cost.sub(state.cookies).toString());
+      if(!isFinite(need)||need<=0)break;
+      const step=Math.max(60,Math.min(86400*30,Math.ceil((need/bc)*0.05)));
+      earn(D(bc).mul(step)); state.totalPlaySec=(state.totalPlaySec||0)+step;
+    }
     try{ if(prestigeUnlocked()&&prestigeGain()>0&&state.cookies.gte(D(prestigeCookieCost()))){ prestigeReset(); return 1; } }catch(e){}
     return 0; });
   const takeSkills=async()=>{ const ids=await p.evaluate(()=>{ const got=[];

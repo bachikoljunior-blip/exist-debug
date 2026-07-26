@@ -80,6 +80,26 @@ async function installBuyPolicy(page, override) {
       return { u: best, cost: bestC };
     };
 
+    // 期限つきの再投資: 「回収がこの残り時間より速い買い物」だけをする。
+    // 転生待ちのような長い放置では、実プレイヤは黙って待たずに設備を伸ばして待ち時間そのものを縮める。
+    // 逆に残りが短いなら手を出さない(貯金を溶かして転生を遠ざけない)。
+    window.__investForDeadline = (remainSec) => {
+      let bought = 0;
+      for (let step = 0; step < 300; step++) {
+        const cs = window.__candidates().filter(x => state.cookies.gte(x.cost));
+        if (!cs.length) break;
+        cs.sort((a, b) => b.eff - a.eff);
+        const best = cs[0];
+        const payback = best.cost / best.marg;      // 何秒で元が取れるか
+        if (!(payback < remainSec * 0.5)) break;    // 残りの半分以内に回収できないなら見送る
+        const b4 = state.upgrades[best.u.id] || 0;
+        buyUpgrade(best.u.id);
+        if ((state.upgrades[best.u.id] || 0) <= b4) break;
+        bought++;
+      }
+      return bought;
+    };
+
     // まとめ買い(実況の1ブロック分): 買った台と数を集約して返す
     window.__buySpree = (maxSteps) => {
       const agg = {}, order = [];
