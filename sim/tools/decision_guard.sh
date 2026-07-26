@@ -93,8 +93,14 @@ if [[ "$MODE" == "--install-git-hook" ]]; then
   if [[ -d "$ROOT/.git/hooks" ]]; then
     cat > "$hook" <<'HOOK'
 #!/bin/bash
-# 判断の丸投げをコミットさせない(sim/tools/decision_guard.sh が本体)
-exec "$(git rev-parse --show-toplevel)/sim/tools/decision_guard.sh"
+# コミットさせない違反: ①判断の丸投げ(decision_guard.sh) ②測定配線の欠落(measure_wiring_check.js)
+top="$(git rev-parse --show-toplevel)"
+"$top/sim/tools/decision_guard.sh" || exit $?
+# sim の測定/判定コードに触るコミットだけ、判定器が読むカウンタが記録に載っているかを静的検査
+if git diff --cached --name-only | grep -qE '^sim/(sim|runner)\.js$'; then
+  node "$top/sim/tools/measure_wiring_check.js" || exit 1
+fi
+exit 0
 HOOK
     chmod +x "$hook"
     echo "installed: .git/hooks/pre-commit"
