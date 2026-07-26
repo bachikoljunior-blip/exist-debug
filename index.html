@@ -16516,7 +16516,13 @@ function completeReset() {
   switchTab("shopTab");
 }
 
+// タイトル画面に居る間はオフライン窓の基準(lastSave)とノルマ休止の記帳を止める。
+// 止めないと「画面は生産0なのに lastSave だけ進む」ので、その時間は online でも offline でも
+// 一切もらえずに消える(タイトルへ戻って放置した時間・タイトルのまま閉じた時間が丸ごと失われる)。
+let titleIdleFreeze = false;
+
 function saveGame() {
+  if (titleIdleFreeze) { localStorage.setItem(saveKey, JSON.stringify(state)); return; }
   const now = Date.now();
   if (state.quotaPauseStartedAt) {
     state.quotaPausedMs = Math.max(0, Number(state.quotaPausedMs) || 0) + Math.max(0, now - state.quotaPauseStartedAt);
@@ -16821,6 +16827,23 @@ function findSavedData() {
   return null;
 }
 
+// 遊んでいない時間ぶんの放置生産を渡す(再読込のオフライン復帰と、タイトル画面に居た時間の両方で使う)
+function grantIdleProduction(idleMs) {
+  if (pausedForSkillChoice()) return D(0);
+  const ms = Math.max(0, Number(idleMs) || 0);
+  if (ms <= 0) return D(0);
+  const baseLimit = OFFLINE_LIMIT_SECONDS;
+  const extraLimit = skillEffect("offlineHours") * 60 * 60;
+  // 終わらぬ焼窯: オフライン生産の時間上限なし
+  const seconds = hasSkillEffect("unlockSystem", "offlineInfinite")
+    ? ms / 1000
+    : Math.min(ms / 1000, baseLimit + extraLimit);
+  // 放置生産は Decimal で計算(seconds が巨大でも double の Infinity 化で取り逃さない)
+  const gained = earn(D(baseCps()).mul(seconds));
+  if (gained.gt(0)) showMessage(`放置 +${fmt(gained)}`);
+  return gained;
+}
+
 function loadGame() {
   const raw = findSavedData();
 
@@ -16838,18 +16861,7 @@ function loadGame() {
     }
     state.quotaPausedMs += offlineMs;
 
-    if (!pausedForSkillChoice()) {
-      const baseLimit = OFFLINE_LIMIT_SECONDS;
-      const extraLimit = skillEffect("offlineHours") * 60 * 60;
-      // 終わらぬ焼窯: オフライン生産の時間上限なし
-      const seconds = hasSkillEffect("unlockSystem", "offlineInfinite")
-        ? offlineMs / 1000
-        : Math.min(offlineMs / 1000, baseLimit + extraLimit);
-      // 放置生産は Decimal で計算(seconds が巨大でも double の Infinity 化で取り逃さない)
-      const gained = earn(D(baseCps()).mul(seconds));
-
-      if (gained.gt(0)) showMessage(`放置 +${fmt(gained)}`);
-    }
+    grantIdleProduction(offlineMs);
 
     saveGame();
   } catch (e) {
@@ -18636,6 +18648,9 @@ function installDebugPanel() {
 
 
 loadGame();
+// 起動時はタイトル画面から始まる。loadGame がここまでのオフライン分を渡したので、
+// この瞬間を起点に凍結し、「はじめる」を押すまでの時間も放置時間として渡す。
+titleIdleFreeze = titleScreenActive();
 ensureState();
 applyVisualAssets();
 applySettings();
@@ -18670,9 +18685,14 @@ if (pausedForSkillChoice()) {
 function startGameFromTitle() {
   if (!titleScreenActive()) return;
 
+  // タイトルに居た時間は放置時間として渡す(凍結していた lastSave が起点)
+  const idleMs = titleIdleFreeze ? Math.max(0, Date.now() - state.lastSave) : 0;
+  titleIdleFreeze = false;
   document.body.classList.remove("titleScreenMode");
   $("titleAboutOverlay").classList.remove("active");
   applyScreenBackground();
+  grantIdleProduction(idleMs);
+  saveGame();
   scheduleGoldenCookie();
   scheduleMonster();
   updateTopOnly();
@@ -18688,7 +18708,8 @@ function returnToTitleScreen() {
   clearMonsterSpawnTimer();
   if (goldenVisible) hideGoldenCookie(false);
   hideMonster(false);
-  saveGame();
+  saveGame();                // ここで lastSave = 戻った瞬間 = 放置の起点
+  titleIdleFreeze = true;    // 以降タイトルに居る間は起点を動かさない
 }
 
 // 初起動の音声解禁ゲート: 最初にここをタップするとBGMを解禁してタイトルBGMを鳴らし、
