@@ -16864,6 +16864,9 @@ function loadGame() {
       state.quotaPauseStartedAt = 0;
     }
     state.quotaPausedMs += offlineMs;
+    // 注文の制限時間も閉じている間は進めない(ノルマ時計と同じ扱い)。
+    // 進めると「受注して閉じる→次に開いたら必ず期限切れ」になり、達成できる余地が消える。
+    if (state.activeOrder && state.activeOrder.expiresAt) state.activeOrder.expiresAt += offlineMs;
 
     grantIdleProduction(offlineMs);
 
@@ -16980,7 +16983,14 @@ function updateGameClockFreeze() {
       state.orderTempCpsUntil = shiftUntil(state.orderTempCpsUntil);
       state.orderTempResearchUntil = shiftUntil(state.orderTempResearchUntil);
       state.orderTempSpiceUntil = shiftUntil(state.orderTempSpiceUntil);
+      state.orderCookieUntil = shiftUntil(state.orderCookieUntil);          // 追い焼き(獲得+50%の300秒)
       state.nextOrderAt = shiftUntil(state.nextOrderAt);
+      state.critFeverUntil = shiftUntil(state.critFeverUntil);              // 会心フィーバー
+      state.critFeverCooldownUntil = shiftUntil(state.critFeverCooldownUntil);
+      state.goldRushUntil = shiftUntil(state.goldRushUntil);                // ゴールドラッシュ
+      state.goldRushCooldownUntil = shiftUntil(state.goldRushCooldownUntil);
+      // 注文の制限時間。止めないと図鑑を開いていた間・画面ロック中に期限切れになる
+      if (state.activeOrder) state.activeOrder.expiresAt = shiftUntil(state.activeOrder.expiresAt);
       // 基準時刻(過去)系: 経過を止めるため常に前へずらす
       if (state.bhFullSince) state.bhFullSince += delta;
       if (state.lastCritAt) state.lastCritAt += delta;

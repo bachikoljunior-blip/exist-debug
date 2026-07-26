@@ -104,6 +104,10 @@ fi
 if git diff --cached --name-only | grep -qE '^(sim/tools/.*\.js|index\.html)$'; then
   node "$top/sim/tools/qa_ref_check.js" || exit 1
 fi
+# ゲーム本体に触るコミットで、停止中に凍結されない期限(=手を出せない間に溶けるバフ/締切)が無いかを静的検査
+if git diff --cached --name-only | grep -qE '^index\.html$'; then
+  node "$top/sim/tools/freeze_wiring_check.js" || exit 1
+fi
 exit 0
 HOOK
     chmod +x "$hook"
