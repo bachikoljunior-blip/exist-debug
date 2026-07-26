@@ -6824,7 +6824,7 @@ const SKILL_NODES = [
   { id: "click_4", name: "神経直結", branchId: "click", cost: 13500000, x: 1991, y: 1035, icon: "◆", prereqs: ["click_3"], desc: "タップ生産 +24%、全生産 +64000%(全生産系スキルと加算)。", effects: [{ type: "click", value: 0.24 }, { type: "all", value: 640 }] },
 
   // 左下：金クッキー型
-  { id: "golden_1", name: "金色の匂い", branchId: "golden", cost: 5, x: 644, y: 738, icon: "✦", prereqs: ["core"], desc: "金クッキー出現間隔 -21%。", effects: [{ type: "goldenRate", value: 0.24 }] },
+  { id: "golden_1", name: "金色の匂い", branchId: "golden", cost: 5, x: 644, y: 738, icon: "✦", prereqs: ["core"], desc: "金クッキー出現間隔 -35%。", effects: [{ type: "goldenRate", value: 0.24 }] },
   // 方針入口の増幅スキル(2026-07-11): 分岐炉心の各方針入口を選んだ直後に、その方針の主役効果を安価に増幅する
   { id: "click_amp", name: "速射の指", branchId: "click", cost: 8, x: 1619, y: -159, icon: "◆", prereqs: ["click_1"], desc: "タップ生産 +75%。", effects: [{ type: "click", value: 0.75 }] },
   { id: "golden_amp", name: "金箔集め", branchId: "golden", cost: 15, x: 665, y: 966, icon: "✦", prereqs: ["golden_1"], desc: "金クッキー即時獲得量 +50%。", effects: [{ type: "goldenAmount", value: 0.5 }] },
@@ -6838,7 +6838,7 @@ const SKILL_NODES = [
   { id: "golden_2", name: "金粉回収", branchId: "golden", cost: 1550, x: 869, y: 773, icon: "✦", prereqs: ["golden_1"], desc: "金クッキー即時獲得量 +75%。", effects: [{ type: "goldenAmount", value: 0.75 }] },
   { id: "golden_3", name: "輝き増幅", branchId: "golden", cost: 550000, x: 1028, y: 858, icon: "✦", prereqs: ["golden_2"], desc: "金ブースト倍率 +2.1。", effects: [{ type: "goldenPower", value: 2.1 }] },
   { id: "golden_analysis", name: "金色観測", branchId: "golden", cost: 190000, x: 1254, y: 757, icon: "✦", prereqs: ["golden_3"], desc: "金クッキーの出現間隔とブースト時間の目安を表示。", effects: [{ type: "unlockSystem", target: "goldenAnalysis" }] },
-  { id: "golden_4", name: "太陽反応", branchId: "golden", cost: 490000000, x: 1204, y: 963, icon: "✦", prereqs: ["golden_3"], desc: "金クッキー出現間隔 -38%、金獲得量 +125%。", effects: [{ type: "goldenRate", value: 0.48 }, { type: "goldenAmount", value: 1.25 }] },
+  { id: "golden_4", name: "太陽反応", branchId: "golden", cost: 490000000, x: 1204, y: 963, icon: "✦", prereqs: ["golden_3"], desc: "金クッキー出現間隔 -58%、金獲得量 +125%。", effects: [{ type: "goldenRate", value: 0.48 }, { type: "goldenAmount", value: 1.25 }] },
 
   // 右上：自動焼成型
   { id: "auto_1", name: "火種", branchId: "auto", cost: 5, x: 1, y: 2083, icon: "◇", prereqs: ["core"], desc: "毎秒生産 +300%。", effects: [{ type: "cps", value: 3 }] },
@@ -6847,7 +6847,7 @@ const SKILL_NODES = [
   { id: "auto_4", name: "無人ライン", branchId: "auto", cost: 3500000, x: 636, y: 1945, icon: "◇", prereqs: ["auto_3"], desc: "毎秒生産 +24%、全生産 +16000%(全生産系スキルと加算)。", effects: [{ type: "cps", value: 0.24 }, { type: "all", value: 160 }] },
 
   // 右下：怪物狩り型
-  { id: "monster_1", name: "狩りの合図", branchId: "monster", cost: 5, x: 546, y: 1126, icon: "◉", prereqs: ["core"], desc: "モンスター出現間隔 -21%。", effects: [{ type: "monsterRate", value: 0.24 }] },
+  { id: "monster_1", name: "狩りの合図", branchId: "monster", cost: 5, x: 546, y: 1126, icon: "◉", prereqs: ["core"], desc: "モンスター出現間隔 -35%。", effects: [{ type: "monsterRate", value: 0.24 }] },
   { id: "monster_2", name: "急所割り", branchId: "monster", cost: 2450, x: 560, y: 1684, icon: "◉", prereqs: ["monster_1", "golden_2"], desc: "モンスター最終ダメージ +160%。", effects: [{ type: "monsterDamageSkill", value: 1.6 }] },
   { id: "monster_3", name: "砕ける皮", branchId: "monster", cost: 1350000, x: 278, y: 2107, icon: "◉", prereqs: ["monster_2"], desc: "モンスターHP -50%。", effects: [{ type: "monsterHpDown", value: 0.7000000000000001 }] },
   // v2: 工房解放スキル(monster枝の序盤から分岐。x=1200列のy=1440/1600は空き)
@@ -14505,7 +14505,7 @@ function codexMonsterRewardHtml() {
   // 報酬系統ボーナスはスキルで解放されて初めて存在する効果なので、解放後のみ表示する
   if (rewardSynergyUnlocked()) {
     parts.push(codexItem("報酬系統ボーナス",
-      `<div>同じ系統の報酬を多く取るほど、その系統の効果が少しずつ伸びる。</div><div>式：補正 = 1.003^枚数(枚数が増えるほど1枚の寄与は逓減)。</div>`
+      `<div>同じ系統の報酬を多く取るほど、その系統の効果が少しずつ伸びる。</div><div>式：補正 = 1.003^(枚数 ÷ (1 + 枚数/400))。枚数が増えるほど1枚の寄与は逓減し、上限は x3.31。</div>`
       + catOrder.map(c => `<div class="codexSub">${catName[c]}：取得 ${fmt((state.rewardCategoryCounts || {})[c] || 0)} → 補正 x${(1 + rewardCategoryBonus(c)).toFixed(3)}</div>`).join(""),
       monsterIcon));
   }
