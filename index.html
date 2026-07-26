@@ -6880,7 +6880,7 @@ const SKILL_NODES = [
 
   // 下：報酬。選択肢数は有限スキルでのみ増える。
   { id: "reward_1", name: "選択の目", branchId: "reward", cost: 400000000, x: 1685, y: 1239, icon: "✧", prereqs: ["monster_4"], desc: "モンスター報酬の選択肢 +1。", effects: [{ type: "rewardChoices", value: 1 }] },
-  { id: "reward_synergy", name: "報酬系統化", branchId: "reward", cost: 140000000, x: 1841, y: 1043, icon: "✧", prereqs: ["reward_1"], desc: "同系統の報酬を取るほどその系統が強化(+0.3%/枚・重ねるほど伸びは緩やか)。", effects: [{ type: "unlockSystem", target: "rewardSynergy" }] },
+  { id: "reward_synergy", name: "報酬系統化", branchId: "reward", cost: 140000000, x: 1841, y: 1043, icon: "✧", prereqs: ["reward_1"], desc: "金色系・狩猟系の報酬を取るほどその系統が強化(+0.3%/枚・重ねるほど伸びは緩やか)。", effects: [{ type: "unlockSystem", target: "rewardSynergy" }] },
   { id: "reward_choice_2", name: "選択の眼光", branchId: "reward", cost: 49000000, x: 1839, y: 1268, icon: "✧", prereqs: ["reward_synergy"], desc: "モンスター報酬の選択肢 +1(選択肢が増えるのはここまで)。", effects: [{ type: "rewardChoices", value: 1 }] },
   // 強化圧縮も退役(2026-07-26 砕粉ミルと同じ理由・同じ判断): 効果 upgradePerkPower は upgradeBoostRate に
   // しか乗らず、それは upgradePerks[id](恒久0)と積になるので効果は常に0。依存ノードは退役した砕粉ミルだけ
@@ -8759,6 +8759,13 @@ function intervalReduction(level, rate) {
   const r = Math.min(0.95, Math.max(0, Number(rate) || 0));
   return Math.pow(1 - r, lv);
 }
+
+// 報酬系統ボーナスが実際に効く系統(図鑑の表示はこれだけを載せる)。
+//   golden: goldenSpawnFactor / goldenAmount 等が読む
+//   hunt  : monsterSpawnFactor / 対モンスターダメージ等が読む
+//   risk  : 読む箇所が無い(補正は常に効果ゼロ)=配線するまで表示しない
+//   equipment: 唯一の報酬「砕粉ミル」を退役させたので取得できず、効果経路(upgradePerks)も恒久0
+const SYNERGY_LIVE_CATS = ["golden", "hunt"];
 
 function rewardCategoryBonus(category) {
   if (!rewardSynergyUnlocked()) return 0;
@@ -14506,7 +14513,10 @@ function codexMonsterRewardHtml() {
   if (rewardSynergyUnlocked()) {
     parts.push(codexItem("報酬系統ボーナス",
       `<div>同じ系統の報酬を多く取るほど、その系統の効果が少しずつ伸びる。</div><div>式：補正 = 1.003^(枚数 ÷ (1 + 枚数/400))。枚数が増えるほど1枚の寄与は逓減し、上限は x3.31。</div>`
-      + catOrder.map(c => `<div class="codexSub">${catName[c]}：取得 ${fmt((state.rewardCategoryCounts || {})[c] || 0)} → 補正 x${(1 + rewardCategoryBonus(c)).toFixed(3)}</div>`).join(""),
+      // 補正が実際に効く系統だけ載せる。危険系統は補正を読む箇所が無く、設備系統は
+      // 唯一の報酬(砕粉ミル)を退役させたため取得自体ができない=どちらも常に x1.000 の飾りだった。
+      + catOrder.filter(c => SYNERGY_LIVE_CATS.includes(c))
+        .map(c => `<div class="codexSub">${catName[c]}：取得 ${fmt((state.rewardCategoryCounts || {})[c] || 0)} → 補正 x${(1 + rewardCategoryBonus(c)).toFixed(3)}</div>`).join(""),
       monsterIcon));
   }
 
