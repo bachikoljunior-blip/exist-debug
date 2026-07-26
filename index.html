@@ -10922,7 +10922,13 @@ function estimatedMonsterHitsCurrent(id) {
   if (!mon || !mon.hp) return null;
 
   const damage = Math.max(1, Math.ceil(monsterBaseDamage() * monsterDamageMultiplier(mon)));
-  return Math.max(1, Math.ceil(mon.hp / damage));
+  // 2026-07-26 修復: 実際の削りは hitMonster で 1タップ maxHp/minTaps に上限がかかる(R33 ワンパン禁止)。
+  // その上限を無視して hp/damage を出していたので、火力が高いと「目安1撃」と言いながら実際は
+  // 通常4回・戦車8回・ボス16回叩く必要があった=数字を出すためのスキル(狩猟分析)が嘘をつく状態。
+  // 実ダメージと同じ式で1タップ分を出してから割る。表示のみ=戦闘の値は不変。
+  const perTapCap = Math.max(1, (mon.maxHp || mon.hp) / monsterMinTaps(mon.typeId));
+  const perTap = Math.max(1, Math.min(damage, perTapCap));
+  return Math.max(1, Math.ceil(mon.hp / perTap));
 }
 
 
