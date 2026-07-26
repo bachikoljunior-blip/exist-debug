@@ -737,6 +737,14 @@ function judgeAcqWindowTiming(hours, W) {
   // bhCharge=実発火の平均倍率(最適/放置)が帯[1.05,2.00]かつ発火≥1回。huntExtend=狩り窓の稼働秒が
   // 窓の5%以上かつ放置の2倍以上(放置は張り直しに気づかない=稼働ほぼ0のはず)。
   const MECH = {
+    wave: (on, off) => {
+      const mOn = (on.waveTicks > 0) ? on.waveMulSum / on.waveTicks : 0;
+      const mOff = (off.waveTicks > 0) ? off.waveMulSum / off.waveTicks : 0;
+      if (!(mOn > 0) || !(mOff > 0)) return { ok: false, text: '波が立っていない=測定不能' };
+      const r = mOn / mOff;
+      const good = r >= 1.05 && r <= 2.0;
+      return { ok: good, text: `波倍率比=${r.toFixed(3)}(最適${mOn.toFixed(3)}/放置${mOff.toFixed(3)})${good ? '✓' : ''}` };
+    },
     bhCharge: (on, off) => {
       const mOn = (on.bhFires > 0) ? on.bhMultSum / on.bhFires : 0;
       const mOff = (off.bhFires > 0) ? off.bhMultSum / off.bhFires : 0;

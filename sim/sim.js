@@ -1673,6 +1673,10 @@ function computeProd(sim) {
       if (resStage3(sim, 'quantumProofing')) amp *= 1 + P.res2.waveStageCoef * r.maxStage;
       const wf = idleOn(sim, 'wave') ? P.timing.waveIdle : P.timing.waveOpt;
       globalRes *= 1 + amp * wf;
+      // ⑬機構生存判定用(measurement専用・経済不変): 実際に乗った波倍率を積算。総クッキー比は
+      // 無関係な経済変更(例: 報酬プールの1枚退役)で軌道がずれると1.310→0.706と壊れるため機構量で測る(2026-07-26)。
+      r.waveMulSum = (r.waveMulSum || 0) + (1 + amp * wf);
+      r.waveTicks = (r.waveTicks || 0) + 1;
     }
   }
   // ③死に報酬対策(第12次P・枝分かれmeasure下で安全): 巨砕ミル(装備)/金獣変異(金)に「取得中だけ立つ全生産floor」を
