@@ -5576,19 +5576,20 @@
     #bhGaugeBtn {
       position: absolute;
       right: 4px;
-      top: 50%;
-      transform: translateY(-50%);
+      /* ステージ移動の▶(右端・上下中央の56px)と重ならない高さに置く。
+         同じ位置のタップが状況で別の意味になるのを避ける(▶はz-index 6でこのボタンの下敷きだった) */
+      top: 0;
       z-index: 60;
-      width: 76px;
-      min-height: 76px;
-      border-radius: 50%;
+      width: 72px;
+      min-height: 50px;
+      border-radius: 18px;
       border: 1px solid rgba(255, 213, 138, 0.5);
       background: radial-gradient(circle at 50% 32%, rgba(96, 64, 150, 0.94), rgba(22, 12, 42, 0.96));
       color: #ffe9c4;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
-      line-height: 1.3;
-      padding: 6px 4px;
+      line-height: 1.22;
+      padding: 4px 4px 5px;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
       touch-action: manipulation;
