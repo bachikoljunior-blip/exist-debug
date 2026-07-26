@@ -32,7 +32,10 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   await p.evaluate(()=>{try{buyMode="1";}catch(e){}});
   // 実プレイヤーの購入判断(共有部品)。stage_playthrough と同じものを使う=片方だけ賢い状態を作らない。
   const { installBuyPolicy } = require('./buy_policy.js');
-  const BUYCFG = await installBuyPolicy(p);
+  // このドライバは実クロックで連続タップする(TPS既定6/s)ので、クリック収入の割引率はその実測値を渡す。
+  // 既定0.05は「offline式で貯める stage_playthrough」向けの値=ここで使うとタップ設備を過小評価する。
+  const TPS_SELF=Number(process.env.TPS||6);
+  const BUYCFG = await installBuyPolicy(p, process.env.TPS_EFF?undefined:{tps:TPS_SELF});
   console.log(`買い方: ${BUYCFG.policy}(実効タップ${BUYCFG.tps}/s・貯める閾値${BUYCFG.saveRatio}倍/手持ち${BUYCFG.saveReach}倍以内)`);
 
   const L=[]; let shotN=0;
