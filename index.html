@@ -4879,6 +4879,19 @@
       margin-bottom: 3px;
     }
 
+    /* ステージ選択の「クエストが進むのはどれか」タグ(R35e): 討伐は最新ステージのみクエスト加算=
+       示さないと楽なステージを選んで長期目標が黙って凍結する(実測)。純表示・経済無影響 */
+    .stageQuestTag {
+      display: inline-block; font-style: normal; font-size: 11px; font-weight: 800;
+      border-radius: 7px; padding: 1px 7px; margin-left: 7px; vertical-align: 1px;
+      background: rgba(255, 205, 110, 0.18); color: #ffd98a;
+      border: 1px solid rgba(255, 205, 110, 0.5);
+    }
+    .stageQuestTag.off {
+      background: rgba(150, 160, 175, 0.12); color: #9fb0c2;
+      border-color: rgba(150, 160, 175, 0.34); font-weight: 700;
+    }
+
     .policyChoiceBtn span {
       display: block;
       font-size: 12px;
@@ -13928,12 +13941,20 @@ function stageChoiceSummary(no) {
 
 function renderStageChoiceScreen() {
   const rows = [];
+  // クエスト加算はフロンティア(最新解放)ステージのみ(questProgressOnKill)。どれを選ぶとクエストが進むかを
+  // カードで明示する(R35e): 示さないと弱い敵の楽なステージを選び、HUDの「あとN体」が永久に動かない罠になる。
+  const frontier = state.stageUnlocked || 1;
+  const questStage = frontier < MAX_STAGE_NO ? frontier : 0;
   for (let no = 1; no <= maxUnlockedStageNo(); no++) {
     const s = stageInfo(no);
+    const tag = questStage === 0 ? ""
+      : (no === questStage
+        ? `<i class="stageQuestTag">🎯 クエスト進行</i>`
+        : `<i class="stageQuestTag off">クエスト加算なし</i>`);
     rows.push(`
       <button type="button" class="policyChoiceBtn" data-runstage="${no}">
         <img class="choiceIcon" src="${assetUrl(ASSETS.stageThumbs[String(s.deep ? 6 : no)])}" alt="" aria-hidden="true" loading="lazy">
-        <b>第${no}ステージ ${s.name}</b><span>${stageChoiceSummary(no)}</span>
+        <b>第${no}ステージ ${s.name}${tag}</b><span>${stageChoiceSummary(no)}</span>
       </button>`);
   }
   $("stageChoiceRow").innerHTML = rows.join("");
