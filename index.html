@@ -12839,6 +12839,10 @@ document.addEventListener("touchstart", resumeAudioIfNeeded, { passive: true });
 document.addEventListener("visibilitychange", () => {
   // タブ非表示(=ゲームを閉じている/ロック中)の切り替わりでノルマ時計を止める/戻す
   updateQuotaPauseState();
+  // 出現/滞在/バフの凍結は50ms tick でも見ているが、非表示中の tick は1秒程度まで間引かれるので
+  // 切り替わった瞬間にも評価する(取りこぼすとその1秒で湧いてしまう)
+  updateSpawnTimerPauseState();
+  updateGameClockFreeze();
   if (document.hidden) {
     saveGame();
   } else {
@@ -16917,7 +16921,9 @@ function clearMonsterSpawnTimer() {
 // 報酬選択モーダルが開いている間、金クッキー・モンスターの出現カウントダウンを
 // 一時停止し、閉じたときに残り時間から再開する(ノルマと同様にじっくり考えられるように)
 function updateSpawnTimerPauseState() {
-  const shouldPause = rewardModalOpen() || overlayFreezesGame();
+  // タブ非表示(画面ロック・アプリを裏に回した状態)も停止条件に入れる。入れないと見えない間に
+  // モンスターが湧いて滞在時間だけ使い切り、ボスなら討伐数まで巻き戻る(手を出せないのに失敗する)。
+  const shouldPause = rewardModalOpen() || overlayFreezesGame() || document.hidden;
 
   // 停止条件が続く間は毎フレーム、動いているタイマーを止め続ける(遷移時だけでなく継続)。
   // 報酬選択中に金クッキーが消える/次モンスターが組まれると新しいタイマーが立つため、
@@ -16955,7 +16961,8 @@ function updateSpawnTimerPauseState() {
 // バフ/ブーストの残り時間・金クッキー/モンスターの滞在時間を凍結し、閉じたら残り時間から再開する。
 function updateGameClockFreeze() {
   const now = Date.now();
-  const buffFrozen = rewardModalOpen() || overlayFreezesGame();
+  // タブ非表示中も凍結する(手を出せない間にバフが溶け、出現物の滞在時間が切れるのを防ぐ)
+  const buffFrozen = rewardModalOpen() || overlayFreezesGame() || document.hidden;
   // 出現物(金クッキー/モンスター)の滞在時間は凍結しない。タブ全画面中も通常どおり進む。
   const spawnFrozen = buffFrozen;
 
