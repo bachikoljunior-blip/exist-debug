@@ -16526,6 +16526,7 @@ function completeReset() {
 let titleIdleFreeze = false;
 
 function saveGame() {
+  captureSpawnWaits();
   if (titleIdleFreeze) { localStorage.setItem(saveKey, JSON.stringify(state)); return; }
   const now = Date.now();
   if (state.quotaPauseStartedAt) {
@@ -16913,6 +16914,29 @@ function setMonsterSpawnTimer(fn, wait) {
   monsterSpawnTimer = setTimeout(fn, wait);
 }
 
+// 出現待ちの残り時間をセーブに写す(monsterSpawnDeadline/goldenSpawnDeadline はモジュール変数で
+// 保存されていなかったため、リロードするたびに42〜60秒の待ちが引き直されていた=待った分が消える)。
+// 閉じている間は湧かないので減らさず、次に開いたところから同じ残りで続ける。
+function captureSpawnWaits() {
+  const remainOf = (paused, deadline, timer) => {
+    if (paused != null) return Math.max(0, Math.round(paused));
+    if (timer && deadline != null) return Math.max(0, Math.round(deadline - Date.now()));
+    return null;
+  };
+  const m = remainOf(monsterSpawnPausedRemaining, monsterSpawnDeadline, monsterSpawnTimer);
+  const g = remainOf(goldenSpawnPausedRemaining, goldenSpawnDeadline, goldenSpawnTimer);
+  // 出現待ち本体のときだけ写す(画面が出ていない間の5秒リトライは待ちではないので写さない)
+  if (monsterSpawnCallback === fireMonsterSpawn && m != null) state.monsterSpawnRemainMs = m;
+  if (goldenSpawnCallback === showGoldenCookie && g != null) state.goldenSpawnRemainMs = g;
+}
+
+// セーブに残っていた出現待ちを1回だけ使う(無ければ null=通常の抽選)
+function takeSavedSpawnWait(key) {
+  const v = Number(state[key]);
+  delete state[key];
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
 function clearMonsterSpawnTimer() {
   clearTimeout(monsterSpawnTimer);
   monsterSpawnTimer = null;
@@ -17053,7 +17077,8 @@ function scheduleGoldenCookie() {
   const max = 80000;
   const nextBonus = state.nextGoldenSpawnMultiplier || 1;
   const raw = (min + Math.random() * (max - min)) * goldenSpawnFactor() * nextBonus / equip2Fx().goldenRateMul; // 新装備: 金出現短縮系
-  const wait = protectedWait(raw, 1000);
+  const saved = takeSavedSpawnWait("goldenSpawnRemainMs"); // 前回の続きから
+  const wait = saved != null ? saved : protectedWait(raw, 1000);
   state.nextGoldenSpawnMultiplier = 1;
 
   setGoldenSpawnTimer(showGoldenCookie, wait);
@@ -17093,7 +17118,8 @@ function scheduleMonster() {
   // 守護ボス待機中(R35): 達成の高揚が冷めないうちに登場(once-per-stageの演出タイミング=経済影響は無視できる)
   const guardianWaiting = (state.frontierBossPending || 0) === currentStageNo() && currentStageNo() < MAX_STAGE_NO
     && !(Array.isArray(monsters) && monsters.some(m => m && m.typeId === "boss"));
-  const wait = protectedWait(guardianWaiting ? 2500 : raw, 1000);
+  const saved = guardianWaiting ? null : takeSavedSpawnWait("monsterSpawnRemainMs"); // 前回の続きから
+  const wait = saved != null ? saved : protectedWait(guardianWaiting ? 2500 : raw, 1000);
   state.nextMonsterSpawnMultiplier = 1;
 
   setMonsterSpawnTimer(fireMonsterSpawn, wait);
