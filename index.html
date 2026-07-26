@@ -14778,6 +14778,7 @@ addTap($("cancelRebirthBtn"), () => {
 function beginRunAfterSkills() {
   // 周回を開始したら転生は確定。以後は「転生前に戻る」できないようスナップショットを破棄する。
   clearPreRebirthSnapshot();
+  try { localStorage.removeItem(RUN_START_PREV_KEY); } catch (e) {} // 取り消し用の退避も不要になる
   state.awaitingSkillChoice = false;
   state.skillChoiceStartCount = boughtSkillCount();
   state.runStart = Date.now();
@@ -16092,6 +16093,11 @@ if ($("playFullscreenBtn")) addTap($("playFullscreenBtn"), togglePlayFullscreen)
 // 転生前の状態スナップショット。転生直後のスキル画面から「転生前に戻る」で取り消せるようにする。
 // (周回を開始した時点で確定=スナップショットを破棄する)
 const PREREBIRTH_KEY = saveKey + "_prerebirth";
+// 転生を取り消したときに戻すための「1つ前の周回開始スナップショット」の置き場(2026-07-26)。
+// 転生は RUN_START_KEY を新しい周回の開始状態で上書きするので、取り消してもそのままだと
+// 「この周回を最初からやり直す」が“取り消した転生の直後”を復元してしまう(古い周回の進行が消え、
+// 取り消した転生がやり直しで復活する)。上書き前の値をここへ退避し、取り消し時に戻す。
+const RUN_START_PREV_KEY = saveKey + "_runstart_prev";
 
 function preRebirthSnapshotAvailable() {
   try { return !!localStorage.getItem(PREREBIRTH_KEY); } catch (e) { return false; }
@@ -16111,6 +16117,13 @@ function cancelRebirth() {
   } catch (e) { return; }
   ensureState();
   clearPreRebirthSnapshot();
+  // 周回開始スナップショットも転生前の状態(=取り消した先の周回のもの)へ戻す。
+  try {
+    const prev = localStorage.getItem(RUN_START_PREV_KEY);
+    if (prev != null) localStorage.setItem(RUN_START_KEY, prev);
+    else localStorage.removeItem(RUN_START_KEY);
+    localStorage.removeItem(RUN_START_PREV_KEY);
+  } catch (e) {}
 
   skillViewMode = false;
   state.awaitingSkillChoice = false;
@@ -16389,8 +16402,14 @@ function prestigeReset() {
   playSound("upgrade");
   showMessage(`転生ポイント +${fmt(gain)}`);
   saveGame();
-  // 「この周回をやり直す」用に、周回開始(転生直後)時点のスナップショットを保存
-  try { localStorage.setItem(RUN_START_KEY, JSON.stringify(state)); } catch (e) {}
+  // 「この周回をやり直す」用に、周回開始(転生直後)時点のスナップショットを保存。
+  // 上書きする前の値は退避しておく(転生を取り消したら戻す先が必要)。
+  try {
+    const prevRunStart = localStorage.getItem(RUN_START_KEY);
+    if (prevRunStart != null) localStorage.setItem(RUN_START_PREV_KEY, prevRunStart);
+    else localStorage.removeItem(RUN_START_PREV_KEY);
+    localStorage.setItem(RUN_START_KEY, JSON.stringify(state));
+  } catch (e) {}
   updateTopOnly();
   renderAllTabs();
   openSkillChoiceScreen();
