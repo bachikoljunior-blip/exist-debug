@@ -10,7 +10,10 @@ const b64=n=>'data:image/jpeg;base64,'+fs.readFileSync(DIR+'/'+n+'.jpg').toStrin
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const kind=op=>{ if(/転生/.test(op))return['転生','p']; if(/スキル/.test(op))return['スキル','s']; if(/装備/.test(op))return['装備','e'];
   if(/研究/.test(op))return['研究','r']; if(/討伐|モンスター/.test(op))return['討伐','m']; if(/金クッキー/.test(op))return['金','g'];
-  if(/報酬/.test(op))return['報酬','w']; if(/タップ/.test(op))return['タップ','t']; if(/開始/.test(op))return['開始','o']; return['設備','b']; };
+  if(/報酬/.test(op))return['報酬','w']; if(/タップ/.test(op))return['タップ','t']; if(/開始/.test(op))return['開始','o'];
+  // 離席/放置は「設備」に落とすと嘘になる(何も買っていない)ので独自区分にする(2026-07-26 離席モデル追加に合わせて)
+  if(/放置|離席/.test(op))return['放置','idle'];
+  return['設備','b']; };
 const entries=ops.map((o,i)=>{ const cnt=o.count>0?`<span class="count">×${o.count}</span>`:''; const [kl,kc]=kind(o.op);
   return `<article class="op"><figure class="shot"><img src="${b64(o.n)}" alt="${esc(o.op)}の画面" loading="lazy" width="430" height="780"></figure>`
     +`<div class="say"><div class="meta"><span class="tag t-${kc}">${kl}</span><span class="step">#${i+1}</span><span class="time">${esc(o.t)}</span></div>`
@@ -36,7 +39,7 @@ const css=`:root{--bg:#F7F3EC;--panel:#FFFDF9;--ink:#241E18;--muted:#786B5C;--li
 .shot{margin:0;display:flex;justify-content:center}.shot img{width:250px;max-width:82%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);box-shadow:0 2px 6px rgba(0,0,0,.12)}
 .say{min-width:0}.meta{display:flex;align-items:center;gap:9px;margin-bottom:5px}
 .tag{font-size:11px;font-weight:800;border-radius:7px;padding:2px 8px;color:#fff;line-height:1.5}
-.t-o{background:#8a7a5c}.t-t{background:#c77f2b}.t-b{background:#4f7d5a}.t-m{background:#b04a3a}.t-w{background:#9a6cae}.t-g{background:#c9a227;color:#2a2210}.t-r{background:#3f7391}.t-p{background:#7a4fae}.t-s{background:#2f8a7a}.t-e{background:#6d6a8c}
+.t-o{background:#8a7a5c}.t-t{background:#c77f2b}.t-b{background:#4f7d5a}.t-m{background:#b04a3a}.t-w{background:#9a6cae}.t-g{background:#c9a227;color:#2a2210}.t-r{background:#3f7391}.t-p{background:#7a4fae}.t-s{background:#2f8a7a}.t-e{background:#6d6a8c}.t-idle{background:#6b7a86}
 .step{font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700}
 .time{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:800;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 11px;font-size:12.5px}
 .what{margin:0;font-size:18px;font-weight:750;line-height:1.35;text-wrap:balance}

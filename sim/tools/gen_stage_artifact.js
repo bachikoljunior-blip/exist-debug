@@ -20,7 +20,7 @@ const kind=op=>{
   if(/討伐|モンスター/.test(op))return['討伐','m'];
   if(/報酬/.test(op))return['報酬','w'];
   if(/金クッキー/.test(op))return['金','g'];
-  if(/放置/.test(op))return['放置','idle'];
+  if(/放置|離席/.test(op))return['放置','idle']; // 離席=open_playthroughの「離れて戻る」ブロック
   if(/タップ/.test(op))return['タップ','t'];
   if(/開始/.test(op))return['開始','o'];
   return['設備','b'];

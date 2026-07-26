@@ -37,15 +37,16 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   // 正直に評価すると強い指の1クッキーあたり毎秒増が最良になり続け、毎秒生産0のまま進む(実走で確認)。
   // 逆に稼働率を一律2%にすると、序盤2分で13タップ=最初の1台(100クッキー)も買えず動かない(これも実走で確認)。
   // 実プレイヤは「最初の数分はほぼ叩き続け、その後は置いて時々戻る」なので二段にする:
-  //   ゲーム内 ACTIVE_SEC(既定300秒)までは DUTY_HI(既定0.8)、それ以降は DUTY_LO(既定0.02)。
+  //   ゲーム内 ACTIVE_SEC(既定300秒)までは実クロックで DUTY_HI(既定0.8)で叩き、それ以降は
+  //   「離席AWAY_H時間(オフライン生産)+戻って ACTIVE_WIN 秒遊ぶ」の繰り返し=平均稼働は自動的に数%になる。
   // 行動(タップ数)と買い方の評価(クリック収入の割引)に必ず同じ値を使う=模型と行動を食い違わせない。
   const TPS_SELF=Number(process.env.TPS||6);
   const ACTIVE_SEC=Number(process.env.ACTIVE_SEC||300);
   const DUTY_HI=Math.max(0,Math.min(1,Number(process.env.DUTY_HI||0.8)));
-  const DUTY_LO=Math.max(0,Math.min(1,Number(process.env.DUTY_LO||0.02)));
-  const dutyAt=(sec)=>(sec<ACTIVE_SEC?DUTY_HI:DUTY_LO);
+  const AWAY_H=Number(process.env.AWAY_H||4);          // 1回の離席時間(時間)
+  const ACTIVE_WIN=Number(process.env.ACTIVE_WIN||180); // 戻ってきて遊ぶ時間(秒)
   const BUYCFG = await installBuyPolicy(p, process.env.TPS_EFF?undefined:{tps:TPS_SELF*DUTY_HI});
-  console.log(`買い方: ${BUYCFG.policy}(タップ${TPS_SELF}/s×稼働 ${DUTY_HI}(最初の${ACTIVE_SEC}秒)→${DUTY_LO}・貯める閾値${BUYCFG.saveRatio}倍)`);
+  console.log(`買い方: ${BUYCFG.policy}(タップ${TPS_SELF}/s×稼働${DUTY_HI}・最初の${ACTIVE_SEC}秒は実クロック→以降は離席${AWAY_H}h+${ACTIVE_WIN}s遊ぶの繰り返し)`);
 
   const L=[]; let shotN=0;
   const gt=async()=>p.evaluate(()=>{try{return Math.round(state.totalPlaySec||0);}catch(e){return 0;}});
@@ -93,18 +94,38 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     // 数分の貯蓄で cost に届くなら銀行モード(1e8ラッチ→1e9転生)。純経済で到達=stage進行(討伐100体)より現実的。
     if(!banking && s.gain>0 && (s.cookies + s.cps*600) >= s.cost) banking=true;
     const sec=s.sec;
-    // 序盤(最初の5分)は細かく=初出の一手を丁寧に。以降の反復グラインドは大きく早送り(まとめ前提)=転生を可視範囲に収める。
-    let step=8000; if(sec>=300)step=60000; if(sec>=1200)step=180000; if(banking)step=Math.max(step,120000);
-    const stepSec=step/1000;
-    // クロックはsub分割で進める(討伐/報酬を取りこぼさない・報酬ポーズで生産が止まらない)
-    { let done=0; const sub=15000; while(done<step){ const st=Math.min(sub,step-done); await p.clock.runFor(st); done+=st;
+    // 時間の進め方(2026-07-26 ユーザー指示A「本物到達を延ばす」への対処):
+    // 実クロックだけで進めると、初転生(1e9クッキー)に要するゲーム内時間が現実の実行時間を超えるので
+    // 序盤数分から先へ行けなかった(実走: 10分で毎秒57・転生0)。実プレイヤの時間の使い方は
+    // 「戻ってきて数分遊ぶ→離れる(その間はゲーム自身のオフライン生産)」なので、そのとおりに刻む:
+    //   ・最初の ACTIVE_SEC 秒: 実クロックで細かく(初出の一手・討伐・金クッキーを取りこぼさない)
+    //   ・以降: 離席 AWAY_H 時間(ゲームの offline式 earn(baseCps×秒) を直呼び)+ 実クロックで ACTIVE_WIN 秒遊ぶ
+    // 離席中に湧きや金が起きないのは実際のゲームと同じ(オフラインは生産だけ)。偽の加速はしていない。
+    let step, stepSec;
+    if(sec < ACTIVE_SEC){
+      step=8000; stepSec=step/1000;
+      let done=0; const sub=4000; while(done<step){ const st=Math.min(sub,step-done); await p.clock.runFor(st); done+=st;
         if(done<step)await p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
           if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster)for(const m of monsters.slice())for(let k=0;k<200&&monsters.indexOf(m)>=0;k++)hitMonster(m.id);
-          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); }); } }
-    // 居る間だけ叩く(二段の稼働率)。評価側の割引も同じ値へ揃える(行動と模型を一致させる)
-    const duty=dutyAt(sec);
-    const tapN=Math.round(stepSec*TPS*duty);
-    await p.evaluate((v)=>{ if(window.__BUY)window.__BUY.tps=v; }, TPS*duty);
+          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); }); }
+    } else {
+      const awaySec=Math.round(AWAY_H*3600);
+      const got=await p.evaluate((asec)=>{ const bc=Math.max(0,Number(baseCps().toString()));
+        const g=earn(D(bc).mul(asec)); state.totalPlaySec=(state.totalPlaySec||0)+asec;
+        return { gain:String(g), cps:bc }; }, awaySec);
+      await rec(`離席${AWAY_H}時間 → 戻って回収(+${got.gain.length>12?Number(got.gain).toExponential(2):got.gain})`,1);
+      step=ACTIVE_WIN*1000; stepSec=ACTIVE_WIN;
+      let done=0; const sub=15000; while(done<step){ const st=Math.min(sub,step-done); await p.clock.runFor(st); done+=st;
+        await p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
+          if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster)for(const m of monsters.slice())for(let k=0;k<200&&monsters.indexOf(m)>=0;k++)hitMonster(m.id);
+          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); }); }
+    }
+    // 実クロックで進めた区間は「居る」区間なので、その中では稼働HIで叩く。買い方の評価に渡す
+    // 実効タップ率は「1日の中でどれだけ叩くか」なので、離席込みの平均(活動窓/(活動窓+離席))で出す。
+    const inWindow=(sec<ACTIVE_SEC)?DUTY_HI:1;
+    const tapN=Math.round(stepSec*TPS*inWindow*(sec<ACTIVE_SEC?1:DUTY_HI));
+    const avgDuty=(sec<ACTIVE_SEC)?DUTY_HI:(ACTIVE_WIN*DUTY_HI/(ACTIVE_WIN+AWAY_H*3600));
+    await p.evaluate((v)=>{ if(window.__BUY)window.__BUY.tps=v; }, TPS*avgDuty);
     const acts=await stepActions(tapN,banking);
     let progressed=false;
     for(const [label,cnt] of acts){ await rec(label,cnt); if(!/タップ/.test(label))progressed=true; }
