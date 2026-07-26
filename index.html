@@ -16281,6 +16281,14 @@ function prestigeReset() {
   // ㉚解放ドリップ: 「生涯すでに棚に並んだ」記録は転生を跨いで持ち越す(=再購入は待たされない)
   const keepRevealedEver = { ...(state.revealedEver || {}) };
   const keepLastRevealAt = Number(state.lastRevealAt) || 0;
+  // 図鑑(2026-07-26 修復): オーバーレイの説明は「発動したことのある効果を、系統ごとにまとめて確認できる」
+  // =一生の記録なのに、転生の state=freshState() で毎回まるごと消えていた(実測: 3件→0件)。
+  // 表示専用で経済に影響しないので持ち越す(集めた記録が転生で消えるのは約束破り)。
+  const keepCodex = JSON.parse(JSON.stringify(state.codex || {}));
+  // 転生解放のラッチ(2026-07-26 修復): 消えると次の周回で所持1億を超えた瞬間に
+  // 「新たな機能が解放されます」がまた出る=もう解放済みなのに新規解放だと嘘をつく(実測: true→false)。
+  const keepPrestigeUnlockedEver = Boolean(state.prestigeUnlockedEver) || Boolean(state.seenPrestigeUnlockNotice);
+  const keepSeenPrestigeUnlockNotice = Boolean(state.seenPrestigeUnlockNotice);
   // 実績研究: トリガは「その周回だけ」(2026-07-11)=カウンタも購入状態も転生でリセット(持ち越さない)
   // 提案8(第12次H): 今周回の天井を次周回の層の試練の相対基準として持ち越す。表示層数は絶対累積のまま。
   // 層の試練の天井持ち越し=直近2周回のmax(R3・trialFloorRuns=2相当・sim同期)
@@ -16334,6 +16342,9 @@ function prestigeReset() {
   state.maxQuotaStageEver = keepMaxQuotaStageEver;
   state.revealedEver = keepRevealedEver;
   state.lastRevealAt = keepLastRevealAt;
+  state.codex = keepCodex;
+  state.prestigeUnlockedEver = keepPrestigeUnlockedEver;
+  state.seenPrestigeUnlockNotice = keepSeenPrestigeUnlockNotice;
   state.lastPrestigeCps = keepLastPrestigeCps;
   state.prevMaxQuotaStage = keepPrevMaxQuotaStage;
   state._prevMaxStage1 = keepPrevMaxStage1;
