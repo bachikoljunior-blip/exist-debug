@@ -70,9 +70,14 @@ BAD = {
   'escalation': r'どうしますか|どちらにしますか|どれにしますか|判断をお願い|指示をください|指示を下さい|承認をください|決めてください|方針をください|方向をください|お待ちします|待ちます(?!ん)|3択|三択|選んでください',
   'perform':    r'理解しました|理解できました|伝わりましたか|わかりました！|把握しました',
 }
+# 仕組み自体を説明する文(禁止句の列挙)は行為ではないので除外する。
+# 近傍にこの語彙があればメタ言及と判定(2026-07-26: 検問が自分の説明文に噛んだのを修正)。
+META = r'検問|丸投げ表現|禁止句|禁止語|検知|decision_guard|ANTI_REGRESSION|再発シグネチャ|演技|パターン|等の|列挙|フック'
 hits=[]
 for k,pat in BAD.items():
     for m in re.finditer(pat,last):
+        a=max(0,m.start()-70); b=min(len(last),m.end()+70)
+        if re.search(META,last[a:b]): continue
         s=max(0,m.start()-40); hits.append(f'{k}: …{last[s:m.end()+40].strip()}…')
 if hits:
     print('  [直近の発言] 判断の丸投げ/理解の演技の疑い:')
