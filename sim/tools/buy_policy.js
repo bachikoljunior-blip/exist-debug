@@ -15,8 +15,13 @@ function readEnv() {
   return {
     policy: process.env.BUY_POLICY || 'payback', // payback=新(既定) / roi=旧(比較用)
     tps: Number(process.env.TPS_EFF || 0.05),    // 放置主体の実効タップ毎秒(10h放置に数分の能動)
-    saveRatio: Number(process.env.SAVE_RATIO || 2.0), // 未購入の台がこの倍率以上に良ければ貯める
-    saveReach: Number(process.env.SAVE_REACH || 3.0), // ただし手持ちのこの倍以内で買える台に限る
+    // 「次のティアへ貯める」は既定オフ(2026-07-26 実測で決定)。stage3到達までのゲーム内時間を
+    // 決定的に比較したところ、貯める規則は入れるほど遅い:
+    //   旧roi=1929日 / payback(貯めない)=836日 / payback+貯める2倍3倍=1351日 / +貯める5倍1.5倍=2770日
+    // 手元にクッキーを寝かせる間だけ複利が止まるので、この経済では「今いちばん回収が速い台を買い続ける」
+    // ほうが強い。実プレイヤの我慢を見せたい時は SAVE_RATIO=2 等で明示的に有効化する(遅くなる代償つき)。
+    saveRatio: Number(process.env.SAVE_RATIO || Infinity), // 未購入の台がこの倍率以上に良ければ貯める
+    saveReach: Number(process.env.SAVE_REACH || 3.0),      // ただし手持ちのこの倍以内で買える台に限る
   };
 }
 
