@@ -4887,6 +4887,12 @@
       background: rgba(255, 205, 110, 0.18); color: #ffd98a;
       border: 1px solid rgba(255, 205, 110, 0.5);
     }
+    /* 所持装備の「装備中」バッジ(R35i) */
+    .eqNowTag {
+      display: inline-block; font-size: 10.5px; font-weight: 800; margin-left: 6px;
+      border-radius: 6px; padding: 1px 6px; color: #b9f0c8;
+      background: rgba(90, 200, 130, 0.16); border: 1px solid rgba(90, 200, 130, 0.5);
+    }
     .stageQuestTag.off {
       background: rgba(150, 160, 175, 0.12); color: #9fb0c2;
       border-color: rgba(150, 160, 175, 0.34); font-weight: 700;
@@ -5964,7 +5970,7 @@
   <div class="policyChoiceInner">
     <div class="policyChoiceHeader">
       <div class="policyChoiceTitle">周回するステージを選択</div>
-      <div class="policyChoiceSub">狩りをするステージを1つ選択(途中変更不可)。</div>
+      <div class="policyChoiceSub">狩りを始めるステージを1つ選択。周回中も◀▶で移動できます(クエストは🎯の付いたステージでの討伐だけ進みます)。</div>
     </div>
     <div id="stageChoiceRow" class="policyChoiceRow"></div>
     <button id="stageChoiceBackBtn" type="button" class="policyChoiceBack">← スキル選択に戻る</button>
@@ -10274,7 +10280,12 @@ function discardEquip2(id) {
   const owned = (state.eq2Owned || {})[id] || 0;
   if (owned <= 0) return;
   const it = equip2ById(id);
-  if (!confirm(`「${it ? it.name : id}」を1個捨てる？`)) return;
+  // 装備中かつ最後の1個なら、外れて効果を失うことを確認文で明示する(R35i・純表示)
+  const eqSlot = EQUIP2_SLOTS.find(sl => (state.eq2Equipped || {})[sl] === id);
+  const warn = (eqSlot && owned <= 1)
+    ? `\n\n※これは装備中(${EQUIP2_CAT_NAMES[eqSlot] || eqSlot})の最後の1個です。捨てると外れて効果を失います。`
+    : "";
+  if (!confirm(`「${it ? it.name : id}」を1個捨てる？${warn}`)) return;
   state.eq2Owned[id] = owned - 1;
   if (state.eq2Owned[id] <= 0) {
     for (const sl of EQUIP2_SLOTS) if (state.eq2Equipped[sl] === id) state.eq2Equipped[sl] = null;
@@ -10315,7 +10326,12 @@ function renderEquip2Tab() {
     // 所持装備はカテゴリごとのタブで切り替える。先頭に「全て」を置き、最初はそれを開く(2026-07-13 ユーザー指示)
     const ownedCats = ["all", ...EQUIP2_CATS];
     if (!ownedCats.includes(equip2OwnedCat)) equip2OwnedCat = "all";
-    const rowFor = x => `<div class="infoRow"><img class="matIcon" src="${assetUrl(equip2Art(x))}" style="filter:${equip2Filter(x)}" alt=""><b>${x.name}</b> ×${fmt(state.eq2Owned[x.id])} / ${x.fxText}<button class="item eq2DiscardBtn" data-eq2discard="${x.id}" style="width:auto;padding:3px 10px;margin-left:auto">捨てる</button></div>`;
+    // 装備中バッジ(R35i): 行に装備中表示が無く、装備品を気付かず捨てて効果を失える(在庫0で自動的に外れる)ため部位名を出す。純表示。
+    const rowFor = x => {
+      const slot = EQUIP2_SLOTS.find(sl => (state.eq2Equipped || {})[sl] === x.id);
+      const badge = slot ? `<span class="eqNowTag">装備中：${EQUIP2_CAT_NAMES[slot] || slot}</span>` : "";
+      return `<div class="infoRow"><img class="matIcon" src="${assetUrl(equip2Art(x))}" style="filter:${equip2Filter(x)}" alt=""><b>${x.name}</b>${badge} ×${fmt(state.eq2Owned[x.id])} / ${x.fxText}<button class="item eq2DiscardBtn" data-eq2discard="${x.id}" style="width:auto;padding:3px 10px;margin-left:auto">捨てる</button></div>`;
+    };
     const ownedTotal = equip2Items().reduce((s, x) => s + (state.eq2Owned[x.id] || 0), 0);
     const catBar = `<div class="buyModeBar" style="margin-bottom:8px;flex-wrap:wrap;gap:4px">` +
       `<button class="item ${equip2OwnedCat === "all" ? "tabSel" : ""}" data-eq2ownedcat="all" style="width:auto;padding:4px 9px">全て${ownedTotal > 0 ? `(${fmt(ownedTotal)})` : ""}</button>` +
