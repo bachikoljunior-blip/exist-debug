@@ -14791,10 +14791,9 @@ function renderPrestige() {
 
   const gain = prestigeGain();
   const prestigeCost = prestigeCookieCost();
-  // ④(前周回超)の構造保証(2026-07-25 sim確定・㉚と同時成立): 前回の周回総生産を超えるまで転生不可。
-  // 「前回より上を目指してから転生」を実行点で強制=④は全周回で成立(simでverify100 ④100%×16方針を実測)。
-  const beatPrev = !(state.prevRunCookies && state.prevRunCookies.gt && state.prevRunCookies.gt(0)) || state.runCookies.gt(state.prevRunCookies);
-  const canPrestige = gain > 0 && !pausedForSkillChoice() && state.cookies.gte(prestigeCost) && beatPrev;
+  // ④(前周回超)は合格条件=仕様にしない(2026-07-26 ユーザー指摘で転生ロックを撤回)。
+  // ④の自然成立はプレイ側の目標感覚(前回より上を目指す)と経済設計が担う。
+  const canPrestige = gain > 0 && !pausedForSkillChoice() && state.cookies.gte(prestigeCost);
   const policyBox = runPolicyUnlocked() ? `
     <div class="infoBox">
       <h3>周回方針</h3>
@@ -14816,7 +14815,7 @@ function renderPrestige() {
       <div class="infoRow">今回のノルマ維持記録：${fmtTime(state.quotaHoldSeconds || 0)} / ノルマ中討伐 ${fmt(state.quotaMonsterKills || 0)}体</div>
       <div class="infoRow">今回獲得できるPT：+${fmt(gain)}</div>
       <div class="infoRow">転生で所持クッキー ${fmt(prestigeCost)} を消費(現在 ${fmt(state.cookies)})。必要量は周回が進むほど上がっていきます。</div>
-      <button id="prestigeBtn" class="item ${canPrestige ? "canBuy" : "locked"}">${canPrestige ? `転生する(${fmt(prestigeCost)}クッキー消費)` : (gain <= 0 ? "未獲得PTなし" : (!beatPrev ? `前回の周回(${fmt(state.prevRunCookies)})を超えると転生できる` : `クッキー${fmt(prestigeCost)}が必要`))}</button>
+      <button id="prestigeBtn" class="item ${canPrestige ? "canBuy" : "locked"}">${canPrestige ? `転生する(${fmt(prestigeCost)}クッキー消費)` : (gain <= 0 ? "未獲得PTなし" : `クッキー${fmt(prestigeCost)}が必要`)}</button>
       <button id="resetBtn" class="item danger">完全リセット</button>
     </div>
   `;

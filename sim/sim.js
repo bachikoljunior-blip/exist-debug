@@ -3035,11 +3035,10 @@ function doPrestige(sim) {
   if (r.cookies < cost) return false;
   const gain = prestigeGainOf(r.runCookies);
   if (gain <= 0) return false;
-  // ④(前周回超)の構造保証(2026-07-25 ユーザー指示「前周回超え100%じゃないのは致命的」):
-  // 前回の周回総生産を超えるまで転生しない。既存設計の「前回より上を目指してから転生」を
-  // 実行点で強制する=④は測定によらず全周回で成立。保険転生(7200s)や目標ラチェット上限が
-  // 作る「前周回割れの周回」はここで転生を保留し、超えるまで走り続ける(T1帯超えは許容=非致命)。
-  if (sim.runs.length > 0 && !(r.runCookies > (sim._prevRC || 0))) return false;
+  // ④はエンジンで強制しない(2026-07-26 ユーザー指摘「合格条件な?プレイ方針の考え方忘れた?」):
+  // ④=合格条件は自然なプレイの結果として測る。転生の可否はプレイ方針(strategies.js)の判断のみ。
+  // ④の自然成立は方針自身の原則「前回より上を目指してから転生」(×1.57目標)が担う——
+  // これを壊していた保険転生(7200s見切り)とラチェット上限を撤去した(strategies.js参照)。
   // 勝利の一周: 発火予約(_victoryLapArm=戦略の判断)を実施済み(_victoryLapDone)へ変換(2026-07-17)。
   // 判断と同時にDoneを立てると⑧インターセプトの1秒遅延中にガードが転生を永久拒否するため分離。
   if (sim._victoryLapArm) { sim._victoryLapArm = false; sim._victoryLapDone = true; }
