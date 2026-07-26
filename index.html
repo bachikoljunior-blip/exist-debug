@@ -13424,6 +13424,9 @@ function updateBossApproach() {
     box.style.display = "";
     return;
   }
+  // R35l: 湧きが止まっている周回(ノルマ終了=canMonsterAppear false)で「ボスまであとN体」は
+  // この周回では叶わない予告なので出さない(進行HUD側が「ノルマ終了→転生」を案内する)。純表示。
+  if (!canMonsterAppear()) { box.style.display = "none"; return; }
   let left = Infinity;
   try { left = stageKillsUntilBoss(currentStageNo()); } catch (e) { left = Infinity; }
   if (!isFinite(left) || left > 5 || left < 0) { box.style.display = "none"; return; }
