@@ -6821,7 +6821,7 @@ const SKILL_NODES = [
   { id: "click_1", name: "会心の指", branchId: "click", cost: 5, x: 1086, y: 99, icon: "◆", prereqs: ["core"], desc: "タップ生産 +200%。", effects: [{ type: "click", value: 2 }] },
   { id: "click_2", name: "連打の呼吸", branchId: "click", cost: 50, x: 1489, y: 62, icon: "◆", prereqs: ["click_1"], desc: "タップ生産 +600%(タップ系スキルと加算)。", effects: [{ type: "click", value: 6 }] },
   { id: "click_3", name: "焼き印タップ", branchId: "click", cost: 15500, x: 1513, y: 487, icon: "◆", prereqs: ["click_2", "golden_2"], desc: "タップ生産 +1500%(加算)、金獲得量 +30%。", effects: [{ type: "click", value: 15 }, { type: "goldenAmount", value: 0.3 }] },
-  { id: "click_4", name: "神経直結", branchId: "click", cost: 13500000, x: 1991, y: 1035, icon: "◆", prereqs: ["click_3"], desc: "タップ生産 +24%、全生産 +64000%(全生産系スキルと加算)。", effects: [{ type: "click", value: 0.24 }, { type: "all", value: 640 }] },
+  { id: "click_4", name: "神経直結", branchId: "click", cost: 13500000, x: 1991, y: 1035, icon: "◆", prereqs: ["click_3"], desc: "タップ生産 +24%、全生産 +64000%(全生産系スキルと加算・合計は生産に2回かかる)。", effects: [{ type: "click", value: 0.24 }, { type: "all", value: 640 }] },
 
   // 左下：金クッキー型
   { id: "golden_1", name: "金色の匂い", branchId: "golden", cost: 5, x: 644, y: 738, icon: "✦", prereqs: ["core"], desc: "金クッキー出現間隔 -35%。", effects: [{ type: "goldenRate", value: 0.24 }] },
@@ -6844,7 +6844,7 @@ const SKILL_NODES = [
   { id: "auto_1", name: "火種", branchId: "auto", cost: 5, x: 1, y: 2083, icon: "◇", prereqs: ["core"], desc: "毎秒生産 +300%。", effects: [{ type: "cps", value: 3 }] },
   { id: "auto_2", name: "炉の列", branchId: "auto", cost: 3850, x: 290, y: 2341, icon: "◇", prereqs: ["auto_1", "monster_2"], desc: "毎秒生産 +1000%(毎秒系スキルと加算)。", effects: [{ type: "cps", value: 10 }] },
   { id: "auto_3", name: "同期炉", branchId: "auto", cost: 38500, x: 468, y: 2185, icon: "◇", prereqs: ["auto_2", "monster_2"], desc: "毎秒生産 +4000%(加算)、モンスターダメージ +60%。", effects: [{ type: "cps", value: 40 }, { type: "monsterDamageSkill", value: 0.6 }] },
-  { id: "auto_4", name: "無人ライン", branchId: "auto", cost: 3500000, x: 636, y: 1945, icon: "◇", prereqs: ["auto_3"], desc: "毎秒生産 +24%、全生産 +16000%(全生産系スキルと加算)。", effects: [{ type: "cps", value: 0.24 }, { type: "all", value: 160 }] },
+  { id: "auto_4", name: "無人ライン", branchId: "auto", cost: 3500000, x: 636, y: 1945, icon: "◇", prereqs: ["auto_3"], desc: "毎秒生産 +24%、全生産 +16000%(全生産系スキルと加算・合計は生産に2回かかる)。", effects: [{ type: "cps", value: 0.24 }, { type: "all", value: 160 }] },
 
   // 右下：怪物狩り型
   { id: "monster_1", name: "狩りの合図", branchId: "monster", cost: 5, x: 546, y: 1126, icon: "◉", prereqs: ["core"], desc: "モンスター出現間隔 -35%。", effects: [{ type: "monsterRate", value: 0.24 }] },
@@ -6915,11 +6915,11 @@ const SKILL_NODES = [
   // 後半設備
   { id: "upgrade_universe", name: "宇宙炉心", branchId: "upgrade", cost: 33000000000, x: 1160, y: 2415, icon: "✺", prereqs: ["upgrade_blackhole"], desc: "宇宙焼成炉を解放。", effects: [{ type: "unlockUpgrade", target: "universeOven" }] },
   { id: "upgrade_godfinger", name: "神指契約", branchId: "upgrade", cost: 130000000000, x: 1007, y: 2134, icon: "◆", prereqs: ["upgrade_universe"], desc: "神の指を解放。", effects: [{ type: "unlockUpgrade", target: "godFinger" }] },
-  { id: "upgrade_singularity", name: "特異点管理", branchId: "upgrade", cost: 320000000000, x: 1226, y: 2878, icon: "◎", prereqs: ["upgrade_universe"], desc: "クッキー特異点を解放、全生産 +255000%(加算)。", effects: [{ type: "unlockUpgrade", target: "cookieSingularity" }, { type: "all", value: 2550 }] },
+  { id: "upgrade_singularity", name: "特異点管理", branchId: "upgrade", cost: 320000000000, x: 1226, y: 2878, icon: "◎", prereqs: ["upgrade_universe"], desc: "クッキー特異点を解放、全生産 +255000%(全生産系スキルと加算・合計は生産に2回かかる)。", effects: [{ type: "unlockUpgrade", target: "cookieSingularity" }, { type: "all", value: 2550 }] },
   { id: "upgrade_quantum", name: "量子厨房", branchId: "upgrade", cost: 1900000000000, x: 1410, y: 2789, icon: "✺", prereqs: ["upgrade_singularity"], desc: "量子ベーカリーを解放。", effects: [{ type: "unlockUpgrade", target: "quantumBakery" }] },
   { id: "upgrade_antimatter", name: "反物質炉", branchId: "upgrade", cost: 11500000000000, x: 1501, y: 2580, icon: "✹", prereqs: ["upgrade_quantum"], desc: "反物質オーブンを解放。", effects: [{ type: "unlockUpgrade", target: "antimatterOven" }] },
 
-  { id: "master_final", name: "超越体", branchId: "master", cost: 175000000000000, x: 1337, y: 2384, icon: "✹", prereqs: ["upgrade_antimatter", "unlock_reward_goldenBeastMutation"], desc: "全生産 +1000000%(加算)、タップ +20%、毎秒 +20%、モンスター報酬の獲得量(報酬Lv)の期待値 +80%。", effects: [{ type: "all", value: 10000 }, { type: "click", value: 0.2 }, { type: "cps", value: 0.2 }, { type: "rewardBonus", value: 0.8 }] }
+  { id: "master_final", name: "超越体", branchId: "master", cost: 175000000000000, x: 1337, y: 2384, icon: "✹", prereqs: ["upgrade_antimatter", "unlock_reward_goldenBeastMutation"], desc: "全生産 +1000000%(全生産系スキルと加算・合計は生産に2回かかる)、タップ +20%、毎秒 +20%、モンスター報酬の獲得量(報酬Lv)の期待値 +80%。", effects: [{ type: "all", value: 10000 }, { type: "click", value: 0.2 }, { type: "cps", value: 0.2 }, { type: "rewardBonus", value: 0.8 }] }
 ];
 
 const SKILLS = SKILL_NODES.map(skill => ({
@@ -14661,6 +14661,18 @@ function codexProductionHtml() {
     + `<div>・<b>熟練スキル(職人の手／工程の極み)</b>：同じ設備を買うほど、その設備1台あたりの生産が複利で伸びる。</div>`
     + `<div>・<b>系列ボーナス</b>：スキルで解放する上位設備は、自分より下位の設備の毎秒生産の <b>25%×台数</b> を追加で生産(神の指はタップ力 ×(1 + 25%×台数))。</div>`,
     ovenIcon));
+  // 全生産系スキル(神経直結・無人ライン・特異点管理・超越体)は加算合計が生産に2回かかる。
+  // スキル説明の「+N%」は加算への寄与で正しいが、生産への実効は2乗になるので式を明記する
+  // (2026-07-26 実測: 神経直結だけを取ると 641倍ではなく 641²=410881倍。simも同式=承認済み設計)。
+  {
+    const all = skillEffect("all");
+    items.push(codexItem("全生産系スキルは合計が2回かかる",
+      `<div>「全生産 +N%」のスキルは、まず<b>全部を足して</b> 1+合計 を作り、それが<b>タップの式と毎秒の式の両方に入り</b>、さらに全体にもう一度かかる。</div>`
+      + `<div>式：生産への実効倍率 = (1 + 全生産系スキルの合計)<b>²</b></div>`
+      + `<div class="codexSub">現在：合計 ${fmt(all)} → 1+合計 = x${(1 + all).toFixed(3)} → 実効 <b>x${((1 + all) * (1 + all)).toFixed(3)}</b></div>`
+      + `<div>各スキルの説明にある「+N%」は<b>合計への寄与</b>の値。単独で取った場合の生産の伸びは (1+N/100)² になる。</div>`,
+      ovenIcon));
+  }
   return items.join("");
 }
 
@@ -15769,7 +15781,7 @@ function renderInfo() {
       <h3>現在の倍率・状態</h3>
       ${runPolicyUnlocked() ? `<div class="infoRow">周回方針：${runPolicyName()}${workshopTabUnlocked() ? `<div class="desc">${policyBiasText(RUN_POLICIES.find(p => p.id === state.runPolicy))}</div>` : ""}</div>` : ""}
       <div class="infoRow">報酬系統：金${fmt((state.rewardCategoryCounts||{}).golden||0)} / 狩猟${fmt((state.rewardCategoryCounts||{}).hunt||0)} / 設備${fmt((state.rewardCategoryCounts||{}).equipment||0)} / 危険${fmt((state.rewardCategoryCounts||{}).risk||0)}</div>
-      <div class="infoRow">スキル全体倍率：x${prestigeMultiplier().toFixed(3)}</div>
+      <div class="infoRow">全生産系スキルの加算合計：x${prestigeMultiplier().toFixed(3)}<div class="desc">この合計はタップ・毎秒の両方の式に入り、さらに全体にもう一度かかる=生産には ×${(prestigeMultiplier()*prestigeMultiplier()).toFixed(3)} 相当(式は図鑑)</div></div>
       <div class="infoRow">スキルタップ倍率：x${clickSkillMultiplier().toFixed(3)}</div>
       <div class="infoRow">スキル毎秒倍率：x${cpsSkillMultiplier().toFixed(3)}</div>
       <div class="infoRow">金クッキー倍率：x${goldenMultiplier().toFixed(3)}</div>
