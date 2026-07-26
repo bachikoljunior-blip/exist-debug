@@ -1683,7 +1683,8 @@ function computeProd(sim) {
   //   upgradeBoostRate 経由 upgradePersonalMultiplier = 1 + upgradePerks[id]×rate のみに効き、upgradePerks を増やす
   //   唯一の経路(報酬 kind:"upgrade")は 2026-07-08「設備強化の固定枠撤廃」以降 coreChoices が空にならないため到達不能
   //   =lv恒久0=効果×0。にもかかわらず本floorのおかげで ③ は「OK rw:crushedMill」と報告する=判定がゲームの死を隠す。
-  //   ③のOKをゲーム側の実効性の証拠として読まないこと。恒久修正(カード効果の再設計 or 退役)は経済案件=要ユーザー判断。
+  //   ③のOKをゲーム側の実効性の証拠として読まないこと。恒久処置は「退役」を選択し実施済み(2026-07-26 自分の決定):
+  //   crushedMill をプール除外+本floor撤去→48h expectで緑を確認→ゲーム側も同期。revertはコミット1本。
   // crushedMill のフロアは撤去(2026-07-26 退役): 効果ゼロのperkを③で合格させる測定クラッチだった。プールからも除外済み。
   if (!rwOff(sim, 'goldenBeastMutation') && (r.perks.goldenBeastMutation || 0) > 0) globalRes *= 1 + (r.perks.goldenBeastMutation || 0) * (P.rw.goldenBeastMutationProd || 0);
   if (!rwOff(sim, 'brandHunt') && (r.perks.brandHunt || 0) > 0) globalRes *= 1 + (r.perks.brandHunt || 0) * (P.rw.brandHuntProd || 0);
@@ -3107,6 +3108,9 @@ function advanceTick(sim, strategy) {
     }
     const r = sim.run;
     purgeBoosts(sim);
+    // ⑬機構生存判定用(measurement専用・経済不変): 狩り窓の稼働秒。延長狩りは討伐で窓を張り直す機構で、
+    // simの実収入に討伐パルスが無いため総クッキー比は原理的に1.000。窓稼働そのものを測る(2026-07-26 決定)。
+    if (sim.t < (r.portalHuntUntil || -1)) r.huntWindowSec = (r.huntWindowSec || 0) + dt;
     // afterheat 有効化(fromを過ぎたものだけ乗せる)
     r.afterheats = r.afterheats.filter(a => a.until > sim.t);
     if (!r.wsStage) r.wsStage = wsPickStage(sim); // 周回ステージ選択(転生時に選択・周回中固定)
@@ -3243,6 +3247,10 @@ function advanceTick(sim, strategy) {
         r.bhBoostUntil = sim.t + P.res2.bhBoostDur;
         r.bhCharge = 0;
         r.bhUses++;
+        // ⑬機構生存判定用(measurement専用・経済不変): 実際に発火した倍率を積算。
+        // 総クッキー比は後期の乗法feedbackで発散し帯で測れないため、機構が制御している量(倍率)で測る(2026-07-26 決定)。
+        r.bhMultSum = (r.bhMultSum || 0) + mult;
+        r.bhFires = (r.bhFires || 0) + 1;
         r.bhReadyAt = null;
       }
     }

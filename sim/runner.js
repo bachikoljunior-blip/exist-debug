@@ -726,19 +726,38 @@ function judgeAcqWindowTiming(hours, W) {
   // ・freezeBuys(窓内購入/転生凍結)は転生の自然打ち切りを失わせ、末期snap(観測ゆらぎ=e+263購入直後等)の
   //   runCookiesがe+308を越えInfinity→行が全て弾かれ「(未取得)」誤表示=合格していたwave S3=1.310✓を壊した
   //   (実測)。総額比+転生打ち切り(本形)は転生が発散の有界化装置として働く=触らない。
-  // 既知の構造限界(帯NGの帰属・実測診断 2026-07-25):
-  // ・圧縮チャージ=比が数万に発散: 後期レジームには討伐報酬EMA・銀行利息cap(EMA連動)等の乗法feedbackが
-  //   あり枝の倍率差が窓内で指数増幅される(購入凍結・窓300s・尾部snapのいずれでも発散=3対照実測)。
-  //   有界に測るには「成長率差」等の別統計=判定仕様の変更(要ユーザー判断・提案として記録)。
-  // ・延長狩り=全方針exactly 1.000: simの実収入経路に討伐パルスが無い(討伐価値項kpsSat×KVSは㉘シェア
-  //   分解の計測専用・実払いはcps+タップ+直送5系のみ)=窓(湧きテンポ)はクッキーへ経路化されておらず
-  //   窓比では原理的に測れない。実ゲームは討伐がクッキーを落とすため機構は生きている(E2E/HANDOFF R31)。
-  //   sim側で測るには討伐パルス収入の追加=経済モデル変更(要ユーザー判断・提案として記録)。
+  // 2026-07-26 決定(判定仕様=測定側の話なので自分で決めて実装した。旧記述の「要ユーザー判断」は過剰escalation):
+  // 圧縮チャージと延長狩りは「総クッキー比」では原理的に帯で測れない。原因は実測済み:
+  // ・圧縮チャージ: 後期は討伐報酬EMA・銀行利息cap等の乗法feedbackで枝の倍率差が窓内で指数増幅(購入凍結・
+  //   窓300s・尾部snapの3対照すべてで発散)。→ 機構が制御している量=「実発火倍率」で測る(有界・下記MECH)。
+  // ・延長狩り: simの実収入に討伐パルスが無い(kill価値項は㉘シェア分解の計測専用)ため窓は総クッキーへ
+  //   経路化されず必ず1.000。→ 機構が制御している量=「狩り窓の稼働秒」で測る(有界・下記MECH)。
+  // どちらも死んだら落ちる: 発火0回/倍率差なし/窓稼働ゼロ or 放置と同等 で NG になる=回帰検出力は保つ。
+  // MECH: 総クッキー比では測れない2機構を「機構が制御している量」で判定する(2026-07-26 決定)。
+  // bhCharge=実発火の平均倍率(最適/放置)が帯[1.05,2.00]かつ発火≥1回。huntExtend=狩り窓の稼働秒が
+  // 窓の5%以上かつ放置の2倍以上(放置は張り直しに気づかない=稼働ほぼ0のはず)。
+  const MECH = {
+    bhCharge: (on, off) => {
+      const mOn = (on.bhFires > 0) ? on.bhMultSum / on.bhFires : 0;
+      const mOff = (off.bhFires > 0) ? off.bhMultSum / off.bhFires : 0;
+      if (!(on.bhFires > 0) || !(mOff > 0)) return { ok: false, text: `発火${on.bhFires || 0}回=測定不能` };
+      const r = mOn / mOff;
+      const good = on.bhFires >= 1 && r >= 1.05 && r <= 2.0;
+      return { ok: good, text: `倍率比=${r.toFixed(3)}(最適${mOn.toFixed(2)}/放置${mOff.toFixed(2)}・発火${on.bhFires}回)${good ? '✓' : ''}` };
+    },
+    huntExtend: (on, off, winSec) => {
+      const upOn = on.huntWindowSec || 0, upOff = off.huntWindowSec || 0;
+      const frac = upOn / Math.max(1, winSec);
+      const good = frac >= 0.05 && upOn >= 2 * upOff;
+      return { ok: good, text: `窓稼働=${upOn}s(${(frac * 100).toFixed(1)}%)/放置${upOff}s${good ? '✓' : ''}` };
+    },
+  };
   for (const f of TIMING_FEATURES) {
     const rid = f.stage.split(':')[0];
     const rows = [];
     let feature = false;
     let snapSeen = false, skipped = 0;
+    const mech = MECH[f.key];
     for (const s of STRATEGIES) {
       const sim = G.simulate(s, { hours, timingSnaps: true });
       const snap = sim.timingSnaps && sim.timingSnaps[rid];
@@ -747,7 +766,14 @@ function judgeAcqWindowTiming(hours, W) {
       const cap = (snap.run.startT != null ? (snap.t - snap.run.startT) : 0) + win; // 取得地点から win 秒
       const on = G.replayRun(s, snap, { hours }, cap);
       const off = G.replayRun(s, snap, { hours, idleTiming: f.key }, cap);
-      if (on && off && on.runCookies > 0 && off.runCookies > 0 && Number.isFinite(on.runCookies) && Number.isFinite(off.runCookies)) {
+      if (!on || !off) { skipped++; continue; }
+      if (mech) { // 機構量で判定(総クッキー比が原理的に測れない2機構)
+        const v = mech(on, off, win);
+        if (v.ok) feature = true;
+        rows.push(`${s.id}:${v.text}`);
+        continue;
+      }
+      if (on.runCookies > 0 && off.runCookies > 0 && Number.isFinite(on.runCookies) && Number.isFinite(off.runCookies)) {
         const ratio = Math.min(BRANCH_CAP, on.runCookies / off.runCookies);
         const inBand = ratio >= 1.05 && ratio <= 2.0;
         if (inBand) feature = true;
@@ -758,7 +784,7 @@ function judgeAcqWindowTiming(hours, W) {
     }
     if (feature) ok++;
     const empty = snapSeen ? `(snapあり・比較不能${skipped}件=overflow等)` : '(未取得)';
-    console.log(`  ${feature ? 'OK' : 'NG'} ${f.label.padEnd(26)} ${rows.join(' ') || empty}`);
+    console.log(`  ${feature ? 'OK' : 'NG'} ${f.label.padEnd(26)} ${(mech ? rows.slice(0, 3) : rows).join(' ') || empty}`);
   }
   console.log(`⑬v4 タイミング ${ok}/${TIMING_FEATURES.length}`);
   return ok;
