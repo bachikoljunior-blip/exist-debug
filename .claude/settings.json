@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sim/tools/decision_guard.sh --hook",
+            "timeout": 30,
+            "statusMessage": "判断の丸投げ検問"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sim/tools/decision_guard.sh --install-git-hook >/dev/null 2>&1 || true",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}
