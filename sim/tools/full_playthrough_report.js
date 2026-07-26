@@ -49,7 +49,7 @@ const fs=require('fs');try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   // ===== Phase 3: 中盤設備・ボス・装備・転生(整合accel) =====
   await p.evaluate(()=>{try{ state.cookies=D('1e12'); state.runCookies=D('1e12'); if(typeof UPGRADES!=='undefined')for(const u of UPGRADES)buyUpgrade(u.id); }catch(e){}}); await ff(500);
   await cap('中盤〜上位設備がショップに並ぶ');
-  await p.evaluate(()=>{try{forceBossNext=true;if(typeof clearMonsters==='function')clearMonsters();showMonster&&showMonster();}catch(e){}}); await ff(300); await cap('ボス出現');
+  await p.evaluate(()=>{try{forceBossNext=true;(monsters||[]).slice().forEach(m=>hideMonster(m.id,false));showMonster&&showMonster('boss');}catch(e){}}); await ff(300); await cap('ボス出現');
   await p.evaluate(()=>{if(typeof monsters!=='undefined'&&monsters&&monsters.length){const id=monsters[0].id;for(let k=0;k<300;k++){if(!monsters.length)break;hitMonster(id);}}for(let n=0;n<12;n++){if(!(rewardModalOpen&&rewardModalOpen()))break;revealRewardChoices&&revealRewardChoices();if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]);}}); await ff(200); await cap('ボス討伐→報酬');
   await p.evaluate(()=>{try{state.stage=1;state.materials=state.materials||{};if(typeof MATERIALS!=='undefined')MATERIALS.forEach(m=>state.materials[m.id]=9999);switchTab&&switchTab('workshopTab');const items=equip2Items();for(const it of items){if(equip2CraftableNow(it)&&equip2Afford(it)){craftEquip2(it.id);break;}}renderActiveTab&&renderActiveTab();}catch(e){}}); await ff(300); await cap('装備作成(工房)');
   await p.evaluate(()=>{try{state.prestigeUnlockedEver=true;state.prestige=3000;state.cookies=D('1e12');switchTab&&switchTab('prestigeTab');renderActiveTab&&renderActiveTab();}catch(e){}}); await ff(300); await cap('転生画面(PT獲得・やり直し・スキルツリー)');

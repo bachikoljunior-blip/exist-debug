@@ -29,6 +29,11 @@
    「検出力は保持」と結論する。4(理解の主張)の測定版で、緑/赤の見た目が出るぶん見逃しやすい。
    → 判定を変えたコミットでは、**その判定が実データを読んだ出力**(比の実数・件数)を必ず添える。0件/測定不能が出たら
    それは機構の死ではなく**まず自分の配線を疑う**。
+   **機械の検問その2(2026-07-26 実装)**: `sim/tools/qa_ref_check.js` = QAツールが `getElementById('X')`/`#X`/
+   `typeof F==='function'` で参照する名前が index.html に実在するかを静的検査(実在しない=その検査は無言で空振り)。
+   同日に同型を3件検出: save_robust/fmt_extreme の `#cookieCount`・`#cps`、crit_felt の `critChance`、
+   full_playthrough の `clearMonsters`。pre-commit で `sim/tools/*.js` か `index.html` を含むコミットに自動実行。
+   回帰実証: 架空のid/関数名を仕込むと検知・戻すと合格。
    **機械の検問(2026-07-26 実装)**: `sim/tools/measure_wiring_check.js` = 判定器(runner.js の MECH)が読む
    カウンタ名を抽出し、sim.js の全周回記録リテラル(`sim.runs.push({...})` ×2 と `replayRun` の `return {...}`)に
    載っているかを静的検査。欠けたら exit 1。`sim/sim.js` か `sim/runner.js` を含むコミットで pre-commit が自動実行する

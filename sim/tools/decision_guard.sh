@@ -100,6 +100,10 @@ top="$(git rev-parse --show-toplevel)"
 if git diff --cached --name-only | grep -qE '^sim/(sim|runner)\.js$'; then
   node "$top/sim/tools/measure_wiring_check.js" || exit 1
 fi
+# QAツール or ゲーム本体に触るコミットで、QA判定器が存在しないid/関数を読んでいないかを静的検査
+if git diff --cached --name-only | grep -qE '^(sim/tools/.*\.js|index\.html)$'; then
+  node "$top/sim/tools/qa_ref_check.js" || exit 1
+fi
 exit 0
 HOOK
     chmod +x "$hook"
