@@ -6789,7 +6789,7 @@ const REWARD_POOL = [
   // { id: "crushedMill", name: "砕粉ミル", category: "equipment", unlockSkill: "unlock_reward_crushedMill", desc: n => `設備個別強化の効果 +${150 * n}%` },
   { id: "huntingCore", name: "狩猟炉心", category: "hunt", unlockSkill: "unlock_reward_huntingCore", desc: n => `モンスター撃破数に応じて毎秒生産上昇。撃破1体ごとに +${(18 * n).toFixed(1)}%` },
   { id: "brandHunt", name: "焼き印狩り", category: "hunt", unlockSkill: "unlock_reward_brandHunt", desc: n => `モンスターダメージ +${45 * n}%×√タップ系設備数(強い指・神の指)` },
-  { id: "deepPursuit", name: "深追いの契約", category: "risk", unlockSkill: "unlock_reward_deepPursuit", desc: n => `出現間隔 -${(100 * (1 - Math.exp(-0.045 * n))).toFixed(0)}%・報酬獲得数 ×${Math.pow(1.6, n).toFixed(1)}、ただしHP ×${Math.pow(1.035, n).toFixed(2)} Lv.${n}` },
+  { id: "deepPursuit", name: "深追いの契約", category: "risk", unlockSkill: "unlock_reward_deepPursuit", desc: n => `出現間隔 -${(100 * (1 - Math.exp(-0.045 * n))).toFixed(0)}%・報酬獲得数 ×${Math.pow(1.6, n).toFixed(1)}、ただしHP ×${deepPursuitHpPenalty().toFixed(2)}(危険系統の報酬を重ねると緩む) Lv.${n}` },
   { id: "goldenBeastMutation", name: "金獣変異", category: "risk", unlockSkill: "unlock_reward_goldenBeastMutation", desc: n => `金ブースト中に撃破すると、一定確率で報酬Lv +1(重ねるほど確率上昇は緩やか)` }
 ];
 
@@ -6880,7 +6880,7 @@ const SKILL_NODES = [
 
   // 下：報酬。選択肢数は有限スキルでのみ増える。
   { id: "reward_1", name: "選択の目", branchId: "reward", cost: 400000000, x: 1685, y: 1239, icon: "✧", prereqs: ["monster_4"], desc: "モンスター報酬の選択肢 +1。", effects: [{ type: "rewardChoices", value: 1 }] },
-  { id: "reward_synergy", name: "報酬系統化", branchId: "reward", cost: 140000000, x: 1841, y: 1043, icon: "✧", prereqs: ["reward_1"], desc: "金色系・狩猟系の報酬を取るほどその系統が強化(+0.3%/枚・重ねるほど伸びは緩やか)。", effects: [{ type: "unlockSystem", target: "rewardSynergy" }] },
+  { id: "reward_synergy", name: "報酬系統化", branchId: "reward", cost: 140000000, x: 1841, y: 1043, icon: "✧", prereqs: ["reward_1"], desc: "金色系・狩猟系・危険系の報酬を取るほどその系統が強化(+0.3%/枚・重ねるほど伸びは緩やか)。", effects: [{ type: "unlockSystem", target: "rewardSynergy" }] },
   { id: "reward_choice_2", name: "選択の眼光", branchId: "reward", cost: 49000000, x: 1839, y: 1268, icon: "✧", prereqs: ["reward_synergy"], desc: "モンスター報酬の選択肢 +1(選択肢が増えるのはここまで)。", effects: [{ type: "rewardChoices", value: 1 }] },
   // 強化圧縮も退役(2026-07-26 砕粉ミルと同じ理由・同じ判断): 効果 upgradePerkPower は upgradeBoostRate に
   // しか乗らず、それは upgradePerks[id](恒久0)と積になるので効果は常に0。依存ノードは退役した砕粉ミルだけ
@@ -8763,9 +8763,9 @@ function intervalReduction(level, rate) {
 // 報酬系統ボーナスが実際に効く系統(図鑑の表示はこれだけを載せる)。
 //   golden: goldenSpawnFactor / goldenAmount 等が読む
 //   hunt  : monsterSpawnFactor / 対モンスターダメージ等が読む
-//   risk  : 読む箇所が無い(補正は常に効果ゼロ)=配線するまで表示しない
+//   risk  : deepPursuitHpPenalty が読む(2026-07-26 配線・sim の expect 48h で合否不変を確認)
 //   equipment: 唯一の報酬「砕粉ミル」を退役させたので取得できず、効果経路(upgradePerks)も恒久0
-const SYNERGY_LIVE_CATS = ["golden", "hunt"];
+const SYNERGY_LIVE_CATS = ["golden", "hunt", "risk"];
 
 function rewardCategoryBonus(category) {
   if (!rewardSynergyUnlocked()) return 0;
@@ -10950,7 +10950,10 @@ function deepPursuitSpawnReduction() {
 
 
 function deepPursuitHpPenalty() {
-  return Math.pow(1.035, state.perks.deepPursuit || 0);
+  // 危険系統の系統化(スキル「報酬系統化」): 危険報酬を重ねるほどHP増を少し扱いやすくする。
+  // sim.js monsterHpValue と同式(P.rw.riskSoft=1.0)。危険系統だけ補正を読む箇所が無く常に効果ゼロだった。
+  const soft = 1 / (1 + rewardCategoryBonus("risk"));
+  return Math.pow(1.035, (state.perks.deepPursuit || 0) * soft);
 }
 
 
