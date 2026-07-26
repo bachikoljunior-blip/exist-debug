@@ -21,11 +21,15 @@ const DIR=process.env.OUT||path.join(os.tmpdir(),'phase_screen_qa'); fs.mkdirSyn
         if(el.children.length===0){ const t=(el.textContent||'').trim();
           if(t && /\b(NaN|undefined|Infinity|null)\b/.test(t)) bad.push((el.id||el.className||el.tagName)+': '+t.slice(0,60)); } };
       walk(document.body);
-      const g=document.getElementById('game')||document.body;
-      const wide=[]; for(const el of document.querySelectorAll('#game *')){
+      // はみ出し検査(2026-07-26修正): 旧セレクタ'#game *'は#game不在で空振り=検査が形骸化していた。
+      // body全域を走査し、横スクロール容器(overflow-x:auto/scroll/hidden)内の要素は内部スクロール=設計として除外。
+      const inScroller=(el)=>{ for(let e2=el.parentElement;e2&&e2!==document.body;e2=e2.parentElement){
+        const ox=getComputedStyle(e2).overflowX; if(ox==='auto'||ox==='scroll'||ox==='hidden')return true; } return false; };
+      const wide=[]; for(const el of document.querySelectorAll('body *')){
         if(el.offsetParent===null)continue; const r2=el.getBoundingClientRect();
-        if(r2.width>0&&(r2.right>window.innerWidth+6||r2.left<-6)) { wide.push((el.id||el.className.split(' ')[0]||el.tagName)+'@'+Math.round(r2.left)+'..'+Math.round(r2.right)); if(wide.length>4)break; } }
-      return {bad:bad.slice(0,6), wide:wide.slice(0,5), scrollW:document.body.scrollWidth, winW:window.innerWidth};
+        if(r2.width>0&&(r2.right>window.innerWidth+6||r2.left<-6)&&!inScroller(el)) { wide.push((el.id||el.className.split(' ')[0]||el.tagName)+'@'+Math.round(r2.left)+'..'+Math.round(r2.right)); if(wide.length>4)break; } }
+      // ページ実スクロールは documentElement 基準(bodyのscrollWidthは内部スクロール容器で偽陽性を出す実測)
+      return {bad:bad.slice(0,6), wide:wide.slice(0,5), scrollW:document.documentElement.scrollWidth, winW:window.innerWidth};
     });
     await p.screenshot({path:DIR+'/'+name+'.png'});
     const ok = r.bad.length===0 && r.wide.length===0 && r.scrollW<=r.winW+2;
