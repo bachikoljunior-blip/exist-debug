@@ -13207,7 +13207,9 @@ function updateQuestHud() {
   const box = $("questHud");
   if (!box) return;
   // 討伐を始める前(最序盤のタップ/購入チュートリアル期)は出さない=最初の討伐で目標が actionable になった瞬間に登場。
-  if (titleScreenActive() || pausedForSkillChoice() || !((state.msKills || 0) > 0)) { box.style.display = "none"; return; }
+  // ゲートは生涯討伐数(monstersDefeated=転生持ち越し)。旧・周回カウンタ(msKills)だと転生ごとに0へ戻り、
+  // 「次は何を目指すか」を最も知りたい転生直後に長期目標のピルが消えていた(R35d・実機で実測)。
+  if (titleScreenActive() || pausedForSkillChoice() || !((state.monstersDefeated || 0) > 0)) { box.style.display = "none"; return; }
   const q = questProgress();
   const nEl = $("questHudN");
   const fill = document.querySelector("#questHudBar > i");
