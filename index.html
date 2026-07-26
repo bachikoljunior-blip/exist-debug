@@ -16261,6 +16261,15 @@ function buildRunStartFromCurrent() {
   s.revealedEver = { ...(cur.revealedEver || {}) };
   s.lastRevealAt = Number(cur.lastRevealAt) || 0;
   s.everResearch = { ...(cur.everResearch || {}) };
+  // 一生のラッチ・周回をまたぐ基準値も写す(周回内で変わらないので現在値=周回開始時の値)。
+  // 写さないと、やり直しのたびに「新たな機能が解放されます」が再び出たり、層の試練の基準が消える。
+  s.prestigeUnlockedEver = Boolean(cur.prestigeUnlockedEver) || Boolean(cur.seenPrestigeUnlockNotice);
+  s.seenPrestigeUnlockNotice = Boolean(cur.seenPrestigeUnlockNotice);
+  s.lastPrestigeCps = Math.max(0, Number(cur.lastPrestigeCps) || 0); // 次回の転生コストの基準。周回内で変わらない
+  s.prevDuration = Math.max(0, Number(cur.prevDuration) || 0);
+  s.prevMaxQuotaStage = Math.max(0, Math.floor(Number(cur.prevMaxQuotaStage) || 0));
+  s._prevMaxStage1 = Math.max(0, Math.floor(Number(cur._prevMaxStage1) || 0));
+  s.skillChoiceStartCount = Math.max(0, Math.floor(Number(cur.skillChoiceStartCount) || 0));
   s.awaitingSkillChoice = true;
   return s;
 }

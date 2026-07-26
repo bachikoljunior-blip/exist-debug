@@ -107,6 +107,8 @@ fi
 # ゲーム本体に触るコミットで、停止中に凍結されない期限(=手を出せない間に溶けるバフ/締切)が無いかを静的検査
 if git diff --cached --name-only | grep -qE '^index\.html$'; then
   node "$top/sim/tools/freeze_wiring_check.js" || exit 1
+  # 転生・やり直しの持ち越し列挙から漏れた state(=永久消失する進捗)が無いかを静的検査
+  node "$top/sim/tools/persist_wiring_check.js" || exit 1
 fi
 exit 0
 HOOK
