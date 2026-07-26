@@ -6564,6 +6564,7 @@ const ASSETS = {
     bossCore3: "images/mat_bossCore3.webp",
     bossCore4: "images/mat_bossCore4.webp",
     bossCore5: "images/mat_bossCore5.webp",
+    bossCoreAny: "images/mat_bossCore1.webp", // 任意のボス核(表示用の代表アイコン)
     voidSugar: "images/mat_voidSugar.webp",
     deepCore: "images/mat_deepCore.webp",
     omniFlour: "images/mat_omniFlour.webp"
@@ -9504,6 +9505,13 @@ function materialSeen(id) {
   return Boolean((state.materialsSeen || {})[id]);
 }
 
+// 素材名(bossCoreAnyのような総称キーも人が読める名前にする)
+function matLabel(id) {
+  if (id === "bossCoreAny") return "ボス核(どのステージの核でもよい)";
+  const m = getMaterial(id);
+  return m ? m.name : id;
+}
+
 function equipLv(id) {
   return Math.max(0, Math.floor(Number((state.equipment || {})[id]) || 0));
 }
@@ -10289,7 +10297,17 @@ function matIconHtml(matId, cls, infoId) {
 }
 // 色素材は上位が下位を代替(sim同期)
 function equip2OreHave(tier) { let n = 0; for (let t = tier; t <= EQUIP2_CFG.tiers; t++) n += materialCount("ore_t" + t); return n; }
-function equip2HaveOf(matId) { const m = /^ore_t(\d+)$/.exec(matId); return m ? equip2OreHave(Number(m[1])) : materialCount(matId); }
+function equip2HaveOf(matId) { if (matId === "bossCoreAny") return anyBossCoreCount(); const m = /^ore_t(\d+)$/.exec(matId); return m ? equip2OreHave(Number(m[1])) : materialCount(matId); }
+// 任意ボス核の消費: 番号の小さいステージの核から使い、足りなければ深層核(spendMaterialsと同順)
+function spendBossCoreAny(n) {
+  let need = Math.max(0, Math.floor(n));
+  for (const key of STAGES.map(s => "bossCore" + s.no).concat(["deepCore"])) {
+    if (need <= 0) break;
+    const use = Math.min(need, materialCount(key));
+    if (use > 0) { state.materials[key] = materialCount(key) - use; need -= use; }
+  }
+  return need === 0;
+}
 function equip2Afford(it) {
   // レシピ固定(2026-07-14): 装備入りレシピは前ティア所持が必須(実行時の代替なし)
   if (it.prev && (state.eq2Owned[it.prev] || 0) < 1) return false;
@@ -10316,6 +10334,7 @@ function craftEquip2(id) {
   const cost = it.cost;
   // 消費(色素材は低い方から充当)
   for (const k in cost) {
+    if (k === "bossCoreAny") { spendBossCoreAny(cost[k]); continue; }
     const m = /^ore_t(\d+)$/.exec(k);
     if (!m) { state.materials[k] = Math.max(0, materialCount(k) - cost[k]); continue; }
     let need = cost[k];
@@ -10557,7 +10576,7 @@ function renderWorkshop() {
   box.querySelectorAll("[data-matinfo]").forEach(b => addTap(b, () => {
     const v = b.dataset.matinfo;
     if (v.startsWith("prev:")) { const pit = equip2ById(v.slice(5)); showInfoPopup(b, pit ? pit.name : v.slice(5)); }
-    else if (v.startsWith("mat:")) { const m = getMaterial(v.slice(4)); showInfoPopup(b, m ? m.name : v.slice(4)); }
+    else if (v.startsWith("mat:")) { showInfoPopup(b, matLabel(v.slice(4))); }
   }));
   // 作成する装備のアイコンをタップしたら名前+効果をアイコン近くにポップアップ表示(行には載せない)(2026-07-13)
   box.querySelectorAll("[data-eq2info]").forEach(b => addTap(b, () => {
@@ -11549,7 +11568,7 @@ function equip2Items() {
           cost[m1] = (cost[m1] || 0) + (1 + ((v * t) % 5)) * (v % 4 === 3 ? bulk : 1); // 大口素材は品による(上限なし)
           if (v >= 4 && t >= 3) { const m2 = PAL[(v + t + 2) % span]; if (m2 !== m1) cost[m2] = (cost[m2] || 0) + 1 + ((v + t) % 3); }
           if (v >= 7 && t >= 3) { const m3 = v % 2 === 0 ? smatA : smatB; cost[m3] = (cost[m3] || 0) + 2; }
-          if (v === 9 && t >= 5) cost[t === 6 ? "voidSugar" : "bossCore"] = 1 + (t === 6 ? 1 : 0);
+          if (v === 9 && t >= 5) cost[t === 6 ? "voidSugar" : "bossCoreAny"] = 1 + (t === 6 ? 1 : 0); // 核はステージ別(bossCore1..5/deepCore)なので任意核キーで要求する(sim側の総称'bossCore'と同義)
         }
         { // 強さ順コスト係数(sim同期): 弱×0.35 … 強×3.0
           const cm = 0.35 + 0.33 * costRank[cat][v];
