@@ -60,6 +60,14 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   const AWAY_H=Number(process.env.AWAY_H||8);           // 1回の離席時間(時間)
   const ACTIVE_WIN=Number(process.env.ACTIVE_WIN||120); // 戻ってきて遊ぶ時間(秒)
   const ACTIVE_SUB=Number(process.env.ACTIVE_SUB||30000); // 活動窓のクロック刻み(ms)
+  // 狩りに座る1回の長さ(2026-07-26 ユーザー指示A「討伐でステージ進行」): 離席中は湧きが起きないので
+  // 討伐は1体も進まない。次のステージが討伐クエストの残りだけで開くなら、実プレイヤは離れずに座って狩る。
+  // 湧きは42〜60秒間隔なので、1200秒の窓で20体前後が見込める。
+  const HUNT_WIN=Number(process.env.HUNT_WIN||1200);
+  // 1ステップの連続タップ上限(2026-07-26 実測): 狩り窓1200秒×6タップ/秒=5760回を1回の evaluate で
+  // 叩くとステップ制限(45秒)を超えて中断する(実走で TIMEOUT stepActions を観測)。実プレイヤも
+  // 一息に5000回は叩かないので、1ステップぶんを上限で切る(買い方に渡す実効タップ率は別管理)。
+  const TAP_CAP=Number(process.env.TAP_CAP||900);
   const BUYCFG = await installBuyPolicy(p, process.env.TPS_EFF?undefined:{tps:TPS_SELF*DUTY_HI});
   console.log(`買い方: ${BUYCFG.policy}(タップ${TPS_SELF}/s×稼働${DUTY_HI}・最初の${ACTIVE_SEC}秒は実クロック→以降は離席${AWAY_H}h+${ACTIVE_WIN}s遊ぶの繰り返し)`);
 
@@ -74,6 +82,15 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   for(let i=0;i<12;i++)await p.click('#cookie').catch(()=>{});
   await rec('クッキーをタップ',12);
 
+  // クエスト(次のステージ解放)の状況。実プレイヤの「今なにが足りないか」の判断材料。
+  const questSnap=async()=>withTO('questSnap',()=>p.evaluate(()=>{
+    try{
+      const q=(typeof questProgress==='function')?questProgress():null;
+      return { ok:!!q, done:!!(q&&q.done), st:(q&&q.st)||0, got:(q&&q.got)||0, need:(q&&q.need)||0,
+        remain:(q&&q.remain)||0, boss:((state.frontierBossPending||0)===((q&&q.st)||0)),
+        kills:state.monstersDefeated||0 };
+    }catch(e){ return { ok:false }; }
+  }));
   const snap=async()=>withTO('snap',()=>p.evaluate(()=>({sec:Math.round(state.totalPlaySec||0),cookies:Number(state.cookies.toString()),cps:Number(currentCps().toString()),
     unlocked:!!(prestigeUnlocked&&prestigeUnlocked()),gain:(prestigeGain?Number(prestigeGain()):0),cost:(prestigeCookieCost?Number(prestigeCookieCost()):0),
     runs:state.prestigeRuns||0,skills:Object.values(state.skills||{}).filter(Boolean).length})));
@@ -119,7 +136,7 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   // 転生直後は毎秒生産が0に戻るので、そのまま離席しても回収は+0(実測: 「離席8時間 → 戻って回収(+0)」が2連続)。
   // 実プレイヤは転生後に少し遊んで設備を建て直してから離れるので、転生のたびに能動セッションを挟む。
   let activeUntilSec=ACTIVE_SEC;
-  const wall0=now(); let reason='blkcap', stallCount=0, banking=false;
+  const wall0=now(); let reason='blkcap', stallCount=0, banking=false, huntDry=0;
   try{
   for(let i=0;i<8000;i++){
     let s=await snap();
@@ -130,7 +147,13 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         activeUntilSec=(s.sec||0)+ACTIVE_SEC; } // 立て直しの能動セッション(離席しても+0なので)
     }
     // 数分の貯蓄で cost に届くなら銀行モード(1e8ラッチ→1e9転生)。純経済で到達=stage進行(討伐100体)より現実的。
+    // 狩り判断(2026-07-26 ユーザー指示A): 次のステージが「討伐クエストの残り」だけで開くなら座って狩る。
+    // 離席中は湧きが起きない=討伐は1体も進まないので、離れるのは進行の放棄にあたる。
+    // 守護ボス待機中は最優先(2.5秒で登場する)。狩っても実りが無い(窓で0体)ときだけ離席に戻して火力を育てる。
+    const q=await questSnap();
+    const wantHunt = q.ok && !q.done && (q.boss || q.remain>0) && huntDry<2;
     if(!banking && s.gain>0 && (s.cookies + s.cps*600) >= s.cost) banking=true;
+    if(wantHunt) banking=false; // 狩り中は設備を止めない(火力=タップと毎秒生産)
     const sec=s.sec;
     // 時間の進め方(2026-07-26 ユーザー指示A「本物到達を延ばす」への対処):
     // 実クロックだけで進めると、初転生(1e9クッキー)に要するゲーム内時間が現実の実行時間を超えるので
@@ -146,6 +169,34 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         if(done<step)await withTO('序盤の処理',()=>p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
           if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster)for(const m of monsters.slice())for(let k=0;k<200&&monsters.indexOf(m)>=0;k++)hitMonster(m.id);
           if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); })); }
+    } else if(wantHunt){
+      // 狩りセッション: 座って湧きを待ち、出たら倒す。討伐が進めば報酬・素材・クエストが同時に進む。
+      // 待ち方は「次の湧き時刻までクロックを飛ばす」(2026-07-26 実測で固定刻みから変更):
+      // 固定30秒刻みだと通常モンスターの滞在(11〜16秒)を跨いで取りこぼし、しかも1窓40回の
+      // クロック前進で実時間を食う。実タイマー(monsterSpawnDeadline)まで飛ばせば1体あたり1回で済む。
+      step=HUNT_WIN*1000; stepSec=HUNT_WIN;
+      const k0=q.kills;
+      let done=0, guard=0;
+      while(done<step && guard++<80){
+        const wait=await withTO('次の湧きまで',()=>p.evaluate(()=>{
+          try{
+            const r=(monsterSpawnPausedRemaining!=null)?monsterSpawnPausedRemaining
+              :(monsterSpawnDeadline!=null?monsterSpawnDeadline-Date.now():null);
+            return (r==null||!isFinite(r))?null:Math.max(0,Math.round(r));
+          }catch(e){ return null; }
+        }));
+        const jump=Math.min(step-done, (wait==null?ACTIVE_SUB:wait+800));
+        await withTO('clock(狩り: 次の湧きまで)',()=>p.clock.runFor(jump)); done+=jump;
+        await withTO('狩りの処理',()=>p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
+          if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster)for(const m of monsters.slice())for(let k=0;k<400&&monsters.indexOf(m)>=0;k++)hitMonster(m.id);
+          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); }));
+      }
+      const q2=await questSnap();
+      const killed=Math.max(0,(q2.kills||0)-k0);
+      if(killed>0){ huntDry=0; await rec(`ステージ${q.st}に座って狩る(クエスト ${q2.got}/${q2.need})`,1); }
+      else { huntDry++; await rec(`ステージ${q.st}で狩ったが倒せない(火力不足=離席で育て直す)`,1); }
+      if(q2.boss&&!q.boss)await rec('討伐ノルマ達成！守護ボスが現れる',1);
+      if((q2.st||0)>(q.st||0))await rec(`守護ボス撃破！ステージ${q2.st}を解放`,1);
     } else {
       const awaySec=Math.round(AWAY_H*3600);
       const got=await withTO('離席のオフライン計算',()=>p.evaluate((asec)=>{ const bc=Math.max(0,Number(baseCps().toString()));
@@ -160,9 +211,10 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     }
     // 実クロックで進めた区間は「居る」区間なので、その中では稼働HIで叩く。買い方の評価に渡す
     // 実効タップ率は「1日の中でどれだけ叩くか」なので、離席込みの平均(活動窓/(活動窓+離席))で出す。
-    const inWindow=(sec<activeUntilSec)?DUTY_HI:1;
-    const tapN=Math.round(stepSec*TPS*inWindow*(sec<activeUntilSec?1:DUTY_HI));
-    const avgDuty=(sec<activeUntilSec)?DUTY_HI:(ACTIVE_WIN*DUTY_HI/(ACTIVE_WIN+AWAY_H*3600));
+    // 狩り中は座っているので稼働HI(離席込みの平均で割り引かない)
+    const sitting=(sec<activeUntilSec)||wantHunt;
+    const tapN=Math.min(TAP_CAP, Math.round(stepSec*TPS*DUTY_HI*(sitting?1:DUTY_HI)));
+    const avgDuty=sitting?DUTY_HI:(ACTIVE_WIN*DUTY_HI/(ACTIVE_WIN+AWAY_H*3600));
     await withTO('稼働率の更新',()=>p.evaluate((v)=>{ if(window.__BUY)window.__BUY.tps=v; }, TPS*avgDuty));
     const acts=await stepActions(tapN,banking);
     let progressed=false;
@@ -174,7 +226,7 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     if(stallCount>=20){reason='stall(経済頭打ち)';break;}
     if((now()-wall0)>WALLCAP){reason='wallcap';break;}
     if(i%3===0){ try{fs.writeFileSync(DIR+'/ops.json',JSON.stringify(L,null,1));}catch(e){}
-      console.log(`i=${i} ${fmtT(s2)} blk=${L.length} bank=${banking} runs=${s.runs} sk=${s.skills} cps=${s.cps.toExponential(1)} wall=${((now()-wall0)/1000).toFixed(0)}s`); }
+      console.log(`i=${i} ${fmtT(s2)} blk=${L.length} ${wantHunt?'狩り':'離席'} bank=${banking} stage=${q.st} quest=${q.got}/${q.need}${q.boss?'(守護待)':''} runs=${s.runs} sk=${s.skills} cps=${s.cps.toExponential(1)} wall=${((now()-wall0)/1000).toFixed(0)}s`); }
   }
   }catch(e){ timedOut=e.message; reason='中断: '+e.message.slice(0,60); }
   fs.writeFileSync(DIR+'/ops.json',JSON.stringify(L,null,1));
