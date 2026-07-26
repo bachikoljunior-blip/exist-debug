@@ -28,11 +28,21 @@ const CASES={
       await p.clock.runFor(1500); await p.click('#audioGate').catch(()=>{}); await p.clock.runFor(400);
       await p.click('#titleStartBtn').catch(()=>{}); await p.clock.runFor(800);
       // 遊べる状態か: cookieタップ→cps/cookiesがNaNでなく数値
+      // 判定は「プレイヤーが見る表示」で行う(2026-07-26 修正)。旧実装は Number(Decimal) の
+      // double 変換で判定しており、1e999 のような正当な巨大値を「BAD c=Infinity」と誤判定し、
+      // かつ存在しない要素id(cookieCount)を読んで hud="" になっていた=判定器側の欠陥。
       loaded=await p.evaluate(()=>{ try{ for(let i=0;i<5;i++)tapCookie();
-        const c=Number(state.cookies.toString()), cps=Number(currentCps().toString());
-        const hud=(document.getElementById('cookieCount')||{}).textContent||'';
-        const ok=Number.isFinite(c)&&Number.isFinite(cps)&&!/NaN|Infinity|undefined/.test(hud);
-        return ok?('OK cookies='+c.toExponential(1)+' cps='+cps.toExponential(1)):('BAD c='+c+' cps='+cps+' hud="'+hud.slice(0,20)+'"');
+        const cStr=String(state.cookies), cpsStr=String(currentCps());
+        const hud=(document.getElementById('cookies')||{}).textContent||'';
+        const shown=(typeof fmt==='function')?String(fmt(state.cookies)):hud;
+        const bad=v=>/NaN|undefined|null/.test(String(v));
+        // 負値もNG(生産がクッキーを減らす盤面はゲームのどの経路でも生まれない)。
+        // 符号は文字列で見る: currentCps() は Decimal でも素の数値でもあり得るため .lt を呼ぶと
+        // 型によって例外→捕まえて false=見逃しになる(2026-07-26 回帰テストで実際に見逃したので修正)。
+        const neg=/^\s*-/.test(cStr)||/^\s*-/.test(cpsStr)||/^\s*-/.test(hud);
+        const ok=!bad(cStr)&&!bad(cpsStr)&&!bad(hud)&&!bad(shown)&&hud.length>0&&!neg;
+        return ok?('OK cookies='+cStr.slice(0,14)+' cps='+cpsStr.slice(0,10)+' hud='+hud.slice(0,14))
+                 :('BAD c='+cStr.slice(0,20)+' cps='+cpsStr.slice(0,12)+' hud="'+hud.slice(0,20)+'" 表示='+shown.slice(0,16));
       }catch(e){return 'EVAL_ERR:'+e.message.slice(0,60);} });
     }catch(e){ loaded='LOAD_ERR:'+e.message.slice(0,60); }
     results.push({name, loaded, errs:[...new Set(errs)].slice(0,2)});

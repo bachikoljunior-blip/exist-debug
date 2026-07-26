@@ -7447,6 +7447,26 @@ function ensureState() {
     state.cookies = state.cookies.add(fixed);
     state.cookieRemainder -= fixed;
   }
+
+  // 頑健性の床(R35o・2026-07-26 実測で発見): 壊れた/改変されたセーブの負値がそのまま盤面に載っていた。
+  // 実測 {"cookies":"-100","prestige":-5,"upgrades":{"grandma":-3},"monstersDefeated":-9} で
+  // クッキー-100・毎秒-3(=生産がクッキーを減らす)・設備-3個・討伐-9体のままロード完了・エラー0。
+  // 負の所持数/負の毎秒/負の累計はゲームのどの経路でも生まれない=正当なセーブでは常に no-op。
+  // 経済式には触らず、ロード時に0で床を張るだけ(クラウド同期の衝突・版差・手書き改変への保険)。
+  const nnInt = v => Math.max(0, Math.floor(Number(v) || 0));
+  Object.keys(state.upgrades).forEach(k => { state.upgrades[k] = nnInt(state.upgrades[k]); });
+  Object.keys(state.perks).forEach(k => { state.perks[k] = nnInt(state.perks[k]); });
+  Object.keys(state.upgradePerks).forEach(k => { state.upgradePerks[k] = nnInt(state.upgradePerks[k]); });
+  Object.keys(state.questKills).forEach(k => { state.questKills[k] = nnInt(state.questKills[k]); });
+  state.prestige = nnInt(state.prestige);
+  state.prestigeTotal = nnInt(state.prestigeTotal);
+  state.prestigeBaseTotal = nnInt(state.prestigeBaseTotal);
+  state.prestigeRuns = nnInt(state.prestigeRuns);
+  state.totalClicks = nnInt(state.totalClicks);
+  state.monstersDefeated = nnInt(state.monstersDefeated);
+  ["cookies", "totalCookies", "runCookies", "earnEma", "emaLastRunCookies", "lastSecondEarn"].forEach(k => {
+    try { if (state[k] && state[k].lt && state[k].lt(0)) state[k] = D(0); } catch (e) { state[k] = D(0); }
+  });
 }
 
 function $(id) {
