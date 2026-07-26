@@ -1684,7 +1684,7 @@ function computeProd(sim) {
   //   唯一の経路(報酬 kind:"upgrade")は 2026-07-08「設備強化の固定枠撤廃」以降 coreChoices が空にならないため到達不能
   //   =lv恒久0=効果×0。にもかかわらず本floorのおかげで ③ は「OK rw:crushedMill」と報告する=判定がゲームの死を隠す。
   //   ③のOKをゲーム側の実効性の証拠として読まないこと。恒久修正(カード効果の再設計 or 退役)は経済案件=要ユーザー判断。
-  if (!rwOff(sim, 'crushedMill') && (r.perks.crushedMill || 0) > 0) globalRes *= 1 + (r.perks.crushedMill || 0) * (P.rw.crushedMillProd || 0);
+  // crushedMill のフロアは撤去(2026-07-26 退役): 効果ゼロのperkを③で合格させる測定クラッチだった。プールからも除外済み。
   if (!rwOff(sim, 'goldenBeastMutation') && (r.perks.goldenBeastMutation || 0) > 0) globalRes *= 1 + (r.perks.goldenBeastMutation || 0) * (P.rw.goldenBeastMutationProd || 0);
   if (!rwOff(sim, 'brandHunt') && (r.perks.brandHunt || 0) > 0) globalRes *= 1 + (r.perks.brandHunt || 0) * (P.rw.brandHuntProd || 0);
 
@@ -2786,7 +2786,11 @@ function buildRewardOffer(sim, level, typeId) {
   const bossBonus = typeId === 'boss' ? ((P.mtype && P.mtype.bossChoiceBonus) || 0) : 0;
   const choiceLimit = P.reward.choiceBase + bossBonus + Math.max(0, Math.floor(skillEffect(sim, 'rewardChoices')));
 
-  const unlockedPerks = REWARD_POOL.filter(x => rewardUnlockedFn(sim, x));
+  // 砕粉ミルの退役(2026-07-26): このperkの効果経路は upPerkPower→personal=1+upgradePerks[id]×rate のみで、
+  // upgradePerks を増やす経路(kind:'upgrade'の報酬)は 2026-07-08「設備強化固定枠の撤廃」で消滅済み=sim/ゲーム双方で
+  // 効果が恒久ゼロ。配ると3枚手札の1枠を死に札が食う(=選択の実質が2枚に減る)ため、プールから外す。
+  // ③の見かけの合格は sim側の測定フロア(1680)が作っていたもので実効性の証拠ではない→フロアも同時に撤去。
+  const unlockedPerks = REWARD_POOL.filter(x => rewardUnlockedFn(sim, x) && x.id !== 'crushedMill');
   // モンスター報酬に「固定で設備強化(upgrade)が1枠入る」仕様は撤廃(2026-07-08 ユーザー決定)。
   // 報酬は報酬プール(perk)のみから決定的ローテーションで選ぶ。
   const offer = [];
