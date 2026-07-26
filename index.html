@@ -12084,11 +12084,20 @@ function renderQuota() {
   // 開始直後の猶予(monsterQuotaRequiredAtElapsed が最初の30秒は0を返す)。
   // 「ノルマ N / 0」は意味不明&満タン緑で誤解を生むので、「最初の敵まで あとN秒」の“接近ゲージ”に置き換える(純UI・次への動機)。
   if (quota === 0 && elapsed < 30) {
-    const cd = Math.max(1, Math.ceil(30 - elapsed));
-    const chargePct = Math.min(100, Math.max(0, (elapsed / 30) * 100));
+    // R35k: 旧実装は「30 - 経過秒」という固定値で、実際の出現(scheduleMonsterの42〜60秒×係数)と最大2倍ずれていた
+    // =カウントが0になっても敵が来ない/来ても表示より遅い。実タイマー(monsterSpawnDeadline)を出す。純表示。
+    const remainMs = (monsterSpawnPausedRemaining != null)
+      ? monsterSpawnPausedRemaining
+      : (monsterSpawnDeadline != null ? monsterSpawnDeadline - Date.now() : null);
+    const known = remainMs != null && remainMs > 0;
+    const cd = known ? Math.max(1, Math.ceil(remainMs / 1000)) : null;
+    const label = known ? `最初の敵まで あと ${cd} 秒` : "最初の敵を待っている⋯";
+    // ゲージは実際の待ち時間に対する進捗(残りが分かる時のみ。分からなければ空)
+    const totalMs = known ? Math.max(remainMs, elapsed * 1000 + remainMs) : 0;
+    const chargePct = known ? Math.min(100, Math.max(0, (1 - remainMs / totalMs) * 100)) : 0;
     box.innerHTML = `
-      <div class="quotaFutureLine"><span>最初の敵まで あと ${cd} 秒</span></div>
-      <div class="quotaGauge quotaUnderTarget" aria-label="最初の敵まで あと ${cd} 秒">
+      <div class="quotaFutureLine"><span>${label}</span></div>
+      <div class="quotaGauge quotaUnderTarget" aria-label="${label}">
         <div class="quotaLayer" style="${quotaLayerStyle(0, chargePct, 1)}"></div>
         <div class="quotaStageBadge" title="現在のノルマ層">第<span class="quotaStageNumber">${stageDisplay.stage}</span>層</div>
       </div>
