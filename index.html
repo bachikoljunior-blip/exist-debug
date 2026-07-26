@@ -4897,6 +4897,8 @@
     /* 所持装備の「装備中」バッジ(R35i) */
     /* R35m: 効果中の料理カードに「再調理は上書き」を注記(素材の無駄払いを防ぐ・純表示) */
     .dishNote { display: block; margin-top: 2px; font-size: 10.5px; color: #e8c98a; }
+    /* 転生の取り消しが消える事実を静かに伝える一行(2026-07-26) */
+    .skillCancelNote { margin-top: 6px; font-size: 11.5px; line-height: 1.5; color: #c9b48f; text-align: center; }
     .eqNowTag {
       display: inline-block; font-size: 10.5px; font-weight: 800; margin-left: 6px;
       border-radius: 6px; padding: 1px 6px; color: #b9f0c8;
@@ -6195,6 +6197,10 @@
         <button id="skillStartBtn" class="startBtn locked">この構成でスタート</button>
       </div>
       <button id="cancelRebirthBtn" class="skillCancelBtn" type="button" style="display:none">← 転生前に戻る</button>
+      <!-- 2026-07-26: 「スタート」は転生を確定させ、この取り消しを永久に捨てる(beginRunAfterSkillsが
+           スナップショットを破棄)。主要動線に確認を挟むと毎回の転生が煩わしくなるので、確認ではなく
+           取り消しボタンの真下に事実を一行で置く(取り消しが出ている時だけ表示)。 -->
+      <div id="cancelRebirthNote" class="skillCancelNote" style="display:none">スタートすると転生が確定し、「転生前に戻る」は使えなくなります。</div>
     </div>
 
     <div class="skillFloatingControls">
@@ -14154,6 +14160,8 @@ function renderSkillChoiceScreen() {
   if (cancelBtn) {
     const canCancel = !skillViewMode && pausedForSkillChoice() && preRebirthSnapshotAvailable();
     cancelBtn.style.display = canCancel ? "" : "none";
+    const note = $("cancelRebirthNote");
+    if (note) note.style.display = canCancel ? "" : "none";
   }
 
   const lines = visibleSkills.flatMap(skill => {
