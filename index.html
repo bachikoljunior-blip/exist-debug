@@ -6772,7 +6772,13 @@ const REWARD_POOL = [
   { id: "beastScent", name: "獣の嗅覚", category: "golden", unlockSkill: "unlock_reward_beastScent", desc: n => `モンスター撃破後、次の金クッキーが早く出る Lv.${n}` },
   { id: "beastHeatFerment", name: "獣熱発酵", category: "hunt", unlockSkill: "unlock_reward_beastHeatFerment", desc: n => `モンスター撃破数に応じて全生産上昇。撃破1体ごとに +${(15.0 * n).toFixed(1)}%` },
   { id: "biteRecovery", name: "甘噛み回収", category: "hunt", unlockSkill: "unlock_reward_biteRecovery", desc: n => `攻撃ごとにクッキー回収(与ダメ×タップ力・Lvで増加) Lv.${n}` },
-  { id: "crushedMill", name: "砕粉ミル", category: "equipment", unlockSkill: "unlock_reward_crushedMill", desc: n => `設備個別強化の効果 +${150 * n}%(※現在この効果の土台となる報酬「設備の個別強化」は出現しないため、生産は変わりません)` },
+  // 砕粉ミルは退役(2026-07-26 自分の決定・sim先行で検証済み)。効果経路は upgradeBoostRate 経由の
+  // upgradePersonalMultiplier = 1 + upgradePerks[id]×rate のみで、upgradePerks を増やす唯一の経路
+  // (報酬 kind:"upgrade")は 2026-07-08「設備強化の固定枠撤廃」以降 coreChoices が空にならず到達不能
+  // =lv恒久0=効果×0。プールに残すと「取っても何も起きない札」で1枚分の選択を奪うだけなので外す。
+  // 新しい数値は発明しない/報酬復活は2026-07-08の決定に逆行するので採らない。revertはこの1行の復帰で可能。
+  // sim: プール除外+③測定フロア撤去で ①12/14・③18/20・⑨21/21(19/19から改善)・⑫4/5・⑬4/4 を確認。
+  // { id: "crushedMill", name: "砕粉ミル", category: "equipment", unlockSkill: "unlock_reward_crushedMill", desc: n => `設備個別強化の効果 +${150 * n}%` },
   { id: "huntingCore", name: "狩猟炉心", category: "hunt", unlockSkill: "unlock_reward_huntingCore", desc: n => `モンスター撃破数に応じて毎秒生産上昇。撃破1体ごとに +${(18 * n).toFixed(1)}%` },
   { id: "brandHunt", name: "焼き印狩り", category: "hunt", unlockSkill: "unlock_reward_brandHunt", desc: n => `モンスターダメージ +${45 * n}%×√タップ系設備数(強い指・神の指)` },
   { id: "deepPursuit", name: "深追いの契約", category: "risk", unlockSkill: "unlock_reward_deepPursuit", desc: n => `出現間隔 -${(100 * (1 - Math.exp(-0.045 * n))).toFixed(0)}%・報酬獲得数 ×${Math.pow(1.6, n).toFixed(1)}、ただしHP ×${Math.pow(1.035, n).toFixed(2)} Lv.${n}` },
@@ -6868,7 +6874,10 @@ const SKILL_NODES = [
   { id: "reward_1", name: "選択の目", branchId: "reward", cost: 400000000, x: 1685, y: 1239, icon: "✧", prereqs: ["monster_4"], desc: "モンスター報酬の選択肢 +1。", effects: [{ type: "rewardChoices", value: 1 }] },
   { id: "reward_synergy", name: "報酬系統化", branchId: "reward", cost: 140000000, x: 1841, y: 1043, icon: "✧", prereqs: ["reward_1"], desc: "同系統の報酬を取るほどその系統が強化(+0.3%/枚・重ねるほど伸びは緩やか)。", effects: [{ type: "unlockSystem", target: "rewardSynergy" }] },
   { id: "reward_choice_2", name: "選択の眼光", branchId: "reward", cost: 49000000, x: 1839, y: 1268, icon: "✧", prereqs: ["reward_synergy"], desc: "モンスター報酬の選択肢 +1(選択肢が増えるのはここまで)。", effects: [{ type: "rewardChoices", value: 1 }] },
-  { id: "reward_2", name: "強化圧縮", branchId: "reward", cost: 1200000000000, x: 1508, y: 2974, icon: "✧", prereqs: ["upgrade_singularity"], desc: "報酬『設備の個別強化』の効果+120%。※現在その報酬は出現しないため効果は休止中(取得しても生産は変わりません)。", effects: [{ type: "upgradePerkPower", value: 1.2000000000000002 }] },
+  // 強化圧縮も退役(2026-07-26 砕粉ミルと同じ理由・同じ判断): 効果 upgradePerkPower は upgradeBoostRate に
+  // しか乗らず、それは upgradePerks[id](恒久0)と積になるので効果は常に0。依存ノードは退役した砕粉ミルだけ
+  // (=この枝を閉じても到達不能になる他ノードは無い)。1.2e12PTを払って何も起きない札を残さない。
+  { id: "reward_2", name: "強化圧縮(退役)", retired: true, branchId: "reward", cost: 1200000000000, x: 1508, y: 2974, icon: "✧", prereqs: ["upgrade_singularity"], desc: "退役: 報酬『設備の個別強化』が2026-07-08のプール変更で出現しなくなり、この強化の効果が0のままだったため退役しました。取得は不要です。", effects: [] },
 
   { id: "unlock_reward_crackedFang", name: "割れた牙", branchId: "reward", cost: 7800000000, x: 1533, y: 1266, icon: "✧", prereqs: ["monster_4"], desc: "報酬カード『割れた牙』を解禁。", effects: [{ type: "unlockReward", target: "crackedFang" }] },
   { id: "unlock_reward_chainPrep", name: "連戦準備", branchId: "reward", cost: 52000000000, x: 1703, y: 1028, icon: "✧", prereqs: ["unlock_reward_crackedFang"], desc: "報酬カード『連戦準備』を解禁。", effects: [{ type: "unlockReward", target: "chainPrep" }] },
@@ -6884,7 +6893,10 @@ const SKILL_NODES = [
   { id: "unlock_reward_goldenFirstHit", name: "金粉の初撃", branchId: "reward", cost: 500000000000, x: 1550, y: 1002, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『金粉の初撃』を解禁。", effects: [{ type: "unlockReward", target: "goldenFirstHit" }] },
   { id: "unlock_reward_beastScent", name: "獣の嗅覚", branchId: "reward", cost: 790000000000, x: 1650, y: 822, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『獣の嗅覚』を解禁。", effects: [{ type: "unlockReward", target: "beastScent" }] },
   { id: "unlock_reward_goldenBeastMutation", name: "金獣変異", branchId: "reward", cost: 110000000000000, x: 1524, y: 2256, icon: "✧", prereqs: ["unlock_reward_deepPursuit"], desc: "報酬カード『金獣変異』を解禁。", effects: [{ type: "unlockReward", target: "goldenBeastMutation" }] },
-  { id: "unlock_reward_crushedMill", name: "砕粉ミル", branchId: "reward", cost: 44500000000000, x: 1653, y: 2591, icon: "✧", prereqs: ["reward_2", "unlock_reward_huntingCore"], desc: "報酬カード『砕粉ミル』を解禁。※砕粉ミルは報酬『設備の個別強化』を強めるカードで、現在その報酬は出現しないため効果は休止中。", effects: [{ type: "unlockReward", target: "crushedMill" }] },
+  // 砕粉ミル退役に伴い、この解禁ノードも retired(2026-07-26)。ノード自体は残す=木のレイアウト座標と
+  // 既存セーブの hasSkill を壊さないため。retired は表示も購入も止める(空札にPTを払わせない)。
+  // 葉ノード(このidを前提にする他ノードは0件)なので、隠しても到達不能になる枝は無い。
+  { id: "unlock_reward_crushedMill", name: "砕粉ミル(退役)", retired: true, branchId: "reward", cost: 44500000000000, x: 1653, y: 2591, icon: "✧", prereqs: ["reward_2", "unlock_reward_huntingCore"], desc: "退役: 報酬カード『砕粉ミル』は、土台となる報酬『設備の個別強化』が2026-07-08のプール変更で出現しなくなり効果が0のままだったため、カードごと退役しました。取得は不要です。", effects: [] },
 
   // 周回支援
   { id: "start_1", name: "帰還貯蔵", branchId: "start", cost: 170000000, x: 1033, y: 1091, icon: "▣", prereqs: ["golden_4"], desc: "転生後75万クッキーで開始。", effects: [{ type: "startCookies", value: 750000 }] },
@@ -13693,12 +13705,16 @@ function buyResearchStage(id, stageNo) {
 }
 
 function skillVisible(skill) {
+  // 退役ノード(2026-07-26): 既に取得済みのセーブでは履歴として見せる。未取得なら出さない
+  // (空札にPTを払わせないため。ノード自体は木の座標と既存セーブ互換のために残している)
+  if (skill.retired) return hasSkill(skill.id);
   if (skill.prereqs.length === 0) return true;
   // 前提が1つでも解放されていれば表示する(購入は全前提解放後)
   return skill.prereqs.some(id => hasSkill(id));
 }
 
 function skillCanBuy(skill) {
+  if (skill.retired) return false; // 退役ノードは購入不可(debugModeでも買わせない)
   if (hasSkill(skill.id)) return false;
   if (!skill.prereqs.every(id => hasSkill(id))) return false;
   if (debugMode) return true;
@@ -14414,7 +14430,7 @@ const PERK_FORMULA = {
   beastScent: "撃破後、次の金クッキーが出るまでの時間 ×e^(−0.5×Lv)（早くなる）。",
   beastHeatFerment: "全生産 ×(1 + その周回の撃破数 × 0.15×Lv)（撃破1体ごとに +15%×Lv）。",
   biteRecovery: "モンスターにダメージを与えるたび、少量のクッキーを獲得する（火力とCPSに応じて逓減しながら増える）。",
-  crushedMill: "設備の個別強化の効果 +1.5×Lv（＝+150%×Lv）。※2026-07-08の報酬プール変更(設備強化の固定枠を撤廃しperkのみに)以降、土台となる「設備の個別強化」報酬は出現しないため、この効果は現在発動しません。",
+  crushedMill: "退役(2026-07-26)。設備の個別強化の効果を強めるカードでしたが、土台となる報酬『設備の個別強化』が2026-07-08のプール変更で出現しなくなり、効果が0のままだったため報酬プールから外しました。既に持っているLvも効果は0です。",
   huntingCore: "毎秒生産 ×(1 + その周回の撃破数 × 0.18×Lv)（撃破1体ごとに +18%×Lv）。",
   brandHunt: "所持しているタップ系設備の数が多いほど、モンスターへのダメージが上がる。",
   deepPursuit: "モンスターの出現が速くHPも上がるが、報酬Lvも増えやすくなる（Lvごとに強まる）。",
