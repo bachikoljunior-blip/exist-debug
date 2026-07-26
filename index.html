@@ -8186,7 +8186,7 @@ function stageExpGrowth(count, rate) {
 
 // ㉚コストのはしご(2026-07-25 sim resStageCostAbs同期): 段階カード(段2/段3)の**生涯初**の開発だけ
 // 絶対額の固定コスト(はしごの段)。再購入(2周目以降)は段1コスト×倍率=各周回の序盤で安く再取得。
-const RES_STAGE_COST_ABS = { "cpsStrike:2": 140000000000, "ovenBatch:2": 490000000000000, "fingerTechnique:2": 2.90e+16, "spiceBlend:2": 2.25e+17, "grandmaCrowd:2": 1.35e+19, "bankClickDividend:2": 8.35e+20, "factoryNetwork:2": 5.20e+22, "portalNetwork:2": 3.30e+24, "cpsStrike:3": 2.15e+26, "ovenBatch:3": 1.75e+27, "spiceBlend:3": 1.15e+29, "fingerTechnique:3": 8.20e+30, "grandmaCrowd:3": 5.75e+32, "bankClickDividend:3": 4.20e+34, "factoryNetwork:3": 3.60e+35, "portalNetwork:3": 2.70e+37, "moonGlobalYeast:2": 9.60e+42, "moonGlobalYeast:3": 8.00e+40, "galaxyAssembly:2": 2.60e+54, "blackHoleCompression:2": 3.95e+61, "galaxyAssembly:3": 8.95e+65, "blackHoleCompression:3": 9.85e+73, "quantumProofing:2": 3.00e+82, "antimatterRecipe:2": 1.00e+90, "portalGlobalFold:2": 1.00e+90, "quantumProofing:3": 1.00e+90, "antimatterRecipe:3": 1.00e+90, "portalGlobalFold:3": 1.00e+90 };
+const RES_STAGE_COST_ABS = { "cpsStrike:2": 140000000000, "ovenBatch:2": 490000000000000, "fingerTechnique:2": 2.90e+16, "spiceBlend:2": 2.25e+17, "grandmaCrowd:2": 1.35e+19, "bankClickDividend:2": 8.35e+20, "factoryNetwork:2": 5.20e+22, "portalNetwork:2": 3.30e+24, "cpsStrike:3": 2.15e+26, "ovenBatch:3": 1.75e+27, "spiceBlend:3": 1.15e+29, "fingerTechnique:3": 8.20e+30, "grandmaCrowd:3": 5.75e+32, "bankClickDividend:3": 4.20e+34, "factoryNetwork:3": 3.60e+35, "portalNetwork:3": 2.70e+37, "moonGlobalYeast:2": 9.60e+42, "moonGlobalYeast:3": 8.00e+40, "galaxyAssembly:2": 2.60e+54, "blackHoleCompression:2": 3.95e+61, "galaxyAssembly:3": 8.95e+65, "blackHoleCompression:3": 9.85e+73, "quantumProofing:2": 1.00e+90, "antimatterRecipe:2": 1.00e+90, "portalGlobalFold:2": 1.00e+90, "quantumProofing:3": 1.00e+90, "antimatterRecipe:3": 1.00e+90, "portalGlobalFold:3": 1.00e+90 };
 // 段階コストの研究別倍率(値段割りD'・sim weave_costs.json と同期)
 const RESEARCH_STAGE_MULT = {"fingerTechnique":{"s2":1500,"s3":2250000},"grandmaCrowd":{"s2":1500,"s3":2250000},"ovenBatch":{"s2":1000,"s3":2250000},"factoryNetwork":{"s2":1500,"s3":2250000},"spiceBlend":{"s2":1500,"s3":2250000},"portalNetwork":{"s2":1500,"s3":2250000},"bankClickDividend":{"s2":1500,"s3":2250000},"moonGlobalYeast":{"s2":1500,"s3":2250000},"portalGlobalFold":{"s2":1500,"s3":2250000},"galaxyAssembly":{"s2":1500,"s3":2250000},"blackHoleCompression":{"s2":1500,"s3":2250000},"quantumProofing":{"s2":1500,"s3":2250000},"antimatterRecipe":{"s2":1500,"s3":2250000},"cpsStrike":{"s2":1500,"s3":2250000}};
 
@@ -10833,7 +10833,7 @@ function bumpSurge(id) {
 
 // ㉚コストのはしご(2026-07-25 sim upCost.firstUnitCost同期): 後半設備(スキル解放組)の初号機は
 // 「特注の固定価格」(はしごの段)。生涯初の1台だけこの固定額で、以後(同周回の2台目も後周回の再購入も)は式価格。
-const UP_FIRST_UNIT_COST = { grandma: 10000, moonBakery: 2.40e+38, timeOven: 8.70e+43, galaxyFactory: 1.00e+50, blackHoleMixer: 2.60e+57, universeOven: 4.65e+64, godFinger: 1.15e+69, cookieSingularity: 4.80e+72, quantumBakery: 3.35e+76, antimatterOven: 3.00e+82 };
+const UP_FIRST_UNIT_COST = { grandma: 10000, moonBakery: 2.40e+38, timeOven: 8.70e+43, galaxyFactory: 1.00e+50, blackHoleMixer: 2.60e+57, universeOven: 4.65e+64, godFinger: 1.00e+70, cookieSingularity: 1.00e+70, quantumBakery: 3.35e+76, antimatterOven: 1.00e+90 };
 
 function costOf(u, ownedOverride, extraHeat) {
   const owned = ownedOverride == null ? state.upgrades[u.id] : ownedOverride;
@@ -10883,7 +10883,7 @@ function multiBuyPlan(u) {
 
 // ㉚コストのはしご(2026-07-25 sim resFirstCost同期): 研究の「初回開発費」(生涯初のみ)。
 // 再購入(毎周回)は従来の resCost=安い固定価格。初回開発=特注の大きい目標 / 再購入=開発済みの量産価格。
-const RES_FIRST_COST = { bankClickDividend: 4000000, portalNetwork: 200000000, spiceBlend: 200000000, cpsStrike: 200000000, moonGlobalYeast: 2.10e+39, galaxyAssembly: 1.00e+50, blackHoleCompression: 1.30e+58, quantumProofing: 1.25e+77, antimatterRecipe: 3.00e+82, portalGlobalFold: 1.00e+90 };
+const RES_FIRST_COST = { bankClickDividend: 4000000, portalNetwork: 200000000, spiceBlend: 200000000, cpsStrike: 200000000, moonGlobalYeast: 2.10e+39, galaxyAssembly: 1.00e+50, blackHoleCompression: 1.30e+58, quantumProofing: 1.25e+77, antimatterRecipe: 1.00e+90, portalGlobalFold: 1.00e+90 };
 
 function researchCost(r) {
   if (!((state.everResearch || {})[r.id]) && RES_FIRST_COST[r.id] != null) {
@@ -11239,7 +11239,7 @@ function equip2HoldMul() { const fx = equip2Fx(); return (!state.quotaFailed && 
 // 解放せず「達成済み(pending)」のみ。解放は「今周回の総生産が前周回総生産×アンカー(未通過の次の値)を
 // 越えた瞬間」に行う=解放イベントが開発バッチのモーメントに融合し、他の解放とΔ30秒未満で並ばない。
 // run0(前周回なし)は即時解放。前周回総生産(prevRunCookies)は転生時に保存(セーブフィールド)。
-const STAGE_UNLOCK_ANCHORS = [0.05, 0.32, 1.6, 8, 40]; // sim BP同期(5アンカー・隣接比×4.6-7)
+const STAGE_UNLOCK_ANCHORS = [0.05, 0.32]; // sim BP同期(5アンカー・隣接比×4.6-7)
 function stageQuestAchieved() {
   const st = state.stageUnlocked || 1;
   if (st >= MAX_STAGE_NO) return false;
@@ -14791,7 +14791,10 @@ function renderPrestige() {
 
   const gain = prestigeGain();
   const prestigeCost = prestigeCookieCost();
-  const canPrestige = gain > 0 && !pausedForSkillChoice() && state.cookies.gte(prestigeCost);
+  // ④(前周回超)の構造保証(2026-07-25 sim確定・㉚と同時成立): 前回の周回総生産を超えるまで転生不可。
+  // 「前回より上を目指してから転生」を実行点で強制=④は全周回で成立(simでverify100 ④100%×16方針を実測)。
+  const beatPrev = !(state.prevRunCookies && state.prevRunCookies.gt && state.prevRunCookies.gt(0)) || state.runCookies.gt(state.prevRunCookies);
+  const canPrestige = gain > 0 && !pausedForSkillChoice() && state.cookies.gte(prestigeCost) && beatPrev;
   const policyBox = runPolicyUnlocked() ? `
     <div class="infoBox">
       <h3>周回方針</h3>
@@ -14813,7 +14816,7 @@ function renderPrestige() {
       <div class="infoRow">今回のノルマ維持記録：${fmtTime(state.quotaHoldSeconds || 0)} / ノルマ中討伐 ${fmt(state.quotaMonsterKills || 0)}体</div>
       <div class="infoRow">今回獲得できるPT：+${fmt(gain)}</div>
       <div class="infoRow">転生で所持クッキー ${fmt(prestigeCost)} を消費(現在 ${fmt(state.cookies)})。必要量は周回が進むほど上がっていきます。</div>
-      <button id="prestigeBtn" class="item ${canPrestige ? "canBuy" : "locked"}">${canPrestige ? `転生する(${fmt(prestigeCost)}クッキー消費)` : (gain <= 0 ? "未獲得PTなし" : `クッキー${fmt(prestigeCost)}が必要`)}</button>
+      <button id="prestigeBtn" class="item ${canPrestige ? "canBuy" : "locked"}">${canPrestige ? `転生する(${fmt(prestigeCost)}クッキー消費)` : (gain <= 0 ? "未獲得PTなし" : (!beatPrev ? `前回の周回(${fmt(state.prevRunCookies)})を超えると転生できる` : `クッキー${fmt(prestigeCost)}が必要`))}</button>
       <button id="resetBtn" class="item danger">完全リセット</button>
     </div>
   `;
