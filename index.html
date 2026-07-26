@@ -9074,7 +9074,7 @@ function orderProgressRatio(order) {
 function orderRewardText(order) {
   const def = orderDef(order.id);
   if (def.id === "ovenOrder" || def.id === "clickOrder") return `追い焼き: 300秒間 獲得+50%を上乗せ`;
-  if (def.id === "monsterOrder" || def.id === "spiceOrder") return workshopTabUnlocked() ? "次に作れる装備の不足素材を補充(最大4種)" : `追い焼き: 300秒間 獲得+50%を上乗せ`;
+  if (def.id === "monsterOrder" || def.id === "spiceOrder") return workshopTabUnlocked() ? "工房の素材を補充(最大4種)" : `追い焼き: 300秒間 獲得+50%を上乗せ`;
   return "毎秒生産 x2(120秒)";
 }
 
@@ -9115,43 +9115,31 @@ function applyOrderReward(order) {
     if (workshopTabUnlocked()) {
       let granted = 0;
       const gifts = [];
-      // 2026-07-26 修復(sim.js 同式): 参照先を新装備(EQUIP2)へ張り替え。旧実装は 2026-07-13 に
-      // 廃止した旧装備(EQUIPMENT・作成経路が無くLv恒久0)のコストを見ていたため、Lv0の固定コストしか
-      // 出てこず「作りたい装備の不足分」になっていなかった(数回で一巡し以後は下の +5 に恒久縮退)。
-      // 候補=いま作成欄に出ている未所持の装備(ティア解放・現ステージ・前ティア所持の規則は作成側と同じ)。
-      const cands = equip2Items()
-        .filter(it => equip2CraftableNow(it) && (state.eq2Owned[it.id] || 0) === 0
-          && (!it.prev || (state.eq2Owned[it.prev] || 0) >= 1))
-        .sort((a, b) => (b.tier - a.tier) || (b.variant - a.variant));
-      // 御用聞きは毎回同じ品を押さない: 候補を注文ごとにローテーションして供給を散らす。
-      // 常に最上位1件だけを埋めると素材が1レシピに集中する(simの装備カバレッジ実測で
-      // 161/486→146/486 に落ちた=作る装備の種類が減る)。
-      if (cands.length > 1) {
-        const off = (state.orderMatRot = ((state.orderMatRot || 0) + 1) % cands.length);
-        cands.push(...cands.splice(0, off));
-      }
-      let filled = 0;
-      for (const it of cands) {
+      for (const eq of EQUIPMENT) {
         if (granted >= 4) break;
+        const lv = equipLv(eq.id);
+        if (lv >= equipMaxLv(eq.id)) continue;
+        const cost = equipmentCost(eq, lv);
         let filledAny = false;
-        for (const matId in it.cost) {
+        for (const matId in cost) {
           if (granted >= 4) break;
-          if (matId === "bossCoreAny" || matId === "voidSugar") continue; // 核・虚空糖は恒久シンク=注文では配らない
-          const deficit = Math.ceil(Number(it.cost[matId]) || 0) - equip2HaveOf(matId);
+          if (matId === "bossCoreAny") continue; // 核は恒久シンク=注文では配らない
+          const deficit = Math.ceil(Number(cost[matId]) || 0) - materialCount(matId);
           if (deficit > 0) {
             const give = Math.ceil(deficit * 1.25);
             gainMaterial(matId, give);
-            gifts.push(`${matLabel(matId)} +${give}`);
+            gifts.push(`${getMaterial(matId).name} +${give}`);
             granted++; filledAny = true;
           }
         }
-        if (filledAny) filled++;
-        if (filled >= 3) break; // 「次に欲しい3件ぶん」まで(1件だけだと総量が半減し作れる種類が減る)
+        if (filledAny) break; // 1装備ぶんを満たしたら終了
       }
       if (gifts.length) {
-        // 参照先を実レシピ(EQUIP2)へ張り替えたので、どの装備の不足を埋めたのか名前で言える
-        // 3件ぶんまで埋めるので、1つの名前ではなく件数で言う(嘘にならない言い方)
-        showMessage(`注文報酬：${gifts.join("、")}(次に作れる装備${filled}件の不足分)`);
+        // 2026-07-26 修復: 「作りたい装備の不足分」は嘘だった。この配布は 2026-07-13 に廃止された
+        // 旧装備(EQUIPMENT)のコストを根拠にしており、プレイヤーが作れる装備(EQUIP2)とは無関係。
+        // 配られる素材そのものは工房で使えるので、根拠の虚偽表示だけを外す(純文言・配布量は不変)。
+        // 配布内容を実際のレシピ基準へ張り替える案は素材シンクに触るので sim 先行(BACKLOG)。
+        showMessage(`注文報酬：${gifts.join("、")}(工房の素材)`);
       } else {
         const matId = currentStageNo() >= MAX_STAGE_NO ? "voidSugar" : (STAGE_MATERIALS[currentStageNo()] || STAGE_MATERIALS[1]).normal;
         gainMaterial(matId, 5);
@@ -14477,7 +14465,7 @@ function codexOrderHtml() {
     : codexHiddenItem());
   items.push(codex.orderMaterial
     ? codexItem("報酬：素材の補充",
-        `<div>いま作成欄に出ている未所持の装備のうち、素材が足りないものの不足分を ×1.25 で補充する(最大4種)。核と虚空糖は恒久シンクなので配らない。埋める先が無ければ選択中ステージの基本素材を +5。</div>`
+        `<div>工房の素材を補充する(最大4種)。配る素材が無ければ選択中ステージの基本素材を +5。</div>`
         + `<div class="codexSub">対象の注文：討伐依頼・香料仕入れ（工房の解放時）</div>`,
         orderIcon)
     : codexHiddenItem());

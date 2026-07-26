@@ -1339,40 +1339,25 @@ function wsOrderTick(sim, prod) {
         // 素材セット=御用聞き型: 次に作りたい装備(方針の好み順で最初に作れない物)の不足分を補充する。
         // 「今いるステージの共通素材を定数配る」型は、それが最も余っている素材のため限界価値ゼロ
         // (核1553個・虚空糖460万在庫でも比1.000=実測)。不足素材を配ってはじめて進行が動く。
-        // 2026-07-26 修復: 参照先を新装備(EQUIP2)へ張り替え。旧実装は 2026-07-13 に廃止した
-        // 旧装備(ws.eq・作成停止でLv恒久0)のコストを見ていたので、Lv0の固定コストしか出てこず
-        // 「次に作りたい装備の不足分」になっていなかった(数回で一巡し以後はフォールバックの
-        // ステージ共通素材=最も余っている素材に縮退。ore_t* は構造上一度も出ない)。
-        const fill = O.rewardFill != null ? O.rewardFill : 0.8;
-        const reserve = (P.equip2 && P.equip2.dishReserve != null) ? P.equip2.dishReserve : 40;
-        const curStageR = Math.max(1, Math.min(P.equip2.tiers, sim.run.wsStage || 1));
-        // 候補=いま作成欄に出ている未所持の装備(ステージ・ティア解放・前ティア所持の規則は作成側と同じ)
-        const cands = equip2Items().filter(it =>
-          it.stages.includes(curStageR)
-          && (it.tier < 2 || hasSkillEffect(sim, 'unlockSystem', 'eqcraftT' + it.tier))
-          && (ws.eq2Owned[it.id] || 0) === 0
-          && (!it.prev || (ws.eq2Owned[it.prev] || 0) >= 1)
-        ).sort((a, b) => (equip2Score(sim, b) - equip2Score(sim, a)) || (b.tier - a.tier));
-        // 御用聞きは毎回同じ品を押さない: 候補を注文ごとにローテーションして供給を散らす。
-        // 常に最上位1件だけを埋めると素材が1レシピに集中し、装備(b)の色銘カバレッジが落ちる
-        // (実測: 固定だと161/486→146/486・ローテーションで回復)。
-        if (cands.length > 1) {
-          const off = (ws.orderMatRot = ((ws.orderMatRot || 0) + 1) % cands.length);
-          cands.push(...cands.splice(0, off));
-        }
-        // 埋める件数: 旧実装は7種の旧装備の固定コスト表を横断して1注文あたり15〜20個ぶん配っていた。
-        // 新実装で1件だけ埋めると総量が半減し、作れる装備の種類が減る(実測 161/486→146)。
-        // 「次に欲しい3件ぶん」まで埋めて総量と広がりを戻す。
-        const fillItems = Math.max(3, O.rewardItems || 1);
+        const epref = WS_EQ_PREF[sim.run.policy] || WS_EQ_PREF.balanced;
         let granted = 0;
-        for (const it of cands) {
-          if (granted >= fillItems) break;
+        for (const id of epref) {
+          if (granted >= (O.rewardItems || 1)) break;
+          const def = wsEqDefOf(id);
+          const lv = ws.eq[id] || 0;
+          const mul = Math.pow(P.ws.eqGrowth, lv) * (P.ws.costMul || 1);
+          const fill = O.rewardFill != null ? O.rewardFill : 0.8;
           let missingAny = false;
-          for (const k in it.cost) {
-            if (k === 'bossCore' || k === 'voidSugar') continue; // 核・虚空糖は恒久シンク=注文では配らない
-            const m = /^ore_t(\d+)$/.exec(k);
-            const have = m ? equip2OreHave(sim, Number(m[1])) : Math.max(0, (ws.mats[k] || 0) - reserve);
-            if (have < it.cost[k]) { wsAddMat(sim, k, (it.cost[k] - have) * fill); missingAny = true; }
+          for (const k in def.cost) {
+            const need = def.cost[k] * mul;
+            const have = ws.mats[k] || 0;
+            if (have < need) { wsAddMat(sim, k, (need - have) * fill); missingAny = true; }
+          }
+          if (lv >= P.ws.eqLvCap) { // 限界突破ぶんの核・虚空糖の不足も補充対象
+            const over = lv - P.ws.eqLvCap;
+            const needC = 5 + 3 * over, needV = 10 * (over + 1);
+            if ((ws.mats.bossCore || 0) < needC) { wsAddMat(sim, 'bossCore', (needC - (ws.mats.bossCore || 0)) * 0.8); missingAny = true; }
+            if ((ws.mats.voidSugar || 0) < needV) { wsAddMat(sim, 'voidSugar', (needV - (ws.mats.voidSugar || 0)) * 0.8); missingAny = true; }
           }
           if (missingAny) granted++;
         }
