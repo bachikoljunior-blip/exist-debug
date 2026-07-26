@@ -40,11 +40,26 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   //   ゲーム内 ACTIVE_SEC(既定300秒)までは実クロックで DUTY_HI(既定0.8)で叩き、それ以降は
   //   「離席AWAY_H時間(オフライン生産)+戻って ACTIVE_WIN 秒遊ぶ」の繰り返し=平均稼働は自動的に数%になる。
   // 行動(タップ数)と買い方の評価(クリック収入の割引)に必ず同じ値を使う=模型と行動を食い違わせない。
+  // どのステップも黙って固まらせない(2026-07-26): 離席モデルを入れた後、i=36の活動窓で
+  // ログが進まなくなる現象を観測した。原因調査より先に「固まったら分かる」ようにする。
+  const STEP_TIMEOUT=Number(process.env.STEP_TIMEOUT||45000);
+  let timedOut=null;
+  const withTO=async(label,fn)=>{
+    let t; const timer=new Promise((_,rej)=>{ t=setTimeout(()=>rej(new Error('TIMEOUT '+label)),STEP_TIMEOUT); });
+    try{ return await Promise.race([fn(),timer]); }
+    finally{ clearTimeout(t); }
+  };
   const TPS_SELF=Number(process.env.TPS||6);
   const ACTIVE_SEC=Number(process.env.ACTIVE_SEC||300);
   const DUTY_HI=Math.max(0,Math.min(1,Number(process.env.DUTY_HI||0.8)));
-  const AWAY_H=Number(process.env.AWAY_H||4);          // 1回の離席時間(時間)
-  const ACTIVE_WIN=Number(process.env.ACTIVE_WIN||180); // 戻ってきて遊ぶ時間(秒)
+  // 離席の刻み(2026-07-26 実測して決めた): 活動窓を実クロックで進める費用が支配的で、
+  // 15秒刻み×180秒=12回のクロック前進で1周あたり実時間60秒かかっていた(=固まって見えた原因。
+  // 固まりではなく遅さだったことは、ステップ毎のタイムアウトが一度も発火しないことで確定)。
+  // 湧きは42〜60秒間隔なので30秒刻みでも取りこぼさない。窓を120秒に縮め、離席を8時間に伸ばす=
+  // 同じ実時間でカバーできるゲーム内時間を約6倍にする。
+  const AWAY_H=Number(process.env.AWAY_H||8);           // 1回の離席時間(時間)
+  const ACTIVE_WIN=Number(process.env.ACTIVE_WIN||120); // 戻ってきて遊ぶ時間(秒)
+  const ACTIVE_SUB=Number(process.env.ACTIVE_SUB||30000); // 活動窓のクロック刻み(ms)
   const BUYCFG = await installBuyPolicy(p, process.env.TPS_EFF?undefined:{tps:TPS_SELF*DUTY_HI});
   console.log(`買い方: ${BUYCFG.policy}(タップ${TPS_SELF}/s×稼働${DUTY_HI}・最初の${ACTIVE_SEC}秒は実クロック→以降は離席${AWAY_H}h+${ACTIVE_WIN}s遊ぶの繰り返し)`);
 
@@ -84,6 +99,7 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
 
   const TPS=Number(process.env.TPS||6); // 実プレイヤの連続タップ(毎秒)
   const wall0=now(); let reason='blkcap', stallCount=0, banking=false;
+  try{
   for(let i=0;i<8000;i++){
     let s=await snap();
     // 転生: 貯蓄が実って cookies>=cost なら転生→スキル取得(ゲームの第2の柱)
@@ -104,21 +120,21 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     let step, stepSec;
     if(sec < ACTIVE_SEC){
       step=8000; stepSec=step/1000;
-      let done=0; const sub=4000; while(done<step){ const st=Math.min(sub,step-done); await p.clock.runFor(st); done+=st;
-        if(done<step)await p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
+      let done=0; const sub=4000; while(done<step){ const st=Math.min(sub,step-done); await withTO('clock(序盤)',()=>p.clock.runFor(st)); done+=st;
+        if(done<step)await withTO('序盤の処理',()=>p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
           if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster)for(const m of monsters.slice())for(let k=0;k<200&&monsters.indexOf(m)>=0;k++)hitMonster(m.id);
-          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); }); }
+          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); })); }
     } else {
       const awaySec=Math.round(AWAY_H*3600);
-      const got=await p.evaluate((asec)=>{ const bc=Math.max(0,Number(baseCps().toString()));
+      const got=await withTO('離席のオフライン計算',()=>p.evaluate((asec)=>{ const bc=Math.max(0,Number(baseCps().toString()));
         const g=earn(D(bc).mul(asec)); state.totalPlaySec=(state.totalPlaySec||0)+asec;
-        return { gain:String(g), cps:bc }; }, awaySec);
+        return { gain:String(g), cps:bc }; }, awaySec));
       await rec(`離席${AWAY_H}時間 → 戻って回収(+${got.gain.length>12?Number(got.gain).toExponential(2):got.gain})`,1);
       step=ACTIVE_WIN*1000; stepSec=ACTIVE_WIN;
-      let done=0; const sub=15000; while(done<step){ const st=Math.min(sub,step-done); await p.clock.runFor(st); done+=st;
-        await p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
+      let done=0; const sub=ACTIVE_SUB; while(done<step){ const st=Math.min(sub,step-done); await withTO('clock(活動窓)',()=>p.clock.runFor(st)); done+=st;
+        await withTO('活動窓の処理',()=>p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
           if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster)for(const m of monsters.slice())for(let k=0;k<200&&monsters.indexOf(m)>=0;k++)hitMonster(m.id);
-          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); }); }
+          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); })); }
     }
     // 実クロックで進めた区間は「居る」区間なので、その中では稼働HIで叩く。買い方の評価に渡す
     // 実効タップ率は「1日の中でどれだけ叩くか」なので、離席込みの平均(活動窓/(活動窓+離席))で出す。
@@ -135,9 +151,10 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     if(s2>=MAXSEC && !banking){reason='seccap';break;}
     if(stallCount>=20){reason='stall(経済頭打ち)';break;}
     if((now()-wall0)>WALLCAP){reason='wallcap';break;}
-    if(i%6===0){ try{fs.writeFileSync(DIR+'/ops.json',JSON.stringify(L,null,1));}catch(e){}
+    if(i%3===0){ try{fs.writeFileSync(DIR+'/ops.json',JSON.stringify(L,null,1));}catch(e){}
       console.log(`i=${i} ${fmtT(s2)} blk=${L.length} bank=${banking} runs=${s.runs} sk=${s.skills} cps=${s.cps.toExponential(1)} wall=${((now()-wall0)/1000).toFixed(0)}s`); }
   }
+  }catch(e){ timedOut=e.message; reason='中断: '+e.message.slice(0,60); }
   fs.writeFileSync(DIR+'/ops.json',JSON.stringify(L,null,1));
   console.log('DONE reason='+reason,'blocks='+L.length,'lastT='+(L.length?L[L.length-1].t:'-'),'errors='+errs.length);
   await b.close();
