@@ -1,4 +1,9 @@
 
+# 検証用に一時導入する Playwright など(ゲーム本体は依存を持たない)
+node_modules/
+package.json
+package-lock.json
+
 # autotune 実行時アーティファクト(進捗は autotune_state.json を追跡)
 sim/params.js.autotune.bak
 sim/results/autotune.log
