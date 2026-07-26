@@ -98,6 +98,9 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   const takeSkills=async()=>{ const names=await withTO('takeSkills',()=>p.evaluate(()=>{ const got=[]; if(typeof SKILLS!=='undefined'&&skillCanBuy){ for(let n=0;n<80;n++){ const s=SKILLS.find(x=>skillCanBuy(x)); if(!s)break; selectSkill(s.id); takeSelectedSkill(); got.push(s.name||s.id);} } return got; })); for(const nm of names)await rec('スキル「'+nm+'」を取得',1); };
 
   const TPS=Number(process.env.TPS||6); // 実プレイヤの連続タップ(毎秒)
+  // 転生直後は毎秒生産が0に戻るので、そのまま離席しても回収は+0(実測: 「離席8時間 → 戻って回収(+0)」が2連続)。
+  // 実プレイヤは転生後に少し遊んで設備を建て直してから離れるので、転生のたびに能動セッションを挟む。
+  let activeUntilSec=ACTIVE_SEC;
   const wall0=now(); let reason='blkcap', stallCount=0, banking=false;
   try{
   for(let i=0;i<8000;i++){
@@ -105,7 +108,8 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     // 転生: 貯蓄が実って cookies>=cost なら転生→スキル取得(ゲームの第2の柱)
     if(s.unlocked && s.gain>0 && s.cookies>=s.cost){
       const pr=await withTO('転生',()=>p.evaluate(()=>{try{if(state.cookies.gte(prestigeCookieCost())&&prestigeGain()>0){prestigeReset();return 1;}}catch(e){}return 0;}));
-      if(pr){ await rec('転生(スキルツリー解放)',1); await takeSkills(); banking=false; s=await snap(); stallCount=0; }
+      if(pr){ await rec('転生(スキルツリー解放)',1); await takeSkills(); banking=false; s=await snap(); stallCount=0;
+        activeUntilSec=(s.sec||0)+ACTIVE_SEC; } // 立て直しの能動セッション(離席しても+0なので)
     }
     // 数分の貯蓄で cost に届くなら銀行モード(1e8ラッチ→1e9転生)。純経済で到達=stage進行(討伐100体)より現実的。
     if(!banking && s.gain>0 && (s.cookies + s.cps*600) >= s.cost) banking=true;
@@ -118,7 +122,7 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     //   ・以降: 離席 AWAY_H 時間(ゲームの offline式 earn(baseCps×秒) を直呼び)+ 実クロックで ACTIVE_WIN 秒遊ぶ
     // 離席中に湧きや金が起きないのは実際のゲームと同じ(オフラインは生産だけ)。偽の加速はしていない。
     let step, stepSec;
-    if(sec < ACTIVE_SEC){
+    if(sec < activeUntilSec){
       step=8000; stepSec=step/1000;
       let done=0; const sub=4000; while(done<step){ const st=Math.min(sub,step-done); await withTO('clock(序盤)',()=>p.clock.runFor(st)); done+=st;
         if(done<step)await withTO('序盤の処理',()=>p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
@@ -138,9 +142,9 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     }
     // 実クロックで進めた区間は「居る」区間なので、その中では稼働HIで叩く。買い方の評価に渡す
     // 実効タップ率は「1日の中でどれだけ叩くか」なので、離席込みの平均(活動窓/(活動窓+離席))で出す。
-    const inWindow=(sec<ACTIVE_SEC)?DUTY_HI:1;
-    const tapN=Math.round(stepSec*TPS*inWindow*(sec<ACTIVE_SEC?1:DUTY_HI));
-    const avgDuty=(sec<ACTIVE_SEC)?DUTY_HI:(ACTIVE_WIN*DUTY_HI/(ACTIVE_WIN+AWAY_H*3600));
+    const inWindow=(sec<activeUntilSec)?DUTY_HI:1;
+    const tapN=Math.round(stepSec*TPS*inWindow*(sec<activeUntilSec?1:DUTY_HI));
+    const avgDuty=(sec<activeUntilSec)?DUTY_HI:(ACTIVE_WIN*DUTY_HI/(ACTIVE_WIN+AWAY_H*3600));
     await withTO('稼働率の更新',()=>p.evaluate((v)=>{ if(window.__BUY)window.__BUY.tps=v; }, TPS*avgDuty));
     const acts=await stepActions(tapN,banking);
     let progressed=false;
