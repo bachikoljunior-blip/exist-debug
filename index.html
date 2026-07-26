@@ -13249,6 +13249,7 @@ function updateQuestHud() {
   if (q.done && q.endgame) {
     // エンドゲーム: 深層の自己ベスト更新が perpetual goal。動機は全編で途切れない。
     // 記録更新中、または更新まであと1-2層(=もうすぐ新記録!の緊張)は強調して「押せ」を felt に(hard-won可視化)。
+    box.classList.remove("offstage"); // 下位ステージ滞在(R35f)の注意色が残るのを防ぐ
     box.classList.toggle("near", q.atRecord || q.toBest <= 2);
     if (fill) fill.style.transform = "scaleX(" + Math.max(0.02, Math.min(1, q.best > 0 ? q.cur / q.best : 1)).toFixed(3) + ")";
     if (nEl) nEl.textContent = q.atRecord
@@ -13264,6 +13265,16 @@ function updateQuestHud() {
   // → 現在ステージがフロンティアでない時は「どこへ行けばよいか」に文言を切り替える。純表示・経済無影響。
   const onFrontier = currentStageNo() === (state.stageUnlocked || 1);
   box.classList.toggle("offstage", !onFrontier);
+  // ノルマ終了(R35j): この周回はもうモンスターが湧かない(canMonsterAppear=false)ので「あとN体」は今叶わない指示。
+  // ただし守護ボス待機中は挑戦継続できる(R35b)ので下の分岐を優先させるため、ここでは pending 以外だけを扱う。
+  if (state.quotaFailed && (state.frontierBossPending || 0) !== (state.stageUnlocked || 1)) {
+    box.classList.remove("near");
+    box.classList.add("offstage");
+    if (fill) fill.style.transform = "scaleX(" + Math.max(0.02, Math.min(1, q.ratio)).toFixed(3) + ")";
+    if (nEl) nEl.textContent = "⚠ ノルマ終了 — 転生して次の周回で続ける(進捗 " + fmt(q.got) + "/" + fmt(q.need) + " は保持)";
+    box.style.display = "";
+    return;
+  }
   // 守護ボス待機中(R35): 「あとN体」でなく「ボスを倒せ」が今やること
   if ((state.frontierBossPending || 0) === (state.stageUnlocked || 1)) {
     box.classList.add("near");
