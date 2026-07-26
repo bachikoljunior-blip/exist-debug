@@ -6751,13 +6751,13 @@ const REWARD_POOL = [
   { id: "goldenChain", name: "黄金連鎖", category: "golden", unlockSkill: "unlock_reward_goldenChain", desc: n => `金クッキー取得後、次のモンスターへのダメージ +${200 * n}%` },
   { id: "crackedFang", name: "割れた牙", category: "hunt", unlockSkill: "unlock_reward_crackedFang", desc: n => `モンスターへのダメージ +${650 * n}%` },
   { id: "chainPrep", name: "連戦準備", category: "risk", unlockSkill: "unlock_reward_chainPrep", desc: n => `撃破後、次のモンスターがすぐ出るようになる。ただし次のHPも増加 Lv.${n}` },
-  { id: "huntFocus", name: "狩猟集中", category: "risk", unlockSkill: "unlock_reward_huntFocus", desc: n => `次のモンスターへのダメージ ×${1 + n}。倒せば報酬Lv+1、時間切れなら報酬Lv-1(次のHPは低下) Lv.${n}` },
+  { id: "huntFocus", name: "狩猟集中", category: "risk", unlockSkill: "unlock_reward_huntFocus", desc: n => `取得した直後の1体だけダメージ上昇(累積しない)。倒せば報酬Lv+1、時間切れなら報酬Lv-1(次のHPは低下) Lv.${n}(取得回数)` },
   { id: "goldenTarget", name: "金色標的", category: "golden", unlockSkill: "unlock_reward_goldenTarget", desc: n => `金ブースト中、モンスターへのダメージ +${220 * n}%` },
   { id: "goldenFirstHit", name: "金粉の初撃", category: "golden", unlockSkill: "unlock_reward_goldenFirstHit", desc: n => `金クッキー取得後、次のモンスターへの初撃ダメージ +${250 * n}%` },
   { id: "beastScent", name: "獣の嗅覚", category: "golden", unlockSkill: "unlock_reward_beastScent", desc: n => `モンスター撃破後、次の金クッキーが早く出る Lv.${n}` },
   { id: "beastHeatFerment", name: "獣熱発酵", category: "hunt", unlockSkill: "unlock_reward_beastHeatFerment", desc: n => `モンスター撃破数に応じて全生産上昇。撃破1体ごとに +${(15.0 * n).toFixed(1)}%` },
   { id: "biteRecovery", name: "甘噛み回収", category: "hunt", unlockSkill: "unlock_reward_biteRecovery", desc: n => `攻撃ごとにクッキー回収(与ダメ×タップ力・Lvで増加) Lv.${n}` },
-  { id: "crushedMill", name: "砕粉ミル", category: "equipment", unlockSkill: "unlock_reward_crushedMill", desc: n => `設備個別強化の効果 +${150 * n}%` },
+  { id: "crushedMill", name: "砕粉ミル", category: "equipment", unlockSkill: "unlock_reward_crushedMill", desc: n => `設備個別強化の効果 +${150 * n}%(※現在この効果の土台となる報酬「設備の個別強化」は出現しないため、生産は変わりません)` },
   { id: "huntingCore", name: "狩猟炉心", category: "hunt", unlockSkill: "unlock_reward_huntingCore", desc: n => `モンスター撃破数に応じて毎秒生産上昇。撃破1体ごとに +${(18 * n).toFixed(1)}%` },
   { id: "brandHunt", name: "焼き印狩り", category: "hunt", unlockSkill: "unlock_reward_brandHunt", desc: n => `モンスターダメージ +${45 * n}%×√タップ系設備数(強い指・神の指)` },
   { id: "deepPursuit", name: "深追いの契約", category: "risk", unlockSkill: "unlock_reward_deepPursuit", desc: n => `出現間隔 -${(100 * (1 - Math.exp(-0.045 * n))).toFixed(0)}%・報酬獲得数 ×${Math.pow(1.6, n).toFixed(1)}、ただしHP ×${Math.pow(1.035, n).toFixed(2)} Lv.${n}` },
@@ -6853,7 +6853,7 @@ const SKILL_NODES = [
   { id: "reward_1", name: "選択の目", branchId: "reward", cost: 400000000, x: 1685, y: 1239, icon: "✧", prereqs: ["monster_4"], desc: "モンスター報酬の選択肢 +1。", effects: [{ type: "rewardChoices", value: 1 }] },
   { id: "reward_synergy", name: "報酬系統化", branchId: "reward", cost: 140000000, x: 1841, y: 1043, icon: "✧", prereqs: ["reward_1"], desc: "同系統の報酬を取るほどその系統が強化(+0.3%/枚・重ねるほど伸びは緩やか)。", effects: [{ type: "unlockSystem", target: "rewardSynergy" }] },
   { id: "reward_choice_2", name: "選択の眼光", branchId: "reward", cost: 49000000, x: 1839, y: 1268, icon: "✧", prereqs: ["reward_synergy"], desc: "モンスター報酬の選択肢 +1(選択肢が増えるのはここまで)。", effects: [{ type: "rewardChoices", value: 1 }] },
-  { id: "reward_2", name: "強化圧縮", branchId: "reward", cost: 1200000000000, x: 1508, y: 2974, icon: "✧", prereqs: ["upgrade_singularity"], desc: "報酬『設備の個別強化』の効果+120%。", effects: [{ type: "upgradePerkPower", value: 1.2000000000000002 }] },
+  { id: "reward_2", name: "強化圧縮", branchId: "reward", cost: 1200000000000, x: 1508, y: 2974, icon: "✧", prereqs: ["upgrade_singularity"], desc: "報酬『設備の個別強化』の効果+120%。※現在その報酬は出現しないため効果は休止中(取得しても生産は変わりません)。", effects: [{ type: "upgradePerkPower", value: 1.2000000000000002 }] },
 
   { id: "unlock_reward_crackedFang", name: "割れた牙", branchId: "reward", cost: 7800000000, x: 1533, y: 1266, icon: "✧", prereqs: ["monster_4"], desc: "報酬カード『割れた牙』を解禁。", effects: [{ type: "unlockReward", target: "crackedFang" }] },
   { id: "unlock_reward_chainPrep", name: "連戦準備", branchId: "reward", cost: 52000000000, x: 1703, y: 1028, icon: "✧", prereqs: ["unlock_reward_crackedFang"], desc: "報酬カード『連戦準備』を解禁。", effects: [{ type: "unlockReward", target: "chainPrep" }] },
@@ -6869,7 +6869,7 @@ const SKILL_NODES = [
   { id: "unlock_reward_goldenFirstHit", name: "金粉の初撃", branchId: "reward", cost: 500000000000, x: 1550, y: 1002, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『金粉の初撃』を解禁。", effects: [{ type: "unlockReward", target: "goldenFirstHit" }] },
   { id: "unlock_reward_beastScent", name: "獣の嗅覚", branchId: "reward", cost: 790000000000, x: 1650, y: 822, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『獣の嗅覚』を解禁。", effects: [{ type: "unlockReward", target: "beastScent" }] },
   { id: "unlock_reward_goldenBeastMutation", name: "金獣変異", branchId: "reward", cost: 110000000000000, x: 1524, y: 2256, icon: "✧", prereqs: ["unlock_reward_deepPursuit"], desc: "報酬カード『金獣変異』を解禁。", effects: [{ type: "unlockReward", target: "goldenBeastMutation" }] },
-  { id: "unlock_reward_crushedMill", name: "砕粉ミル", branchId: "reward", cost: 44500000000000, x: 1653, y: 2591, icon: "✧", prereqs: ["reward_2", "unlock_reward_huntingCore"], desc: "報酬カード『砕粉ミル』を解禁。", effects: [{ type: "unlockReward", target: "crushedMill" }] },
+  { id: "unlock_reward_crushedMill", name: "砕粉ミル", branchId: "reward", cost: 44500000000000, x: 1653, y: 2591, icon: "✧", prereqs: ["reward_2", "unlock_reward_huntingCore"], desc: "報酬カード『砕粉ミル』を解禁。※砕粉ミルは報酬『設備の個別強化』を強めるカードで、現在その報酬は出現しないため効果は休止中。", effects: [{ type: "unlockReward", target: "crushedMill" }] },
 
   // 周回支援
   { id: "start_1", name: "帰還貯蔵", branchId: "start", cost: 170000000, x: 1033, y: 1091, icon: "▣", prereqs: ["golden_4"], desc: "転生後75万クッキーで開始。", effects: [{ type: "startCookies", value: 750000 }] },
@@ -14323,13 +14323,13 @@ const PERK_FORMULA = {
   goldenChain: "金クッキー取得後、次に出るモンスターのダメージ倍率に +2.0×Lv を加算（他のダメージ報酬と合算。＝+200%×Lv相当）。",
   crackedFang: "モンスターダメージ倍率に +6.5×Lv を加算（他のダメージ報酬と合算。＝+650%×Lv相当）。",
   chainPrep: "撃破後、次モンスター出現までの待ち ×e^(−0.3×Lv)（早くなる）／代わりに次モンスターHP ×1.032^Lv（増える）。",
-  huntFocus: "次のモンスターへのダメージ ×(1+Lv)。倒せば報酬Lv+1、時間切れなら報酬Lv−1(次のHPは×0.75に低下)。",
+  huntFocus: "取得した直後の1体だけ ダメージ ×(1+その取得分)。撃破・取り逃しのどちらでも効果は消え、次の取得へ累積しない(表示Lvは取得回数の記録)。倒せば報酬Lv+1、時間切れなら報酬Lv−1(次のHPは×0.75に低下)。",
   goldenTarget: "金ブースト中のみ、モンスターダメージ倍率に +2.2×Lv を加算（＝+220%×Lv相当）。",
   goldenFirstHit: "金クッキー取得後、次のモンスターへの最初の一撃のみ ×(1 + 2.5×Lv)（＝+250%×Lv）。",
   beastScent: "撃破後、次の金クッキーが出るまでの時間 ×e^(−0.5×Lv)（早くなる）。",
   beastHeatFerment: "全生産 ×(1 + その周回の撃破数 × 0.15×Lv)（撃破1体ごとに +15%×Lv）。",
   biteRecovery: "モンスターにダメージを与えるたび、少量のクッキーを獲得する（火力とCPSに応じて逓減しながら増える）。",
-  crushedMill: "設備の個別強化の効果 +1.5×Lv（＝+150%×Lv）。",
+  crushedMill: "設備の個別強化の効果 +1.5×Lv（＝+150%×Lv）。※2026-07-08の報酬プール変更(設備強化の固定枠を撤廃しperkのみに)以降、土台となる「設備の個別強化」報酬は出現しないため、この効果は現在発動しません。",
   huntingCore: "毎秒生産 ×(1 + その周回の撃破数 × 0.18×Lv)（撃破1体ごとに +18%×Lv）。",
   brandHunt: "所持しているタップ系設備の数が多いほど、モンスターへのダメージが上がる。",
   deepPursuit: "モンスターの出現が速くHPも上がるが、報酬Lvも増えやすくなる（Lvごとに強まる）。",
@@ -14481,7 +14481,7 @@ function codexProductionHtml() {
   items.push(codexItem("設備の生産を増幅するもの",
     `<div>設備の生産を×倍率で伸ばすのは、設備の外側にある次の5つ：</div>`
     + `<div>・<b>専用の研究</b>(設備ごと)。例：オーブン→「オーブン大量焼成」、工場→「工場ネットワーク」、銀行→「複利金庫」、異世界炉→「異世界接続網」。</div>`
-    + `<div>・<b>モンスター報酬「設備の個別強化」</b>：選ぶたび、その設備の生産が上がる。</div>`
+    + `<div>・<b>モンスター報酬「設備の個別強化」</b>：選ぶたび、その設備の生産が上がる。<i>(2026-07-08の報酬プール変更以降、このカードは出現しません)</i></div>`
     + `<div>・<b>研究「おばあちゃん連携」</b>：おばあちゃんが強い指・オーブン・工場などを底上げ(1台ごとに +0.2〜0.3%)。</div>`
     + `<div>・<b>熟練スキル(職人の手／工程の極み)</b>：同じ設備を買うほど、その設備1台あたりの生産が複利で伸びる。</div>`
     + `<div>・<b>系列ボーナス</b>：スキルで解放する上位設備は、自分より下位の設備の毎秒生産の <b>25%×台数</b> を追加で生産(神の指はタップ力 ×(1 + 25%×台数))。</div>`,
@@ -17896,10 +17896,13 @@ function rewardPreviewText(choice) {
   }
 
   if (choice.id === "huntFocus") {
+    // 実効倍率は「今かかっている集中(huntFocusLv)+今回の付与分」。撃破/取り逃しで必ず0へ戻る(17470/17651)ため
+    // 累計Lv(perks.huntFocus=取得回数の記録)基準で出すと、取るほど表示だけが膨らみ実火力と乖離する(R35g・実測)。
+    const eff = (state.huntFocusLv || 0) + Math.max(0, lvNext - lvNow);
     return `
       <div class="desc">系統：勝負狩猟</div>
-      <div class="desc">Lv.${lvNow} → Lv.${lvNext}</div>
-      <div class="desc">次のモンスターへのダメージ：+${100 * lvNext}%</div>
+      <div class="desc">Lv.${lvNow} → Lv.${lvNext}(取得回数の記録・火力は累積しない)</div>
+      <div class="desc">次の1体へのダメージ：+${100 * eff}%(この1体のみ／持ち越し無し)</div>
       <div class="desc">成功：報酬Lv +1</div>
       <div class="desc">失敗：次HP低下、次報酬Lv -1</div>
     `;

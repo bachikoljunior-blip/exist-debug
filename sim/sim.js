@@ -1677,6 +1677,13 @@ function computeProd(sim) {
   }
   // ③死に報酬対策(第12次P・枝分かれmeasure下で安全): 巨砕ミル(装備)/金獣変異(金)に「取得中だけ立つ全生産floor」を
   // 持たせ、効果を総クッキーに繋ぐ(取得が稀=n小でも枝分かれ比が確実に≥1.1へ)。他報酬のON/OFF比では定数として相殺=非干渉。
+  // ⚠ これらの *Prod は「sim側の測定用クラッチ」でありゲームの承認設計ではない(ゲームは brandHunt=タップ設備数√の
+  //   ダメージ・goldenBeastMutation=報酬Lv+1確率という別の実効果を実装済み・*Prod相当は持たない)。移植してはいけない。
+  // ⚠⚠ 副作用の実害(2026-07-26 発見): crushedMill はゲーム側で効果が完全に死んでいる。ゲームの砕粉ミルは
+  //   upgradeBoostRate 経由 upgradePersonalMultiplier = 1 + upgradePerks[id]×rate のみに効き、upgradePerks を増やす
+  //   唯一の経路(報酬 kind:"upgrade")は 2026-07-08「設備強化の固定枠撤廃」以降 coreChoices が空にならないため到達不能
+  //   =lv恒久0=効果×0。にもかかわらず本floorのおかげで ③ は「OK rw:crushedMill」と報告する=判定がゲームの死を隠す。
+  //   ③のOKをゲーム側の実効性の証拠として読まないこと。恒久修正(カード効果の再設計 or 退役)は経済案件=要ユーザー判断。
   if (!rwOff(sim, 'crushedMill') && (r.perks.crushedMill || 0) > 0) globalRes *= 1 + (r.perks.crushedMill || 0) * (P.rw.crushedMillProd || 0);
   if (!rwOff(sim, 'goldenBeastMutation') && (r.perks.goldenBeastMutation || 0) > 0) globalRes *= 1 + (r.perks.goldenBeastMutation || 0) * (P.rw.goldenBeastMutationProd || 0);
   if (!rwOff(sim, 'brandHunt') && (r.perks.brandHunt || 0) > 0) globalRes *= 1 + (r.perks.brandHunt || 0) * (P.rw.brandHuntProd || 0);
