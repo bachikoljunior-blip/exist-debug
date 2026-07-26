@@ -95,7 +95,25 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     return out;
   },{tapN,bank}));
 
-  const takeSkills=async()=>{ const names=await withTO('takeSkills',()=>p.evaluate(()=>{ const got=[]; if(typeof SKILLS!=='undefined'&&skillCanBuy){ for(let n=0;n<80;n++){ const s=SKILLS.find(x=>skillCanBuy(x)); if(!s)break; selectSkill(s.id); takeSelectedSkill(); got.push(s.name||s.id);} } return got; })); for(const nm of names)await rec('スキル「'+nm+'」を取得',1); };
+  // 2026-07-26 修正: スキルを取っただけでは周回が始まらない。転生後は awaitingSkillChoice で
+  // プレイ画面が止まり、totalPlaySec も進まない(実走で確認: 転生後に7反復ぶんゲーム内時間が
+  // 40時間15分10秒のまま凍結・cps0・タップは全てスキル画面を開くだけ)。ゲーム同様に
+  // 「スキルを取る→ステージを選んで周回開始(beginRunAfterSkills)」まで進める。
+  const takeSkills=async()=>{ const res=await withTO('takeSkills',()=>p.evaluate(()=>{ const got=[];
+      if(typeof SKILLS!=='undefined'&&skillCanBuy){ for(let n=0;n<80;n++){ const s=SKILLS.find(x=>skillCanBuy(x)); if(!s)break; selectSkill(s.id); takeSelectedSkill(); got.push(s.name||s.id);} }
+      let started=false, stage=0;
+      try{
+        // 実プレイヤはクエストが進むステージ(フロンティア=最新解放)を選ぶ
+        if(typeof maxUnlockedStageNo==='function'){ const f=Math.max(1,Math.min(maxUnlockedStageNo(), state.stageUnlocked||1)); state.stage=f; stage=f; }
+        if(typeof closeStageChoiceScreen==='function')closeStageChoiceScreen();
+        if(typeof beginRunAfterSkills==='function'&&state.awaitingSkillChoice){ beginRunAfterSkills(); started=true; }
+      }catch(e){}
+      return { got, started, stage, awaiting:!!state.awaitingSkillChoice };
+    }));
+    for(const nm of res.got)await rec('スキル「'+nm+'」を取得',1);
+    if(res.started)await rec(`ステージ${res.stage}を選んで新しい周回を開始`,1);
+    if(res.awaiting)console.log('   ⚠ 周回開始に失敗(awaitingSkillChoiceが残った)=時間が進まない状態');
+  };
 
   const TPS=Number(process.env.TPS||6); // 実プレイヤの連続タップ(毎秒)
   // 転生直後は毎秒生産が0に戻るので、そのまま離席しても回収は+0(実測: 「離席8時間 → 戻って回収(+0)」が2連続)。
