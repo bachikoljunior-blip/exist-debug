@@ -50,6 +50,12 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     need:(typeof QUEST_KILLS_NEED!=='undefined'?(QUEST_KILLS_NEED[(state.stageUnlocked||1)-1]||0):0),
     kills:state.monstersDefeated||0}));
 
+  // 実プレイヤーの購入判断(2026-07-26 ユーザー指示A)。判断そのものは sim/tools/buy_policy.js に置き、
+  // 実況ドライバ2本(stage_playthrough / open_playthrough)が同じものを使う=片方だけ賢い状態を作らない。
+  const { installBuyPolicy } = require('./buy_policy.js');
+  const BUYCFG = await installBuyPolicy(p);
+  console.log(`買い方: ${BUYCFG.policy}(実効タップ${BUYCFG.tps}/s・貯める閾値${BUYCFG.saveRatio}倍/手持ち${BUYCFG.saveReach}倍以内)`);
+
   // 序盤: タップ→設備を1手ずつ(初出を丁寧に)。初討伐・研究・金クッキーが発生順で入る。
   await rec('タイトルから開始',1);
   for(let i=0;i<12;i++)await p.click('#cookie').catch(()=>{});
@@ -68,15 +74,9 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         gm=gm.replace(/^💰?\s*/,'').trim();
         add(gm?('金クッキーを回収 → '+gm):'金クッキーを回収',1);}
       if(typeof RESEARCH!=='undefined')for(const r of RESEARCH){try{if(!state.research[r.id]&&(typeof researchUnlocked!=='function'||researchUnlocked(r))&&state.cookies.gte(D(r.cost))){buyResearch(r.id);add('研究「'+r.name+'」を購入',1);}}catch(e){}}
-      const agg={},order=[];
-      for(let step=0;step<200;step++){ let best=null,bestR=0,bestC=null;
-        for(const u of UPGRADES){ if(typeof upgradeUnlocked==='function'&&!upgradeUnlocked(u))continue;
-          if(u.type==='click'&&(state.upgrades[u.id]||0)>=25)continue;
-          let c;try{c=costOf(u);}catch(e){continue;} const cn=Number(c.toString()); if(!isFinite(cn)||cn<=0)continue;
-          const marg=(u.type==='click')?((u.value||1)*5):(u.value||1); const rr=marg/cn;
-          if(rr>bestR){bestR=rr;best=u;bestC=cn;} }
-        if(!best||!state.cookies.gte(bestC))break; const b4=state.upgrades[best.id]||0; buyUpgrade(best.id); const bt=(state.upgrades[best.id]||0)-b4; if(bt<=0)break; if(!agg[best.id]){agg[best.id]=[best.name,0];order.push(best.id);} agg[best.id][1]+=bt; }
-      for(const id of order)add(agg[id][0]+'を購入',agg[id][1]);
+      const sp=window.__buySpree(200);
+      for(const [nm,cnt] of sp.order)add(nm+'を購入',cnt);
+      if(sp.saved)add('次のティアへ貯める(今の一番良い台より格段に良い台が射程に入った)',1);
       return out; },{});
     for(const [label,cnt] of acts) await rec(label,cnt);
     const s=await snap();
@@ -104,15 +104,9 @@ try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     for(let r=0;r<iters;r++){
       const bc=Math.max(1,Number(baseCps().toString()));
       const sec=3600*10; earn(D(bc).mul(sec)); state.totalPlaySec=(state.totalPlaySec||0)+sec; log.idleSec+=sec;
-      const agg={},order=[];
-      for(let step=0;step<300;step++){ let best=null,bestR=0,bestC=null;
-        for(const u of UPGRADES){ if(typeof upgradeUnlocked==='function'&&!upgradeUnlocked(u))continue;
-          if(u.type==='click'&&(state.upgrades[u.id]||0)>=25)continue;
-          let c;try{c=costOf(u);}catch(e){continue;} const cn=Number(c.toString()); if(!isFinite(cn)||cn<=0)continue;
-          const marg=(u.type==='click')?((u.value||1)*5):(u.value||1); const rr=marg/cn;
-          if(rr>bestR){bestR=rr;best=u;bestC=cn;} }
-        if(!best||!state.cookies.gte(bestC))break; const b4=state.upgrades[best.id]||0; buyUpgrade(best.id); const bt=(state.upgrades[best.id]||0)-b4; if(bt<=0)break; if(!agg[best.id]){agg[best.id]=[best.name,0];order.push(best.id);} agg[best.id][1]+=bt; }
-      for(const id of order){if(!log.builds.find(x=>x[0]===agg[id][0]))log.builds.push(agg[id]);else log.builds.find(x=>x[0]===agg[id][0])[1]+=agg[id][1];}
+      const sp=window.__buySpree(300);
+      for(const row of sp.order){ const hit=log.builds.find(x=>x[0]===row[0]);
+        if(hit)hit[1]+=row[1]; else log.builds.push([row[0],row[1]]); }
       if(typeof RESEARCH!=='undefined')for(const rr of RESEARCH){try{if(!state.research[rr.id]&&(typeof researchUnlocked!=='function'||researchUnlocked(rr))&&state.cookies.gte(D(rr.cost))){buyResearch(rr.id);log.researches.push(rr.name);}}catch(e){}}
       // 研究の段階2/3(実プレイヤの複利源=directive A): 生産系のみ買う(生産に効かない段階へ大金を流すと
       // cps複利が細り転生+1回=1e25の壁を踏む=決定的A/Bで実測)。buyResearchStageが条件/費用を検査。

@@ -30,6 +30,10 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   await p.click('#audioGate').catch(()=>{}); await p.clock.runFor(700);
   await p.click('#titleStartBtn').catch(()=>{}); await p.clock.runFor(800);
   await p.evaluate(()=>{try{buyMode="1";}catch(e){}});
+  // 実プレイヤーの購入判断(共有部品)。stage_playthrough と同じものを使う=片方だけ賢い状態を作らない。
+  const { installBuyPolicy } = require('./buy_policy.js');
+  const BUYCFG = await installBuyPolicy(p);
+  console.log(`買い方: ${BUYCFG.policy}(実効タップ${BUYCFG.tps}/s・貯める閾値${BUYCFG.saveRatio}倍/手持ち${BUYCFG.saveReach}倍以内)`);
 
   const L=[]; let shotN=0;
   const gt=async()=>p.evaluate(()=>{try{return Math.round(state.totalPlaySec||0);}catch(e){return 0;}});
@@ -54,10 +58,11 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     { let c=0; for(let n=0;n<12;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length){chooseReward(pendingRewardChoices[0]);c++;}else break; } add('討伐報酬を選択',c); }
     if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie){collectGoldenCookie();add('金クッキーを回収',1);}
     if(typeof RESEARCH!=='undefined')for(const r of RESEARCH){try{ if(!state.research[r.id]&&(typeof researchUnlocked!=='function'||researchUnlocked(r))&&state.cookies.gte(D(r.cost))){ buyResearch(r.id); add('研究「'+r.name+'」を購入',1);} }catch(e){}}
-    if(!bank){ const agg={},order=[]; for(let step=0;step<400;step++){ let best=null,bestR=0,bestC=null;
-        for(const u of UPGRADES){ if(typeof upgradeUnlocked==='function'&&!upgradeUnlocked(u))continue; let c;try{c=costOf(u);}catch(e){continue;} const cn=Number(c.toString()); if(!isFinite(cn)||cn<=0)continue; const r=(u.value||1)/cn; if(r>bestR){bestR=r;best=u;bestC=cn;} }
-        if(!best||!state.cookies.gte(bestC))break; const b4=state.upgrades[best.id]||0; buyUpgrade(best.id); const bt=(state.upgrades[best.id]||0)-b4; if(bt<=0)break; if(agg[best.id]===undefined){agg[best.id]=[best.name,0];order.push(best.id);} agg[best.id][1]+=bt; }
-      for(const id of order)add(agg[id][0]+'を購入',agg[id][1]); }
+    // 購入判断は buy_policy.js の共有ルール(回収時間+次ティアへ貯める)。旧「価値/費用」貪欲は
+    // 強い指を常に最優先に選んでいた=強い指偏重(2026-07-26 ユーザー指示Aで是正)。
+    if(!bank){ const sp=window.__buySpree(400);
+      for(const [nm,cnt] of sp.order)add(nm+'を購入',cnt);
+      if(sp.saved)add('次のティアへ貯める(今より格段に良い台が射程に入った)',1); }
     if(tapCookie&&tapN>0){for(let k=0;k<tapN;k++)tapCookie();add('クッキーをタップ',tapN);}
     return out;
   },{tapN,bank});
