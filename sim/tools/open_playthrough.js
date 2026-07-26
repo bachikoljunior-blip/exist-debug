@@ -64,23 +64,23 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   console.log(`買い方: ${BUYCFG.policy}(タップ${TPS_SELF}/s×稼働${DUTY_HI}・最初の${ACTIVE_SEC}秒は実クロック→以降は離席${AWAY_H}h+${ACTIVE_WIN}s遊ぶの繰り返し)`);
 
   const L=[]; let shotN=0;
-  const gt=async()=>p.evaluate(()=>{try{return Math.round(state.totalPlaySec||0);}catch(e){return 0;}});
+  const gt=async()=>withTO('gt',()=>p.evaluate(()=>{try{return Math.round(state.totalPlaySec||0);}catch(e){return 0;}}));
   const fmtT=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;return (h?h+'時間':'')+((m||h)?m+'分':'')+ss+'秒';};
   const rec=async(op,inc)=>{ inc=(inc==null?1:inc); const t=await gt(); const last=L[L.length-1];
-    if(last && last.op===op){ last.count+=inc; last.t=fmtT(t); await p.screenshot({path:DIR+'/'+last.n+'.jpg',type:'jpeg',quality:50}); return; }
-    shotN++; const nm=String(shotN).padStart(3,'0'); await p.screenshot({path:DIR+'/'+nm+'.jpg',type:'jpeg',quality:50}); L.push({n:nm,t:fmtT(t),op,count:inc}); };
+    if(last && last.op===op){ last.count+=inc; last.t=fmtT(t); await withTO('screenshot(同一操作)',()=>p.screenshot({path:DIR+'/'+last.n+'.jpg',type:'jpeg',quality:50})); return; }
+    shotN++; const nm=String(shotN).padStart(3,'0'); await withTO('screenshot',()=>p.screenshot({path:DIR+'/'+nm+'.jpg',type:'jpeg',quality:50})); L.push({n:nm,t:fmtT(t),op,count:inc}); };
 
   await rec('タイトルから開始',0);
   for(let i=0;i<12;i++)await p.click('#cookie').catch(()=>{});
   await rec('クッキーをタップ',12);
 
-  const snap=async()=>p.evaluate(()=>({sec:Math.round(state.totalPlaySec||0),cookies:Number(state.cookies.toString()),cps:Number(currentCps().toString()),
+  const snap=async()=>withTO('snap',()=>p.evaluate(()=>({sec:Math.round(state.totalPlaySec||0),cookies:Number(state.cookies.toString()),cps:Number(currentCps().toString()),
     unlocked:!!(prestigeUnlocked&&prestigeUnlocked()),gain:(prestigeGain?Number(prestigeGain()):0),cost:(prestigeCookieCost?Number(prestigeCookieCost()):0),
-    runs:state.prestigeRuns||0,skills:Object.values(state.skills||{}).filter(Boolean).length}));
+    runs:state.prestigeRuns||0,skills:Object.values(state.skills||{}).filter(Boolean).length})));
 
   // 1刻みの処理を発生順に返す(討伐→報酬→金→研究→設備→タップ)。実プレイヤの購入判断=価値/費用の貪欲(毎手ROI再評価)。
   // bank=true=転生貯蓄中は設備購入を止め(タップ/討伐/金/研究は続ける)、cookiesを1e8ラッチ→1e9転生まで貯める。
-  const stepActions=async(tapN,bank)=>p.evaluate(({tapN,bank})=>{
+  const stepActions=async(tapN,bank)=>withTO('stepActions(討伐/報酬/金/研究/買い物/タップ)',()=>p.evaluate(({tapN,bank})=>{
     const out=[]; const add=(l,c)=>{ if(c>0)out.push([l,c]); };
     if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster){ const b4=state.monstersDefeated||0; for(const m of monsters.slice())for(let k=0;k<200&&monsters.indexOf(m)>=0;k++)hitMonster(m.id); add('モンスターを討伐',(state.monstersDefeated||0)-b4); }
     { let c=0; for(let n=0;n<12;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length){chooseReward(pendingRewardChoices[0]);c++;}else break; } add('討伐報酬を選択',c); }
@@ -93,9 +93,9 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
       if(sp.saved)add('次のティアへ貯める(今より格段に良い台が射程に入った)',1); }
     if(tapCookie&&tapN>0){for(let k=0;k<tapN;k++)tapCookie();add('クッキーをタップ',tapN);}
     return out;
-  },{tapN,bank});
+  },{tapN,bank}));
 
-  const takeSkills=async()=>{ const names=await p.evaluate(()=>{ const got=[]; if(typeof SKILLS!=='undefined'&&skillCanBuy){ for(let n=0;n<80;n++){ const s=SKILLS.find(x=>skillCanBuy(x)); if(!s)break; selectSkill(s.id); takeSelectedSkill(); got.push(s.name||s.id);} } return got; }); for(const nm of names)await rec('スキル「'+nm+'」を取得',1); };
+  const takeSkills=async()=>{ const names=await withTO('takeSkills',()=>p.evaluate(()=>{ const got=[]; if(typeof SKILLS!=='undefined'&&skillCanBuy){ for(let n=0;n<80;n++){ const s=SKILLS.find(x=>skillCanBuy(x)); if(!s)break; selectSkill(s.id); takeSelectedSkill(); got.push(s.name||s.id);} } return got; })); for(const nm of names)await rec('スキル「'+nm+'」を取得',1); };
 
   const TPS=Number(process.env.TPS||6); // 実プレイヤの連続タップ(毎秒)
   const wall0=now(); let reason='blkcap', stallCount=0, banking=false;
@@ -104,7 +104,7 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     let s=await snap();
     // 転生: 貯蓄が実って cookies>=cost なら転生→スキル取得(ゲームの第2の柱)
     if(s.unlocked && s.gain>0 && s.cookies>=s.cost){
-      const pr=await p.evaluate(()=>{try{if(state.cookies.gte(prestigeCookieCost())&&prestigeGain()>0){prestigeReset();return 1;}}catch(e){}return 0;});
+      const pr=await withTO('転生',()=>p.evaluate(()=>{try{if(state.cookies.gte(prestigeCookieCost())&&prestigeGain()>0){prestigeReset();return 1;}}catch(e){}return 0;}));
       if(pr){ await rec('転生(スキルツリー解放)',1); await takeSkills(); banking=false; s=await snap(); stallCount=0; }
     }
     // 数分の貯蓄で cost に届くなら銀行モード(1e8ラッチ→1e9転生)。純経済で到達=stage進行(討伐100体)より現実的。
@@ -141,7 +141,7 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     const inWindow=(sec<ACTIVE_SEC)?DUTY_HI:1;
     const tapN=Math.round(stepSec*TPS*inWindow*(sec<ACTIVE_SEC?1:DUTY_HI));
     const avgDuty=(sec<ACTIVE_SEC)?DUTY_HI:(ACTIVE_WIN*DUTY_HI/(ACTIVE_WIN+AWAY_H*3600));
-    await p.evaluate((v)=>{ if(window.__BUY)window.__BUY.tps=v; }, TPS*avgDuty);
+    await withTO('稼働率の更新',()=>p.evaluate((v)=>{ if(window.__BUY)window.__BUY.tps=v; }, TPS*avgDuty));
     const acts=await stepActions(tapN,banking);
     let progressed=false;
     for(const [label,cnt] of acts){ await rec(label,cnt); if(!/タップ/.test(label))progressed=true; }
