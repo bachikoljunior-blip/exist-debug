@@ -32,11 +32,20 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   await p.evaluate(()=>{try{buyMode="1";}catch(e){}});
   // 実プレイヤーの購入判断(共有部品)。stage_playthrough と同じものを使う=片方だけ賢い状態を作らない。
   const { installBuyPolicy } = require('./buy_policy.js');
-  // このドライバは実クロックで連続タップする(TPS既定6/s)ので、クリック収入の割引率はその実測値を渡す。
-  // 既定0.05は「offline式で貯める stage_playthrough」向けの値=ここで使うとタップ設備を過小評価する。
+  // タップの稼働率(2026-07-26 実測して二段にした)。旧実装は各ステップで stepSec×6 回タップ=
+  // 何日でも毎秒6回叩き続ける人間という前提で、実在しないプレイヤだった。その前提のまま買い方を
+  // 正直に評価すると強い指の1クッキーあたり毎秒増が最良になり続け、毎秒生産0のまま進む(実走で確認)。
+  // 逆に稼働率を一律2%にすると、序盤2分で13タップ=最初の1台(100クッキー)も買えず動かない(これも実走で確認)。
+  // 実プレイヤは「最初の数分はほぼ叩き続け、その後は置いて時々戻る」なので二段にする:
+  //   ゲーム内 ACTIVE_SEC(既定300秒)までは DUTY_HI(既定0.8)、それ以降は DUTY_LO(既定0.02)。
+  // 行動(タップ数)と買い方の評価(クリック収入の割引)に必ず同じ値を使う=模型と行動を食い違わせない。
   const TPS_SELF=Number(process.env.TPS||6);
-  const BUYCFG = await installBuyPolicy(p, process.env.TPS_EFF?undefined:{tps:TPS_SELF});
-  console.log(`買い方: ${BUYCFG.policy}(実効タップ${BUYCFG.tps}/s・貯める閾値${BUYCFG.saveRatio}倍/手持ち${BUYCFG.saveReach}倍以内)`);
+  const ACTIVE_SEC=Number(process.env.ACTIVE_SEC||300);
+  const DUTY_HI=Math.max(0,Math.min(1,Number(process.env.DUTY_HI||0.8)));
+  const DUTY_LO=Math.max(0,Math.min(1,Number(process.env.DUTY_LO||0.02)));
+  const dutyAt=(sec)=>(sec<ACTIVE_SEC?DUTY_HI:DUTY_LO);
+  const BUYCFG = await installBuyPolicy(p, process.env.TPS_EFF?undefined:{tps:TPS_SELF*DUTY_HI});
+  console.log(`買い方: ${BUYCFG.policy}(タップ${TPS_SELF}/s×稼働 ${DUTY_HI}(最初の${ACTIVE_SEC}秒)→${DUTY_LO}・貯める閾値${BUYCFG.saveRatio}倍)`);
 
   const L=[]; let shotN=0;
   const gt=async()=>p.evaluate(()=>{try{return Math.round(state.totalPlaySec||0);}catch(e){return 0;}});
@@ -92,7 +101,10 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         if(done<step)await p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
           if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster)for(const m of monsters.slice())for(let k=0;k<200&&monsters.indexOf(m)>=0;k++)hitMonster(m.id);
           if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); }); } }
-    const tapN=Math.round(stepSec*TPS);
+    // 居る間だけ叩く(二段の稼働率)。評価側の割引も同じ値へ揃える(行動と模型を一致させる)
+    const duty=dutyAt(sec);
+    const tapN=Math.round(stepSec*TPS*duty);
+    await p.evaluate((v)=>{ if(window.__BUY)window.__BUY.tps=v; }, TPS*duty);
     const acts=await stepActions(tapN,banking);
     let progressed=false;
     for(const [label,cnt] of acts){ await rec(label,cnt); if(!/タップ/.test(label))progressed=true; }
