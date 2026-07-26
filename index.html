@@ -8302,6 +8302,11 @@ const MILESTONE_RESEARCH = (() => {
     sorted.forEach((n, rank) => { skResTier[n.id] = Math.min(5, Math.floor(rank * 6 / NN)); });
   })();
   SKILL_NODES.forEach((n, i) => {
+    // 退役ノードの実績研究は作らない(2026-07-26): trig=hasSkill(退役スキル)は新規プレイヤでは永久に
+    // 満たせないので、生成しても到達不能な項目が増えるだけ(死に要素を消すために退役させた趣旨に反する)。
+    // 現状は avail/locked の両方で非表示=プレイヤーには見えないが、将来「実績研究の総数」を出したときに
+    // 永遠に埋まらないカウンタになるので、根元で作らないようにする。
+    if (n.retired) return;
     const [fx, ft] = branchFx(n.id);
     const c1 = skResLadder[skResTier[n.id]];
     add("msk_" + n.id, n.name + "の応用", "スキル「" + n.name + "」を取得", () => hasSkill(n.id), ft, fx, c1);
