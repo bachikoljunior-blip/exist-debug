@@ -2986,6 +2986,10 @@ function doPrestige(sim) {
     prestigeCps: r.prestigeCps, prestigeCostPaid: r.prestigeCostPaid, // 転生コストテーブル生成用(2026-07-11)
     killsByType: Object.assign({}, r.killsByType), rewardByType: Object.assign({}, r.rewardByType),
     wsDishes: Object.keys(r.buffs || {}), wsEq: Object.assign({}, sim.ws.eq), wsOrders: Object.assign({}, r.ordersDone), wsStageNo: r.wsStage,
+    // ⑬機構量判定用の測定カウンタ(measurement専用・経済不変)。周回記録に載せないと replayRun の
+    // 戻り値から消え、MECH判定が「機構が動いていない」と誤判定する(2026-07-26 実測して修正)。
+    waveMulSum: r.waveMulSum || 0, waveTicks: r.waveTicks || 0,
+    bhMultSum: r.bhMultSum || 0, bhFires: r.bhFires || 0, huntWindowSec: r.huntWindowSec || 0,
     measure: finalizeMeasure(r)
   });
 
@@ -3424,6 +3428,10 @@ function replayRun(strategy, snap, opts, capSec) {
   sim.firstResearchBuy = s.firstResearchBuy; sim.firstPerk = s.firstPerk; sim.firstStageBuy = s.firstStageBuy;
   if (s.ws) sim.ws = s.ws;
   sim.run = s.run;
+  // ⑬機構量判定(MECH)は「この窓の中で機構がどう動いたか」だけを見る。snapshotが持ち込んだ
+  // 取得前の積算を残すと on/off 共通の前置き分で比が1へ薄まるのでゼロから測る(measurement専用)。
+  sim.run.waveMulSum = 0; sim.run.waveTicks = 0;
+  sim.run.bhMultSum = 0; sim.run.bhFires = 0; sim.run.huntWindowSec = 0;
   const horizonAbs = sim.run.startT + (capSec != null ? capSec : sim.opt.hours * 3600);
   while (sim.t < horizonAbs) {
     if (advanceTick(sim, strategy)) break; // この周回の転生で終了
@@ -3433,7 +3441,11 @@ function replayRun(strategy, snap, opts, capSec) {
   return {
     startT: r.startT, endT: sim.t, duration: sim.t - r.startT,
     runCookies: r.runCookies, quotaHold: r.quotaHoldSeconds, maxStage: r.maxStage,
-    kills: r.kills, golden: r.goldenTaken, quotaFailAt: r.quotaFailAt, partial: true
+    kills: r.kills, golden: r.goldenTaken, quotaFailAt: r.quotaFailAt, partial: true,
+    // ⑬機構量判定用の測定カウンタ(measurement専用・経済不変)。周回記録に載せないと replayRun の
+    // 戻り値から消え、MECH判定が「機構が動いていない」と誤判定する(2026-07-26 実測して修正)。
+    waveMulSum: r.waveMulSum || 0, waveTicks: r.waveTicks || 0,
+    bhMultSum: r.bhMultSum || 0, bhFires: r.bhFires || 0, huntWindowSec: r.huntWindowSec || 0,
   };
 }
 
@@ -3490,6 +3502,10 @@ function simulate(strategy, opts) {
     critAtBuy: r.critAtBuy, critEnd: r.critNow, critMax: r.critMax,
     killsByType: Object.assign({}, r.killsByType), rewardByType: Object.assign({}, r.rewardByType),
     wsDishes: Object.keys(r.buffs || {}), wsEq: Object.assign({}, sim.ws.eq), wsOrders: Object.assign({}, r.ordersDone), wsStageNo: r.wsStage,
+    // ⑬機構量判定用の測定カウンタ(measurement専用・経済不変)。周回記録に載せないと replayRun の
+    // 戻り値から消え、MECH判定が「機構が動いていない」と誤判定する(2026-07-26 実測して修正)。
+    waveMulSum: r.waveMulSum || 0, waveTicks: r.waveTicks || 0,
+    bhMultSum: r.bhMultSum || 0, bhFires: r.bhFires || 0, huntWindowSec: r.huntWindowSec || 0,
     skillsBought: 0, skillIds: []
   });
   return sim;
