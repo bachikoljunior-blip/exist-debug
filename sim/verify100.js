@@ -21,7 +21,7 @@ for (const id of ids) {
   const s = STRATEGIES.find(x => x.id === id);
   if (!s) { console.log('unknown strategy: ' + id); continue; }
   const t0 = Date.now();
-  const sim = G.simulate(s, hours ? { hours } : { runUntilDone: true });
+  const sim = G.simulate(s, hours ? { hours } : { runUntilDone: true, maxHours: 400 }); // ④構造保証で周回が伸び得るため地平を400hへ(全解放はやること無くなるまで=時間条件ではない)
   const ev = (sim.unlockEvents || []).slice().sort((a, b) => a.t - b.t);
   // 同一tick=1モーメント(runner unlockgap と同じ)
   const moments = [];
