@@ -5098,6 +5098,10 @@
       box-shadow: 0 1px 6px rgba(70, 130, 220, 0.22);
     }
     #questHud.near { border-color: rgba(180, 230, 255, 0.95); box-shadow: 0 0 12px rgba(120, 190, 255, 0.5); }
+    /* フロンティア以外を表示中(=ここでの討伐はクエストに加算されない)の注意色。R35f */
+    #questHud.offstage { color: #ffdca6; border-color: rgba(255, 200, 120, 0.6); background: linear-gradient(180deg, rgba(52, 36, 14, 0.92), rgba(38, 26, 12, 0.94)); }
+    #questHud.offstage #questHudBar { background: rgba(255, 200, 120, 0.22); }
+    #questHud.offstage #questHudBar > i { background: linear-gradient(90deg, #ffc978, #ffe0a8); }
     #questHudN { flex: 0 0 auto; overflow: hidden; text-overflow: ellipsis; }
     #questHudBar { flex: 1 1 auto; display: block; height: 5px; min-width: 30px; border-radius: 3px; background: rgba(140,190,250,0.22); position: relative; overflow: hidden; }
     #questHudBar > i { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 3px; background: linear-gradient(90deg, #7ac0ff, #a0f0d2); transform-origin: left center; }
@@ -13239,18 +13243,27 @@ function updateQuestHud() {
     box.style.display = "";
     return;
   }
+  // クエストが進むのはフロンティア(最新解放)ステージの討伐のみ(questProgressOnKill)。下位ステージを
+  // 表示中に「倒せ/あとN体」と言うと、その画面では叶わない指示になる(R35f・果たせない約束の是正)。
+  // → 現在ステージがフロンティアでない時は「どこへ行けばよいか」に文言を切り替える。純表示・経済無影響。
+  const onFrontier = currentStageNo() === (state.stageUnlocked || 1);
+  box.classList.toggle("offstage", !onFrontier);
   // 守護ボス待機中(R35): 「あとN体」でなく「ボスを倒せ」が今やること
   if ((state.frontierBossPending || 0) === (state.stageUnlocked || 1)) {
     box.classList.add("near");
     if (fill) fill.style.transform = "scaleX(1)";
-    if (nEl) nEl.textContent = "👑 守護ボスを倒して「" + q.nextName + "」を解放！";
+    if (nEl) nEl.textContent = onFrontier
+      ? "👑 守護ボスを倒して「" + q.nextName + "」を解放！"
+      : "⚠ 守護ボスは「" + q.curName + "」に出現";
     box.style.display = "";
     return;
   }
   const near = q.ratio >= 0.8 || q.remain <= 10;
-  box.classList.toggle("near", near);
+  box.classList.toggle("near", near && onFrontier);
   if (fill) fill.style.transform = "scaleX(" + Math.max(0.02, Math.min(1, q.ratio)).toFixed(3) + ")";
-  if (nEl) nEl.textContent = "🎯 「" + q.nextName + "」まで あと " + fmt(q.remain) + " 体";
+  if (nEl) nEl.textContent = onFrontier
+    ? "🎯 「" + q.nextName + "」まで あと " + fmt(q.remain) + " 体"
+    : "⚠ 「" + q.curName + "」で討伐(あと " + fmt(q.remain) + " 体)";
   box.style.display = "";
 }
 
