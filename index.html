@@ -9123,6 +9123,13 @@ function applyOrderReward(order) {
         .filter(it => equip2CraftableNow(it) && (state.eq2Owned[it.id] || 0) === 0
           && (!it.prev || (state.eq2Owned[it.prev] || 0) >= 1))
         .sort((a, b) => (b.tier - a.tier) || (b.variant - a.variant));
+      // 御用聞きは毎回同じ品を押さない: 候補を注文ごとにローテーションして供給を散らす。
+      // 常に最上位1件だけを埋めると素材が1レシピに集中する(simの装備カバレッジ実測で
+      // 161/486→146/486 に落ちた=作る装備の種類が減る)。
+      if (cands.length > 1) {
+        const off = (state.orderMatRot = ((state.orderMatRot || 0) + 1) % cands.length);
+        cands.push(...cands.splice(0, off));
+      }
       let targetName = "";
       for (const it of cands) {
         if (granted >= 4) break;

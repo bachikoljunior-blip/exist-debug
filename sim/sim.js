@@ -1353,6 +1353,13 @@ function wsOrderTick(sim, prod) {
           && (ws.eq2Owned[it.id] || 0) === 0
           && (!it.prev || (ws.eq2Owned[it.prev] || 0) >= 1)
         ).sort((a, b) => (equip2Score(sim, b) - equip2Score(sim, a)) || (b.tier - a.tier));
+        // 御用聞きは毎回同じ品を押さない: 候補を注文ごとにローテーションして供給を散らす。
+        // 常に最上位1件だけを埋めると素材が1レシピに集中し、装備(b)の色銘カバレッジが落ちる
+        // (実測: 固定だと161/486→146/486・ローテーションで回復)。
+        if (cands.length > 1) {
+          const off = (ws.orderMatRot = ((ws.orderMatRot || 0) + 1) % cands.length);
+          cands.push(...cands.splice(0, off));
+        }
         let granted = 0;
         for (const it of cands) {
           if (granted >= (O.rewardItems || 1)) break;
