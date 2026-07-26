@@ -9130,11 +9130,10 @@ function applyOrderReward(order) {
         const off = (state.orderMatRot = ((state.orderMatRot || 0) + 1) % cands.length);
         cands.push(...cands.splice(0, off));
       }
-      let targetName = "";
+      let filled = 0;
       for (const it of cands) {
         if (granted >= 4) break;
         let filledAny = false;
-        targetName = it.name;
         for (const matId in it.cost) {
           if (granted >= 4) break;
           if (matId === "bossCoreAny" || matId === "voidSugar") continue; // 核・虚空糖は恒久シンク=注文では配らない
@@ -9146,11 +9145,13 @@ function applyOrderReward(order) {
             granted++; filledAny = true;
           }
         }
-        if (filledAny) break; // 1装備ぶんを満たしたら終了
+        if (filledAny) filled++;
+        if (filled >= 3) break; // 「次に欲しい3件ぶん」まで(1件だけだと総量が半減し作れる種類が減る)
       }
       if (gifts.length) {
         // 参照先を実レシピ(EQUIP2)へ張り替えたので、どの装備の不足を埋めたのか名前で言える
-        showMessage(`注文報酬：${gifts.join("、")}(${targetName}の不足分)`);
+        // 3件ぶんまで埋めるので、1つの名前ではなく件数で言う(嘘にならない言い方)
+        showMessage(`注文報酬：${gifts.join("、")}(次に作れる装備${filled}件の不足分)`);
       } else {
         const matId = currentStageNo() >= MAX_STAGE_NO ? "voidSugar" : (STAGE_MATERIALS[currentStageNo()] || STAGE_MATERIALS[1]).normal;
         gainMaterial(matId, 5);

@@ -1360,9 +1360,13 @@ function wsOrderTick(sim, prod) {
           const off = (ws.orderMatRot = ((ws.orderMatRot || 0) + 1) % cands.length);
           cands.push(...cands.splice(0, off));
         }
+        // 埋める件数: 旧実装は7種の旧装備の固定コスト表を横断して1注文あたり15〜20個ぶん配っていた。
+        // 新実装で1件だけ埋めると総量が半減し、作れる装備の種類が減る(実測 161/486→146)。
+        // 「次に欲しい3件ぶん」まで埋めて総量と広がりを戻す。
+        const fillItems = Math.max(3, O.rewardItems || 1);
         let granted = 0;
         for (const it of cands) {
-          if (granted >= (O.rewardItems || 1)) break;
+          if (granted >= fillItems) break;
           let missingAny = false;
           for (const k in it.cost) {
             if (k === 'bossCore' || k === 'voidSugar') continue; // 核・虚空糖は恒久シンク=注文では配らない
