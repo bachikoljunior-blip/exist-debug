@@ -16391,7 +16391,15 @@ function prestigeReset() {
 }
 
 function completeReset() {
-  if (!confirm("完全にリセットする？")) return;
+  // 2026-07-26 修復: 旧確認文は「完全にリセットする？」だけで、何が消えるかを伝えていなかった。
+  // 実際には転生PT・スキル・装備・素材・ステージ解放・図鑑まで全部消え、取り消し手段は無い。
+  // さらにクラウド保存にログイン中は 60秒周期の自動同期(CLOUD_SYNC_INTERVAL_MS)が空データを
+  // 送るので、クラウド側のバックアップまで上書きされる=「クラウドに残っているはず」が成り立たない。
+  // 消える範囲と、ログイン中の追加被害を明記し、ログイン中はもう一段の確認を挟む(操作は残す)。
+  const logged = (typeof cloudUser !== "undefined" && cloudUser) ? true : false;
+  const scope = "完全リセット: 転生PT・スキル・装備・素材・ステージ解放・図鑑・実績まで、すべての進行が消えます。取り消せません。";
+  if (!confirm(scope + (logged ? "\n\nさらに今はクラウド保存にログイン中です。" : "") + "\n\n本当に実行する？")) return;
+  if (logged && !confirm("最終確認: リセット後およそ1分で、クラウド側のバックアップも空のデータで上書きされます(自動同期)。\n残しておきたい場合は先にログアウトしてください。\n\nこのまま完全リセットする？")) return;
 
   localStorage.removeItem(saveKey);
   oldSaveKeys.forEach(key => localStorage.removeItem(key));
