@@ -8990,8 +8990,15 @@ let lastWorkshopAvailKey = null;
 function workshopAvailIdsNow() {
   if (!workshopTabUnlocked() || !workshopCraftUnlocked()) return [];
   const ids = [];
-  EQUIPMENT.forEach(eq => {
-    if (equipLv(eq.id) === 0 && canAffordMaterials(equipmentCost(eq, 0))) ids.push("eq:" + eq.id);
+  // 2026-07-26 修復: ここは旧装備テーブル(EQUIPMENT)を見ていた。旧装備は 2026-07-13 に廃止されて
+  // 作成経路が無く(工房のカードも作らない)、equipLv は恒久0のまま=素材が揃うと「作れる」と判定して
+  // タブを光らせるが、開いても作れる装備は無い。逆に本当に作れるようになった新装備(EQUIP2)では
+  // 一度も光らない=通知が常に逆を指していた。実際に作成できるものだけを見る。純UI(経済に触らない)。
+  (typeof equip2Items === "function" ? equip2Items() : []).forEach(it => {
+    if ((state.eq2Owned[it.id] || 0) > 0) return;              // 初回作成のみ(低ノイズの意図を維持)
+    if (!equip2CraftableNow(it)) return;                        // ティア解放+今のステージで作れる
+    if (!equip2Afford(it)) return;                              // 素材+前ティア所持まで満たしている
+    ids.push("eq2:" + it.id);
   });
   return ids;
 }
@@ -9058,7 +9065,7 @@ function orderProgressRatio(order) {
 function orderRewardText(order) {
   const def = orderDef(order.id);
   if (def.id === "ovenOrder" || def.id === "clickOrder") return `追い焼き: 300秒間 獲得+50%を上乗せ`;
-  if (def.id === "monsterOrder" || def.id === "spiceOrder") return workshopTabUnlocked() ? "工房の素材を補充(不足分×1.25・最大4種)" : `追い焼き: 300秒間 獲得+50%を上乗せ`;
+  if (def.id === "monsterOrder" || def.id === "spiceOrder") return workshopTabUnlocked() ? "工房の素材を補充(最大4種)" : `追い焼き: 300秒間 獲得+50%を上乗せ`;
   return "毎秒生産 x2(120秒)";
 }
 
@@ -9119,7 +9126,11 @@ function applyOrderReward(order) {
         if (filledAny) break; // 1装備ぶんを満たしたら終了
       }
       if (gifts.length) {
-        showMessage(`注文報酬：${gifts.join("、")}(作りたい装備の不足分)`);
+        // 2026-07-26 修復: 「作りたい装備の不足分」は嘘だった。この配布は 2026-07-13 に廃止された
+        // 旧装備(EQUIPMENT)のコストを根拠にしており、プレイヤーが作れる装備(EQUIP2)とは無関係。
+        // 配られる素材そのものは工房で使えるので、根拠の虚偽表示だけを外す(純文言・配布量は不変)。
+        // 配布内容を実際のレシピ基準へ張り替える案は素材シンクに触るので sim 先行(BACKLOG)。
+        showMessage(`注文報酬：${gifts.join("、")}(工房の素材)`);
       } else {
         const matId = currentStageNo() >= MAX_STAGE_NO ? "voidSugar" : (STAGE_MATERIALS[currentStageNo()] || STAGE_MATERIALS[1]).normal;
         gainMaterial(matId, 5);
@@ -14418,7 +14429,7 @@ function codexOrderHtml() {
     : codexHiddenItem());
   items.push(codex.orderMaterial
     ? codexItem("報酬：素材の補充",
-        `<div>工房の素材を補充する(不足分×1.25・最大4種)。不足がなければ選択中ステージの基本素材を +5。</div>`
+        `<div>工房の素材を補充する(最大4種)。配る素材が無ければ選択中ステージの基本素材を +5。</div>`
         + `<div class="codexSub">対象の注文：討伐依頼・香料仕入れ（工房の解放時）</div>`,
         orderIcon)
     : codexHiddenItem());
@@ -14476,8 +14487,13 @@ function codexMonsterRewardHtml() {
   catOrder.forEach(cat => {
     const list = existing.filter(r => (r.category || "equipment") === cat);
     // 設備系には「◯◯強化」(設備個別強化の報酬)も含める。所持設備が対象
+    // 2026-07-26 修復: 所持設備ごとに「？？？」枠(codexHiddenItem)を並べていたが、この枠を埋める
+    // 報酬(kind:"upgrade"=設備の個別強化)は 2026-07-08 の固定枠撤廃以降到達不能で、upgradePerks は
+    // 恒久0=設備を持つ数だけ永久に埋まらない伏せ枠が図鑑に並ぶ状態だった(砕粉ミルと同じ死に枠)。
+    // 実際にLvを持っているものだけ載せる(古いセーブでLvを持つ場合は従来どおり表示)。純UI。
     const upgradeRewards = cat === "equipment"
-      ? UPGRADES.filter(u => (state.upgrades[u.id] || 0) > 0 && upgradeUnlocked(u))
+      ? UPGRADES.filter(u => (state.upgrades[u.id] || 0) > 0 && upgradeUnlocked(u)
+          && (((state.upgradePerks || {})[u.id] || 0) > 0))
       : [];
     if (!list.length && !upgradeRewards.length) return;
     parts.push(`<div class="codexGroupLabel">${catName[cat]}系の報酬</div>`);
