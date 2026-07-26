@@ -16166,6 +16166,22 @@ function buildRunStartFromCurrent() {
   s.frontierBossEscapes = Math.max(0, Math.floor(Number(cur.frontierBossEscapes) || 0));
   s.totalPlaySec = Math.max(0, Number(cur.totalPlaySec) || 0);
   s.maxQuotaStageEver = Math.max(1, Math.floor(Number(cur.maxQuotaStageEver) || 1));
+  // 2026-07-26 修復: ここは prestigeReset の keep 一覧と同じ「転生を跨いで残るもの」を写す場所だが、
+  // 新装備(eq2)・クエスト進捗・初台ボーナス・実績研究・図鑑・開示履歴が抜けていた。
+  // このスナップショットは「この周回を最初からやり直す」の復元元なので、抜けたぶんは
+  // やり直しを押した瞬間に永久に消える(作った装備が全部消える・クエスト進捗が0に戻る)。
+  // やり直しの確認文は「素材・装備・クッキー・進行は"周回開始時点"に戻る(PT・スキルは保持)」であり、
+  // 過去の周回で作った装備や累積クエストまで消す約束はしていない=約束破りの実害。
+  s.eq2Owned = { ...(cur.eq2Owned || {}) };
+  s.eq2Equipped = { ...(cur.eq2Equipped || {}) };
+  s.eq2Seen = { ...(cur.eq2Seen || {}) };
+  s.questKills = { ...(cur.questKills || {}) };
+  s.presenceBonus = { ...(cur.presenceBonus || {}) };
+  s.msResearch = { ...(cur.msResearch || {}) };
+  s.codex = JSON.parse(JSON.stringify(cur.codex || {}));
+  s.revealedEver = { ...(cur.revealedEver || {}) };
+  s.lastRevealAt = Number(cur.lastRevealAt) || 0;
+  s.everResearch = { ...(cur.everResearch || {}) };
   s.awaitingSkillChoice = true;
   return s;
 }
