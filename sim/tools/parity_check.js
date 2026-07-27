@@ -89,6 +89,22 @@ const P = S.P;
   }
 }
 
+// 報酬カードの id と系統(効果値の式は個別検証。ここは「片側にだけ在る/系統が違う」を止める)
+{
+  const i0 = html.indexOf('const REWARD_POOL');
+  const seg = html.slice(i0, html.indexOf('\n];', i0));
+  const g5 = {}; let mm;
+  const re = /\{\s*id:\s*"(\w+)",\s*name:\s*"[^"]*",\s*category:\s*"(\w+)"/g;
+  while ((mm = re.exec(seg))) g5[mm[1]] = mm[2];
+  const s5 = {}; for (const r of S.REWARD_POOL) s5[r.id] = r.category;
+  for (const id of new Set([...Object.keys(s5), ...Object.keys(g5)])) {
+    if (s5[id] === undefined) bad.push(`報酬カード ${id}: ゲームにだけ存在`);
+    else if (g5[id] === undefined) bad.push(`報酬カード ${id}: sim にだけ存在`);
+    else if (s5[id] !== g5[id]) bad.push(`報酬カード ${id} の系統: sim=${s5[id]} game=${g5[id]}`);
+  }
+  if (Object.keys(g5).length < 18) bad.push(`自己検査: ゲームから読めた報酬カードが ${Object.keys(g5).length} 件=抽出が壊れている`);
+}
+
 // 自己検査: 抽出が壊れていれば「不一致0件」に見えてしまうので、読めた件数と代表idを確認する
 if (Object.keys(game).length < 14) bad.push(`自己検査: ゲームから読めた設備が ${Object.keys(game).length} 件=抽出が壊れている`);
 if (Object.keys(simM).length < 14) bad.push(`自己検査: sim から読めた設備が ${Object.keys(simM).length} 件=抽出が壊れている`);
@@ -103,4 +119,4 @@ if (bad.length) {
   console.error('sim が判定基準。ゲームを sim に合わせる(sim を変えるなら平均保存の確認込みでバッテリー再走)。');
   process.exit(1);
 }
-console.log(`parity OK: 設備${ids.length}件(cps+click)・研究費用14件・研究段階26件・実績研究216件・すべて一致(sim未模型のゲーム研究7件は BACKLOG OPEN1 で追跡)`);
+console.log(`parity OK: 設備${ids.length}件(cps+click)・研究費用14件・研究段階26件・実績研究216件・報酬カード20件・すべて一致(sim未模型のゲーム研究7件は BACKLOG OPEN1 で追跡)`);
