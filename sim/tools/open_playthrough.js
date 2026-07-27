@@ -127,7 +127,7 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     // 強い指を常に最優先に選んでいた=強い指偏重(2026-07-26 ユーザー指示Aで是正)。
     if(!bank){ const sp=window.__buySpree(400);
       for(const [nm,cnt] of sp.order)add(nm+'を購入',cnt);
-      if(sp.saved)add('次のティアへ貯める(今より格段に良い台が射程に入った)',1); }
+      if(sp.saved)add(sp.stageSave?`研究「${sp.stageSave.name}」段階${sp.stageSave.stageNo}を開くためにクッキーを貯める`:'次のティアへ貯める(今より格段に良い台が射程に入った)',1); }
     // 金クッキー活用(2026-07-27 ユーザー指示Aの「金クッキー活用」): 金ブースト中は生産が数倍になるので、
     // 実プレイヤは「今が稼ぎ時」と分かって手が増える。ブースト中だけタップを1.5倍にして、実況にもそう出す。
     let boosted=false;

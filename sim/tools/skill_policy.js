@@ -14,9 +14,12 @@ const UNMEASURED_VALUE = 1.08; // 静的には測れない効果の期待値
 // 目標が今のPTのこの倍率以内(=あと1〜2回の転生で届く)なら実プレイヤは寄り道せずに貯める。
 // 3.0 の根拠: 転生1回のPT供給は前回比1.4〜1.7倍(pG=0.023の供給式)なので、2回ぶんで概ね3倍。
 const RESERVE_REACH = 3.0;
+// 段階カードを「今ほんとうに開く手」と数える射程(2026-07-27)。物差しは次の転生費用(=この周回で
+// 自分が持つ額)。その何倍までを射程とみなすか。1.0=「この周回で手が届く額なら開く価値がある」。
+const GATE_REACH = 1.0;
 
 async function installSkillPolicy(page, opt) {
-  const cfg = Object.assign({ unlockValue: UNLOCK_VALUE, unmeasuredValue: UNMEASURED_VALUE, reserveReach: RESERVE_REACH }, opt || {});
+  const cfg = Object.assign({ unlockValue: UNLOCK_VALUE, unmeasuredValue: UNMEASURED_VALUE, reserveReach: RESERVE_REACH, gateReach: GATE_REACH }, opt || {});
   await page.evaluate((cfg) => {
     window.__SKILLPOL = cfg;
     window.__takeSkillsSmart = function () {
@@ -41,10 +44,33 @@ async function installSkillPolicy(page, opt) {
       // スキル**(RES_STAGE2/RES_STAGE3 のゲート)が普通の伸び札として扱われ、静的には効果0に見えて
       // 一度も選ばれなかった。段階2は設備直送/金直送/討伐直送の入口=この経済の主要な収入源なので、
       // 実プレイヤ(カード文面を読む人)なら必ず取る。実測: この扱いを入れるまで段階研究の購入は0件。
-      const stageGate = new Set();
-      try { for (const k in RES_STAGE2) stageGate.add(RES_STAGE2[k]); } catch (e) {}
-      try { for (const k in RES_STAGE3) stageGate.add(RES_STAGE3[k]); } catch (e) {}
-      const unlocks = s => (s.effects || []).some(e => e.type === 'unlockSystem' || e.type === 'unlockReward') || stageGate.has(s.id);
+      // ただし「開くカードの値段」まで見る(2026-07-27 実測): 段階2の費用は研究ごとに桁が全く違う
+      // (設備=オーブン大量焼成 3e8 / 金=香料調合 4.35e65 / タップ=指先の型 8.75e74 / 討伐=異世界接続網 9.7e198)。
+      // 値段を見ないと「同じ5PTの入口」に見えて、実際には一生買えないカードを開く手を先に取ってしまう
+      // (実測: 金の枝を取り、唯一届く設備直送=3e8 が最後まで開かないまま転生1回で頭打ち)。
+      // 実プレイヤはカードの値段を見て「これはすぐ買える/これは何桁も先」を判断するので、
+      // 今の稼ぎで射程内(手持ち+1時間ぶんの gateReach 倍以内)の段階だけを「新しく開く手」と数える。
+      const stageGate = new Map(); // skillId -> そのスキルが開く段階カードの最安費用
+      try {
+        for (const r of RESEARCH) {
+          for (const [map, no] of [[RES_STAGE2, 2], [RES_STAGE3, 3]]) {
+            const sk = map[r.id]; if (!sk) continue;
+            let c; try { c = Number(researchStageCost(r, no)); } catch (e) { continue; }
+            if (!isFinite(c) || c <= 0) continue;
+            if (!stageGate.has(sk) || c < stageGate.get(sk)) stageGate.set(sk, c);
+          }
+        }
+      } catch (e) {}
+      // 射程の物差しは「この周回で自分が持つ額」=次の転生費用(プレイヤーが画面で見ている目標額)。
+      // 転生直後は所持クッキーも毎秒生産も0なので、そこを基準にすると全部「届かない」になる。
+      const reachable = (() => {
+        let have = 0, goal = 0;
+        try { have = Number(state.cookies.toString()); } catch (e) {}
+        try { goal = Number(prestigeCookieCost().toString()); } catch (e) {}
+        return Math.max(have, goal) * window.__SKILLPOL.gateReach;
+      })();
+      const unlocks = s => (s.effects || []).some(e => e.type === 'unlockSystem' || e.type === 'unlockReward')
+        || (stageGate.has(s.id) && stageGate.get(s.id) <= reachable);
       // 未所持ノードに到達するのに必要な前提の合計(自分含む)。安い鎖なら実プレイヤは一気に辿る。
       const chain = (s, seen) => {
         seen = seen || new Set();

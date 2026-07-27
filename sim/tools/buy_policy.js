@@ -22,13 +22,15 @@ function readEnv() {
     // ほうが強い。実プレイヤの我慢を見せたい時は SAVE_RATIO=2 等で明示的に有効化する(遅くなる代償つき)。
     saveRatio: Number(process.env.SAVE_RATIO || Infinity), // 未購入の台がこの倍率以上に良ければ貯める
     saveReach: Number(process.env.SAVE_REACH || 3.0),      // ただし手持ちのこの倍以内で買える台に限る
+    // 段階研究(=直送などの新システムの入口)のために貯める射程。手持ちのこの倍以内なら設備を止めて貯める。
+    stageSaveReach: Number(process.env.STAGE_SAVE_REACH || 50),
   };
 }
 
 async function installBuyPolicy(page, override) {
   const cfg = Object.assign(readEnv(), override || {});
-  await page.evaluate(({ policy, tps, saveRatio, saveReach }) => {
-    window.__BUY = { policy, tps, saveRatio, saveReach };
+  await page.evaluate(({ policy, tps, saveRatio, saveReach, stageSaveReach }) => {
+    window.__BUY = { policy, tps, saveRatio, saveReach, stageSaveReach };
 
     // 1台買ったときの毎秒の増分。全体倍率(研究/スキル/perk等)は全候補に共通なので順位付けでは
     // 相殺する=個別強化ぶんだけ乗せれば十分。クリック系は実効タップ毎秒で毎秒換算する。
@@ -52,9 +54,31 @@ async function installBuyPolicy(page, override) {
       return out;
     };
 
+    // 段階研究のために貯める(2026-07-27 実測して追加): 設備を買い続けると手持ちが常に空になり、
+    // 「設備直送を開く オーブン大量焼成 段階2=3億」に一度も届かなかった(実走で確認)。この経済では
+    // 直送が総収入のほぼ全部を占めるので、実プレイヤは目の前の1台より先に**開く**ほうを選ぶ。
+    // 貯める対象は段階カードだけ(設備の次ティアへ貯める規則は 2026-07-26 の実測で遅いと分かっている)。
+    // 射程を stageSaveReach 倍に切る=何桁も先のカード(金4e65・討伐9.7e198)のために止まらない。
+    window.__stageSaveNeed = () => {
+      try {
+        const have = Number(state.cookies.toString());
+        let best = null;
+        for (const sc of (typeof visibleResearchStageCards === 'function' ? visibleResearchStageCards() : [])) {
+          const c = Number(researchStageCost(sc.r, sc.stageNo));
+          if (!isFinite(c) || c <= 0) continue;
+          if (state.cookies.gte(c)) continue;                 // 買えるものは spree が買う
+          if (c > have * window.__BUY.stageSaveReach) continue; // 遠すぎるカードは待たない
+          if (best == null || c < best.cost) best = { cost: c, name: sc.r.name, stageNo: sc.stageNo };
+        }
+        return best;
+      } catch (e) { return null; }
+    };
+
     // 1手選ぶ。買えるものの中で最良。ただし「あと少し貯めれば saveRatio 倍以上に良い台」が
     // 手持ちの saveReach 倍以内にあるなら買わずに待つ(=次のティアへ貯める実プレイヤの判断)。
     window.__pickBuy = () => {
+      const st = window.__stageSaveNeed();
+      if (st) return { save: true, stage: st };
       const cs = window.__candidates();
       if (!cs.length) return null;
       const have = Number(state.cookies.toString());
@@ -145,11 +169,11 @@ async function installBuyPolicy(page, override) {
     // まとめ買い(実況の1ブロック分): 買った台と数を集約して返す
     window.__buySpree = (maxSteps) => {
       const agg = {}, order = [];
-      let saved = false;
+      let saved = false, stageSave = null;
       for (let step = 0; step < (maxSteps || 200); step++) {
         const pick = (window.__BUY.policy === 'roi') ? window.__pickBuyRoi() : window.__pickBuy();
         if (!pick) break;
-        if (pick.save) { saved = true; break; }
+        if (pick.save) { saved = true; stageSave = pick.stage || null; break; }
         const b4 = state.upgrades[pick.u.id] || 0;
         buyUpgrade(pick.u.id);
         const bt = (state.upgrades[pick.u.id] || 0) - b4;
@@ -157,7 +181,7 @@ async function installBuyPolicy(page, override) {
         if (!agg[pick.u.id]) { agg[pick.u.id] = [pick.u.name, 0]; order.push(pick.u.id); }
         agg[pick.u.id][1] += bt;
       }
-      return { order: order.map(id => agg[id]), saved };
+      return { order: order.map(id => agg[id]), saved, stageSave };
     };
   }, cfg);
   return cfg;
