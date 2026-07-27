@@ -6778,7 +6778,7 @@ const REWARD_POOL = [
   { id: "goldenTarget", name: "金色標的", category: "golden", unlockSkill: "unlock_reward_goldenTarget", desc: n => `金ブースト中、モンスターへのダメージ +${220 * n}%` },
   { id: "goldenFirstHit", name: "金粉の初撃", category: "golden", unlockSkill: "unlock_reward_goldenFirstHit", desc: n => `金クッキー取得後、次のモンスターへの初撃ダメージ +${250 * n}%` },
   { id: "beastScent", name: "獣の嗅覚", category: "golden", unlockSkill: "unlock_reward_beastScent", desc: n => `モンスター撃破後、次の金クッキーが早く出る Lv.${n}` },
-  { id: "beastHeatFerment", name: "獣熱発酵", category: "hunt", unlockSkill: "unlock_reward_beastHeatFerment", desc: n => `モンスター撃破数に応じて全生産上昇。撃破1体ごとに +${(15.0 * n).toFixed(1)}%` },
+  { id: "beastHeatFerment", name: "獣熱発酵", category: "hunt", unlockSkill: "unlock_reward_beastHeatFerment", desc: n => `モンスター撃破数に応じて全生産上昇。撃破1体ごとに +${(5.0 * n).toFixed(1)}%` },
   { id: "biteRecovery", name: "甘噛み回収", category: "hunt", unlockSkill: "unlock_reward_biteRecovery", desc: n => `攻撃ごとにクッキー回収(与ダメ×タップ力・Lvで増加) Lv.${n}` },
   // 砕粉ミルは退役(2026-07-26 自分の決定・sim先行で検証済み)。効果経路は upgradeBoostRate 経由の
   // upgradePersonalMultiplier = 1 + upgradePerks[id]×rate のみで、upgradePerks を増やす唯一の経路
@@ -6787,7 +6787,7 @@ const REWARD_POOL = [
   // 新しい数値は発明しない/報酬復活は2026-07-08の決定に逆行するので採らない。revertはこの1行の復帰で可能。
   // sim: プール除外+③測定フロア撤去で ①12/14・③18/20・⑨21/21(19/19から改善)・⑫4/5・⑬4/4 を確認。
   // { id: "crushedMill", name: "砕粉ミル", category: "equipment", unlockSkill: "unlock_reward_crushedMill", desc: n => `設備個別強化の効果 +${150 * n}%` },
-  { id: "huntingCore", name: "狩猟炉心", category: "hunt", unlockSkill: "unlock_reward_huntingCore", desc: n => `モンスター撃破数に応じて毎秒生産上昇。撃破1体ごとに +${(18 * n).toFixed(1)}%` },
+  { id: "huntingCore", name: "狩猟炉心", category: "hunt", unlockSkill: "unlock_reward_huntingCore", desc: n => `モンスター撃破数に応じて毎秒生産上昇。撃破1体ごとに +${(12 * n).toFixed(1)}%` },
   { id: "brandHunt", name: "焼き印狩り", category: "hunt", unlockSkill: "unlock_reward_brandHunt", desc: n => `モンスターダメージ +${45 * n}%×√タップ系設備数(強い指・神の指)` },
   { id: "deepPursuit", name: "深追いの契約", category: "risk", unlockSkill: "unlock_reward_deepPursuit", desc: n => `出現間隔 -${(100 * (1 - Math.exp(-0.045 * n))).toFixed(0)}%・報酬獲得数 ×${Math.pow(1.6, n).toFixed(1)}、ただしHP ×${deepPursuitHpPenalty().toFixed(2)}(危険系統の報酬を重ねると緩む) Lv.${n}` },
   { id: "goldenBeastMutation", name: "金獣変異", category: "risk", unlockSkill: "unlock_reward_goldenBeastMutation", desc: n => `金ブースト中に撃破すると、一定確率で報酬Lv +1(重ねるほど確率上昇は緩やか)` }
@@ -9405,7 +9405,8 @@ function moonLayerGlobalMultiplier() {
   if (stage < 3) return 1;
 
   const moon = state.upgrades.moonBakery || 0;
-  let m = levelGrowth(Math.max(0, stage - 2), 0.003) * levelGrowth(moon, 0.001);
+  // sim R.moonStage=0.001 / R.moonOwn=0.0008(2026-07-27 片側parity修復: ゲームだけ 0.003/0.001)
+  let m = levelGrowth(Math.max(0, stage - 2), 0.001) * levelGrowth(moon, 0.0008);
   // 段階2: ノルマ余裕率(今回クッキー/必要ノルマ)で発酵が進む
   if (resStage2("moonGlobalYeast")) {
     const q = monsterQuotaRequired();
@@ -10807,13 +10808,13 @@ function challengeMultiplier() {
 function runRewardAllMultiplier() {
   const killCount = Math.max(0, state.quotaMonsterKills || 0);
   const lv = state.perks.beastHeatFerment || 0;
-  return 1 + killCount * lv * 0.15;
+  return 1 + killCount * lv * 0.05; // sim P.rw.beastHeatFerment=0.05(2026-07-27 片側parity修復: ゲームだけ0.15)
 }
 
 function runRewardCpsMultiplier() {
   const killCount = Math.max(0, state.quotaMonsterKills || 0);
   const lv = state.perks.huntingCore || 0;
-  return 1 + killCount * lv * 0.18;
+  return 1 + killCount * lv * 0.12; // sim P.rw.huntingCore=0.12(同上: ゲームだけ0.18)
 }
 
 function upgradeBoostRate(u) {
@@ -11161,7 +11162,7 @@ function antimatterRecipeMultiplier() {
 function globalResearchMultiplier() {
   let m = 1;
 
-  if (state.research.moonGlobalYeast) m *= 9 * moonLayerGlobalMultiplier();
+  if (state.research.moonGlobalYeast) m *= 8 * moonLayerGlobalMultiplier(); // sim R.moonBase=8(2026-07-27 片側parity修復)
   if (state.research.portalGlobalFold) m *= portalGlobalFoldMultiplier();
   // 量産波及(2026-07-14 sim同期): 一括焼成=オーブン台数・工場ネットワーク=工場台数で全生産が僅かに伸びる
   if (state.research.ovenBatch) m *= Math.pow(1.00012, state.upgrades.oven || 0);
@@ -11176,6 +11177,12 @@ function globalResearchMultiplier() {
   }
   if (state.research.antimatterRecipe) m *= antimatterRecipeMultiplier();
   m *= galaxyDivisionBonus(); // 銀河分業 段階2: 編成ボーナス
+
+  // 報酬カードの全生産寄与(sim の③死に報酬対策と同値・2026-07-27 移植): 焼き印狩り +10%/Lv・金獣変異 +5%/Lv。
+  // ゲームには討伐ダメージ/報酬Lv確率の効果しか無く、この生産寄与が丸ごと抜けていた。
+  { const pk = state.perks || {};
+    if ((pk.brandHunt || 0) > 0) m *= 1 + pk.brandHunt * 0.1;
+    if ((pk.goldenBeastMutation || 0) > 0) m *= 1 + pk.goldenBeastMutation * 0.05; }
 
   // 研究連動の全生産倍率(sim P.resGlobal と同値・2026-07-27 片側parity修復)。
   // 対応研究を持っている間だけ立つ一律倍率と、段階3(および月面段2)の底上げ。
@@ -14563,10 +14570,10 @@ const PERK_FORMULA = {
   goldenTarget: "金ブースト中のみ、モンスターダメージ倍率に +2.2×Lv を加算（＝+220%×Lv相当）。",
   goldenFirstHit: "金クッキー取得後、次のモンスターへの最初の一撃のみ ×(1 + 2.5×Lv)（＝+250%×Lv）。",
   beastScent: "撃破後、次の金クッキーが出るまでの時間 ×e^(−0.5×Lv)（早くなる）。",
-  beastHeatFerment: "全生産 ×(1 + その周回の撃破数 × 0.15×Lv)（撃破1体ごとに +15%×Lv）。",
+  beastHeatFerment: "全生産 ×(1 + その周回の撃破数 × 0.05×Lv)（撃破1体ごとに +5%×Lv）。",
   biteRecovery: "モンスターにダメージを与えるたび、少量のクッキーを獲得する（火力とCPSに応じて逓減しながら増える）。",
   crushedMill: "退役(2026-07-26)。設備の個別強化の効果を強めるカードでしたが、土台となる報酬『設備の個別強化』が2026-07-08のプール変更で出現しなくなり、効果が0のままだったため報酬プールから外しました。既に持っているLvも効果は0です。",
-  huntingCore: "毎秒生産 ×(1 + その周回の撃破数 × 0.18×Lv)（撃破1体ごとに +18%×Lv）。",
+  huntingCore: "毎秒生産 ×(1 + その周回の撃破数 × 0.12×Lv)（撃破1体ごとに +12%×Lv）。",
   brandHunt: "所持しているタップ系設備の数が多いほど、モンスターへのダメージが上がる。",
   deepPursuit: "モンスターの出現が速くHPも上がるが、報酬Lvも増えやすくなる（Lvごとに強まる）。",
   goldenBeastMutation: "金ブースト中に撃破すると、確率 1 − e^(−(0.9 + 0.18×Lv)) で報酬Lv+1（Lvが高いほど確率の上がりは緩やか）。"
