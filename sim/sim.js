@@ -1823,6 +1823,7 @@ function computeProd(sim) {
     bankM = lg(capOwn(bank), R.bankOwn) * (1 + Math.log1p(saved) * R.bankSaved) * (policyIs(sim, 'click') ? 1.08 : 1);
   }
 
+  if (sim._clickOut) Object.assign(sim._clickOut, { clickRaw, bankM, clickSkillMul, prestigeMul, globalRes, killMulAll });
   let click = clickRaw * bankM * clickSkillMul * prestigeMul * globalRes * killMulAll;
   cpsRaw += (r.ms && r.ms.cpsAdd) || 0; // 効果多様化: 加算(+N/秒の固定生産)
   let cps = cpsRaw * cpsSkillMul * prestigeMul * globalRes * killMulAll * killMulCps;
@@ -3746,6 +3747,8 @@ module.exports = {
   // sim と実機の到達ペース差を「模型の弱さ」と「parity破れ」に分解するために使う。
   computeProd,
   // 測定用: 設備ごとの直接生産(系列ボーナス前)を id→値 で返す。sim と実機のどの設備で桁が違うかを見る。
+  // 測定用: タップ力の内訳(clickRaw=設備の加算・bankM=銀行配当・その後の全体倍率)。
+  clickParts: (sim) => { sim._clickOut = {}; const prod = computeProd(sim); const out = sim._clickOut; sim._clickOut = null; return Object.assign(out, { baseClick: prod.baseClick, clickEV: prod.clickEV }); },
   // 測定用: 金相場(直送のアンカー)の内訳。
   goldenRateParts: (sim) => {
     const prod = computeProd(sim);

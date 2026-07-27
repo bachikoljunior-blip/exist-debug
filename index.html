@@ -11390,11 +11390,14 @@ function productionLinkClickPower() {
   // 「タップの毎秒生産加算も最初から入ってる=治せ・研究でどこかに追加」)。研究前は0=タップ設備の加算だけ。
   if (!state.research.fingerTechnique) return 0;
   const finger = state.upgrades.finger || 0;
+  // 掛かる倍率は sim(sim.js の指先連動)と同じもの: タップ系スキル+実績研究(タップ系/全生産系)まで。
+  // 2026-07-27 片側parity修復: ゲームだけ **銀行配当(×26.8)** を重ねて掛け、実績研究のタップ倍率を
+  // 掛けていなかった=同じ盤面のタップ力が sim の 8.78倍(金相場=直送すべてのアンカーが膨らむ)。
   return baseCps()
     * clickProductionLinkCoefficient()
     * (1 + 0.02 * Math.sqrt(finger))
     * clickSkillMultiplier()
-    * bankClickMultiplier();
+    * msMulOf("click") * msMulOf("all");
 }
 
 function baseClickPower() {

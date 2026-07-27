@@ -165,6 +165,20 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
       amt: n(goldenAmountMultiplier()), early: n(goldenEarlyMultiplier()), eq: n(equip2Fx().goldenAmtMul),
       mult: n(goldenMultiplier()), dur: n(goldenBoostDuration()) / 1000 };
   });
+  const simC = S.clickParts(sim);
+  const gameC = await p.evaluate(() => {
+    const n = x => Number(String(x));
+    let raw = 1; for (const u of UPGRADES) if (u.type === 'click') raw += n(rawUpgradeContribution(u));
+    return { clickRaw: raw, bankM: n(bankClickMultiplier()), clickSkill: n(clickSkillMultiplier()),
+      prodLink: n(productionLinkClickPower()), base: n(baseClickPower()), cur: n(currentClickPower()),
+      crit: 1 + n(fingerCritChance()) * (n(fingerCritMultiplier()) - 1) };
+  });
+  console.log('  タップ力の内訳(sim / 実機):');
+  console.log(`    設備の加算 ${simC.clickRaw.toExponential(3)} / ${gameC.clickRaw.toExponential(3)} 比 ${(gameC.clickRaw / simC.clickRaw).toFixed(4)}`);
+  console.log(`    銀行配当 ${simC.bankM.toFixed(4)} / ${gameC.bankM.toFixed(4)} ・ タップ系スキル ${simC.clickSkillMul.toFixed(4)} / ${gameC.clickSkill.toFixed(4)}`);
+  console.log(`    素のタップ力 ${simC.baseClick.toExponential(3)} / ${gameC.base.toExponential(3)} 比 ${(gameC.base / simC.baseClick).toFixed(4)}(実機の生産連動項 ${gameC.prodLink.toExponential(3)})`);
+  console.log(`    会心込み ${simC.clickEV.toExponential(3)} / ${(gameC.cur * gameC.crit).toExponential(3)} 比 ${((gameC.cur * gameC.crit) / simC.clickEV).toFixed(4)}`);
+
   console.log('  金相場の内訳(sim / 実機):');
   console.log(`    間隔 ${simGold.interval.toFixed(2)} / ${gameGold.interval.toFixed(2)} ・ cps枝 ${simGold.cpsBranch.toExponential(3)} / ${gameGold.cpsBranch.toExponential(3)} ・ click枝 ${simGold.clickBranch.toExponential(3)} / ${gameGold.clickBranch.toExponential(3)}`);
   console.log(`    金量 ${simGold.amt.toFixed(4)} / ${gameGold.amt.toFixed(4)} ・ 序盤 ${simGold.early.toFixed(3)} / ${gameGold.early.toFixed(3)} ・ 倍率 ${simGold.mult.toFixed(3)} / ${gameGold.mult.toFixed(3)} ・ 持続 ${simGold.dur.toFixed(1)} / ${gameGold.dur.toFixed(1)}`);
