@@ -1756,14 +1756,8 @@ function computeProd(sim) {
       }
       resM *= m;
     }
-    // 上位設備の指数増幅研究(2026-07-27 ゲーム同期・index.html:11018-11024 と同式)
-    if (u.id === 'bank' && resActive(sim, 'bankVault')) resM *= 9 * lg(capOwn(owned), 0.0096);
-    if (u.id === 'moonBakery' && resActive(sim, 'moonBake')) resM *= 9 * lg(capOwn(owned), 0.008);
-    if (u.id === 'timeOven' && resActive(sim, 'timeLayer')) resM *= 9 * lg(capOwn(owned), 0.008);
-    if (u.id === 'blackHoleMixer' && resActive(sim, 'eventHorizon')) resM *= 9 * lg(capOwn(owned), 0.0064);
-    if (u.id === 'universeOven' && resActive(sim, 'cosmicConvection')) resM *= 9 * lg(capOwn(owned), 0.0064);
-    if (u.id === 'cookieSingularity' && resActive(sim, 'singularityFlow')) resM *= 9 * lg(capOwn(owned), 0.0064);
-    if (u.id === 'antimatterOven' && resActive(sim, 'annihilationCore')) resM *= 9 * lg(capOwn(owned), 0.0064);
+    // 上位設備の指数増幅研究7件は建物cpsに乗せない(2026-07-27 実測: ①で1.01〜1.06=払っても何も起きない。
+    // 建物cpsは直送時代の総収入の0.05%未満という既知の構造。増幅は設備直送側へ一本化=factoryNetwork段2と同処方)
     if (u.id === 'portal' && resActive(sim, 'portalNetwork')) resM *= R.portalSelf;
     if (u.id === 'galaxyFactory' && resActive(sim, 'galaxyAssembly')) {
       const types = UPGRADES.filter(x => (r.upgrades[x.id] || 0) > 0).length;
@@ -2295,7 +2289,16 @@ function equipDirectIncome(sim, base, prod) {
     for (let j = UPIDX.bank; j < UPGRADES.length; j++) if ((r2.upgrades[UPGRADES[j].id] || 0) > 0) hi++;
     fnM = 1 + P.res2.factoryEqKind * hi;
   }
-  return genreDirect(sim, anchor, sim.run.upgrades.oven || 0, P.equipDirect) * polM * fnM;
+  // 上位設備の指数増幅研究(2026-07-27 再設計): 「その設備を積むと量産ラインの出口=設備直送が伸びる」。
+  // 建物cpsに乗せる旧形は総収入の0.05%未満で①1.01〜1.06=死に札だった。投資量に足す形なら
+  // 「どの設備を積むか」の選択が直送の太さに直結する(増幅変数は投資量ひとつ=承認済みの規約どおり)。
+  const UPPER_AMP = [['bankVault', 'bank'], ['moonBake', 'moonBakery'], ['timeLayer', 'timeOven'],
+    ['eventHorizon', 'blackHoleMixer'], ['cosmicConvection', 'universeOven'],
+    ['singularityFlow', 'cookieSingularity'], ['annihilationCore', 'antimatterOven']];
+  let inv = sim.run.upgrades.oven || 0;
+  const w = (P.res2.upperAmpWeight != null) ? P.res2.upperAmpWeight : 1;
+  for (const [rid, uid] of UPPER_AMP) if (resActive(sim, rid)) inv += (sim.run.upgrades[uid] || 0) * w;
+  return genreDirect(sim, anchor, inv, P.equipDirect) * polM * fnM;
 }
 // 金直送: 投資量=金perk合計。ゲート=香料調合 段階2(スキル golden_1→段階2購入→効果)。
 function goldenDirectIncome(sim, base) {
@@ -3669,14 +3672,8 @@ function upgradeUnitMult(sim, u) {
     resM *= R.factorySelf * lg(low, R.factoryLow) * lg(owned, R.factoryOwn);
   }
   if (u.id === 'spiceRack' && resActive(sim, 'spiceBlend')) resM *= lg(owned, R.spiceOwn);
-  // 上位設備の指数増幅研究(2026-07-27 ゲーム同期・index.html:11018-11024 と同式)
-  if (u.id === 'bank' && resActive(sim, 'bankVault')) resM *= 9 * lg(capOwn(owned), 0.0096);
-  if (u.id === 'moonBakery' && resActive(sim, 'moonBake')) resM *= 9 * lg(capOwn(owned), 0.008);
-  if (u.id === 'timeOven' && resActive(sim, 'timeLayer')) resM *= 9 * lg(capOwn(owned), 0.008);
-  if (u.id === 'blackHoleMixer' && resActive(sim, 'eventHorizon')) resM *= 9 * lg(capOwn(owned), 0.0064);
-  if (u.id === 'universeOven' && resActive(sim, 'cosmicConvection')) resM *= 9 * lg(capOwn(owned), 0.0064);
-  if (u.id === 'cookieSingularity' && resActive(sim, 'singularityFlow')) resM *= 9 * lg(capOwn(owned), 0.0064);
-  if (u.id === 'antimatterOven' && resActive(sim, 'annihilationCore')) resM *= 9 * lg(capOwn(owned), 0.0064);
+  // 上位設備の指数増幅研究7件は建物cpsに乗せない(2026-07-27 実測: ①で1.01〜1.06=払っても何も起きない。
+  // 建物cpsは直送時代の総収入の0.05%未満という既知の構造。増幅は設備直送側へ一本化=factoryNetwork段2と同処方)
   if (u.id === 'portal' && resActive(sim, 'portalNetwork')) resM *= R.portalSelf;
   if (u.id === 'galaxyFactory' && resActive(sim, 'galaxyAssembly')) {
     const types = UPGRADES.filter(x => (r.upgrades[x.id] || 0) > 0).length;
