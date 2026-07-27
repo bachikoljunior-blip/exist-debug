@@ -6740,11 +6740,11 @@ const RESEARCH = [
   // 段階2/3は「対応スキル取得後、研究タブに購入カードが出現し、クッキーで購入して有効化」する。
   { id: "fingerTechnique", name: "指先の型", cost: 2500, detail: "式：会心率=99.5%×score/(score+12)+装備/研究の会心率(上限なしで99.5%へ漸近)、会心倍率=8+score×10。score=0.01+√強い指×0.045+0.002×最高到達層+方針補正(クリック型+0.01)。さらに毎秒生産の約0.4%(強い指の√で増加)がタップ力に加算。段階2(スキル「連打の呼吸」で購入可):会心コンボ=会心ごとに+1(上限なし、30秒途切れでリセット)、会心倍率×(1+0.03×コンボ)＋屋台が全開になる。さらにコンボを15まで積みきると「会心フィーバー」が点火——平時ためていた超会心(特大の一撃)が数秒間いっきに噴き出す(総量は変わらない=溜めた分の放出。コンボを切らさず積むほど噴火が濃い)。段階3(スキル「神経直結」で購入可):会心の余熱=会心のたびに毎秒生産×0.025%×最高到達層を追加獲得。", s2: "会心ごとにコンボ+1(30秒途切れでリセット)、会心倍率+3%/コンボ。屋台も全開。コンボ15で会心フィーバー=溜めた超会心が一気に噴出。", s3: "会心のたび追加クッキー(毎秒生産と最高到達層で上昇)。", desc: "タップに会心を追加。会心率と倍率は強い指・最高到達層で上昇。段階購入でコンボ・屋台・余熱が追加" },
   { id: "grandmaCrowd", name: "おばあちゃん連携", cost: 100000, detail: "式：おばあちゃん自身の生産×12。支援=1.002〜1.003^おばあちゃん(強い指・オーブン・工場)。段階2(スキル「炉の列」で購入可):支援先に銀行・香料棚を追加(×1.008^おばあちゃん)。段階3(スキル「無人ライン」で購入可):全支援×(1+0.001×最高到達層)。", s2: "支援先に銀行・香料棚を追加(+0.8%/台)。", s3: "最高到達層でさらに上昇。", desc: "おばあちゃんの生産×12。さらに1台ごとに強い指・オーブン・工場を+0.2〜0.3%強化。段階購入で対象と層連動が追加" },
-  { id: "ovenBatch", name: "オーブン大量焼成", cost: 300000, detail: "式：9×1.008^オーブン×1.015^(最高到達層-1)。さらに量産波及＝全生産×1.00012^オーブン。段階2(スキル「火種」で購入可):オーブン強化倍率×1.35＋量産品の売上(毎秒収入)が始まる。段階3(スキル「無人ライン」で購入可):オーブン強化倍率×1.06×(1+0.008×最高到達層)。", s2: "オーブン強化×1.35。量産品の売上(毎秒収入)を開始。", s3: "オーブン強化+6%、最高到達層でさらに上昇。", desc: "オーブンを強化(オーブン数・最高到達層で上昇)。段階購入で倍率と層連動が追加" },
-  { id: "factoryNetwork", name: "工場ネットワーク", cost: 1000000, detail: "式：9×1.002^(指+婆+炉)×1.0128^工場。さらに物流波及＝全生産×1.00012^工場。段階2(スキル「無人ライン」で購入可):銀行以上の所持設備種類×(1+0.15×種類数)。段階3(スキル「まとめ買い」で購入可):×(1+0.0012×最高到達層)。", s2: "上位設備の種類ごとに+15%。", s3: "最高到達層でさらに上昇。", desc: "工場を強化(下位設備・工場数で上昇)。段階購入で設備種類と層連動が追加" },
+  { id: "ovenBatch", name: "オーブン大量焼成", cost: 300000, detail: "式：20×1.048^オーブン×1.05^(最高到達層-1)。さらに量産波及＝全生産×1.00012^オーブン。段階2(スキル「火種」で購入可):オーブン強化倍率×1.7(焼成方針・他方針は×1.2)＋量産品の売上(毎秒収入)が始まる。段階3(スキル「無人ライン」で購入可):オーブン強化倍率×1.06×(1+0.008×最高到達層)。", s2: "オーブン強化×1.7(焼成方針・他は×1.2)。量産品の売上(毎秒収入)を開始。", s3: "オーブン強化+6%、最高到達層でさらに上昇。", desc: "オーブンを強化(オーブン数・最高到達層で上昇)。段階購入で倍率と層連動が追加" },
+  { id: "factoryNetwork", name: "工場ネットワーク", cost: 1000000, detail: "式：14×1.002^(指+婆+炉)×1.0416^工場。さらに物流波及＝全生産×1.00012^工場。段階2(スキル「無人ライン」で購入可):銀行以上の所持設備種類で量産品の売上×(1+0.018×種類数)。段階3(スキル「まとめ買い」で購入可):×(1+0.0012×最高到達層)。", s2: "上位設備の種類ごとに量産品の売上+1.8%。", s3: "最高到達層でさらに上昇。", desc: "工場を強化(下位設備・工場数で上昇)。段階購入で設備種類と層連動が追加" },
   { id: "cpsStrike", name: "生産火力転換", cost: 30000000, detail: "式：モンスターへのダメージに現在の毎秒生産がそのまま加算される。", desc: "毎秒生産の値がそのままモンスターへのダメージに加算されるようになる" },
-  { id: "spiceBlend", name: "香料調合", cost: 20000000, detail: "式：常時 香料棚×1.0128^棚。金取得後30秒(棚数で少し延長)はさらに×8×1.0096^棚。段階2(スキル「金色の匂い」で購入可):風味の熟成=金取得から12秒間、全生産×(1+0.9%×前回の金からの経過秒・最大60秒)＋香料の売上(毎秒収入)が始まる。段階3(スキル「輝き増幅」で購入可):熟成×(1+0.0015×最高到達層)。", s2: "金取得で全生産バースト(12秒・間が空くほど強い、最大60秒分)。香料の売上も開始。", s3: "最高到達層でさらに上昇。", desc: "香料棚を強化、金取得後はさらに大きく強化。段階購入でバーストと香料の売上が追加" },
-  { id: "portalNetwork", name: "異世界接続網", cost: 1200000, detail: "式：異世界炉の生産×9。出現間隔×0.993^異世界炉(常時)。段階2(スキル「砕ける皮」で購入可):延長狩り=討伐のたびに狩り窓を40秒張り直す(討伐間隔<40秒なら窓が続く)、窓中は出現×0.997^異世界炉＋行商が全開になる。段階3(スキル「群れ読み」で購入可):窓中の出現×e^(-0.0008×最高到達層)。", s2: "討伐ごとに40秒の狩り窓(窓中は炉の数だけ出現がさらに速い)。行商も全開。", s3: "窓中の出現間隔が最高到達層でさらに短縮。", desc: "異世界炉の生産×9・炉の数だけ出現が速くなる。段階購入で狩り窓と行商全開が追加" },
+  { id: "spiceBlend", name: "香料調合", cost: 20000000, detail: "式：常時 香料棚×1.0512^棚。金取得後30秒(棚数で少し延長)はさらに×7×1.0096^棚。段階2(スキル「金色の匂い」で購入可):風味の熟成=金取得から12秒間、全生産×(1+0.9%×前回の金からの経過秒・最大60秒)＋香料の売上(毎秒収入)が始まる。段階3(スキル「輝き増幅」で購入可):熟成×(1+0.0015×最高到達層)。", s2: "金取得で全生産バースト(12秒・間が空くほど強い、最大60秒分)。香料の売上も開始。", s3: "最高到達層でさらに上昇。", desc: "香料棚を強化、金取得後はさらに大きく強化。段階購入でバーストと香料の売上が追加" },
+  { id: "portalNetwork", name: "異世界接続網", cost: 1200000, detail: "式：異世界炉の生産×6。出現間隔×0.993^異世界炉(常時)。段階2(スキル「砕ける皮」で購入可):延長狩り=討伐のたびに狩り窓を40秒張り直す(討伐間隔<40秒なら窓が続く)、窓中は出現×0.997^異世界炉＋行商が全開になる。段階3(スキル「群れ読み」で購入可):窓中の出現×e^(-0.0008×最高到達層)。", s2: "討伐ごとに40秒の狩り窓(窓中は炉の数だけ出現がさらに速い)。行商も全開。", s3: "窓中の出現間隔が最高到達層でさらに短縮。", desc: "異世界炉の生産×6・炉の数だけ出現が速くなる。段階購入で狩り窓と行商全開が追加" },
   { id: "bankClickDividend", name: "銀行クリック配当", cost: 4000000, detail: "式：クリック×1.0128^銀行×(1+log(所持クッキーの桁数+1)×8)。取得と同時に銀行配当(毎秒収入)を開始。段階2(スキル「まとめ買い」で購入可):複利利息=所持×0.5%×log10(1+銀行)を毎秒獲得(毎秒生産×8付近から逓減、打ち止めなし)。段階3(スキル「経済分析」で購入可):逓減基準×(1+0.08×最高到達層)。", s2: "毎秒利息を獲得(所持クッキーと銀行数で上昇・大きいほど伸びは緩やか)。", s3: "利息の上限が最高到達層で上昇。", desc: "タップを強化(銀行数・貯蓄で上昇)、銀行配当(毎秒収入)も開始。段階購入で複利利息が追加" },
   { id: "moonGlobalYeast", name: "月面発酵", cost: 7.4e116, detail: "式：全生産×9(常時)。さらに第3層以降 ×1.003^(最高到達層-2)×1.001^月面。段階2(スキル「時空免許」で購入可):log10(1+ノルマ余裕率)/10で発酵が進む。段階3(スキル「研究解析」で購入可):×(1+5%×取得研究数)。", s2: "ノルマの余裕が大きいほど全生産上昇。", s3: "研究1件ごとに+5%。", desc: "全生産×9。第3層からは最高到達層・月面数でさらに上昇。段階購入で余裕率連動と研究数連動が追加" },
   { id: "portalGlobalFold", name: "異世界増幅", cost: 8.7e38, detail: "式：1.002^異世界炉×3.5^出現中モンスター×金ブースト中×5。段階2(スキル「特異点管理」で購入可):折込連鎖=全生産×1.058^ノルマ中討伐数。討伐するほど成長率が上がる。段階3(スキル「超越体」で購入可):×(1+0.001×最高到達層)。", s2: "ノルマ中の討伐ごとに全生産+5.8%(複利)。", s3: "最高到達層でさらに上昇。", desc: "全生産アップ(異世界炉・出現中モンスター・金ブーストで上昇)。段階購入で討伐連鎖が追加" },
@@ -10933,9 +10933,11 @@ function ovenStageMultiplier() {
   const stage = maxQuotaStage(); // その回の最高到達ノルマ層
   const policyBonus = runPolicyIs("bake") ? 1.10 : 1;
 
-  let m = levelGrowth(owned, 0.008) * levelGrowth(Math.max(0, stage - 1), 0.015) * policyBonus; // 層ランプ0.004→0.010(sim同期2026-07-11 ①oven再係留)
-  // 段階2: オーブン強化倍率 x1.35
-  if (resStage2("ovenBatch")) m *= 1.35;
+  // レートは sim R.ovenOwn=0.048 / R.ovenStage=0.05(2026-07-27 片側parity修復: ゲームだけ 0.008/0.015 の旧値で、
+  // 140台のとき研究倍率が sim の 1/677 になっていた=実機の毎秒生産が判定基準の1/54になる主因)
+  let m = levelGrowth(owned, 0.048) * levelGrowth(Math.max(0, stage - 1), 0.05) * policyBonus;
+  // 段階2: 方針連動(焼成×1.7 / それ以外×1.2)=sim P.res2.ovenBakeMulBake/Other(同上・ゲームは固定1.35だった)
+  if (resStage2("ovenBatch")) m *= runPolicyIs("bake") ? 1.7 : 1.2;
   // 段階3: 最高到達ノルマ層でオーブンの研究倍率が伸びる(sim.js:1735 と同式・底上げ0.06+層係数0.008)。
   // 旧実装は個別強化Lv(upgradePerks.oven)依存だったが、その唯一の供給源=報酬 kind:"upgrade" が
   // 2026-07-08「設備強化の固定枠撤廃」以降到達不能で恒久0=段階3の効果は常に×1.00だった(sim側は層依存へ再設計済み)
@@ -10954,13 +10956,10 @@ function factoryNetworkMultiplier() {
 
   const factory = state.upgrades.factory || 0;
 
-  let m = levelGrowth(low, 0.002) * levelGrowth(factory, 0.0128);
-  // 段階2: 銀行以上の上位設備の所持種類数で伸びる
-  if (resStage2("factoryNetwork")) {
-    let hi = 0;
-    for (let j = 4; j < UPGRADES.length; j++) if ((state.upgrades[UPGRADES[j].id] || 0) > 0) hi++;
-    m *= 1 + 0.15 * hi;
-  }
+  // sim R.factoryLow=0.002 / R.factoryOwn=0.0416(2026-07-27 片側parity修復: ゲームだけ 0.0128 の旧値)
+  let m = levelGrowth(low, 0.002) * levelGrowth(factory, 0.0416);
+  // 段階2の「上位設備の種類数」ボーナスは工場の建物cpsではなく**設備直送**に乗る(sim sim.js:2300 と同じ置き場・
+  // 係数 0.018。2026-07-27 片側parity修復: ゲームだけ建物側に 0.15 で乗っていた=置き場も係数も違った)
   // 段階3: 最高到達ノルマ層
   if (resStage3("factoryNetwork")) m *= 1 + 0.0012 * maxQuotaStage();
   return m;
@@ -11016,10 +11015,11 @@ function spiceRackMultiplier() {
   const goldenActive = Date.now() < (state.spiceBoostUntil || 0);
   const policyBonus = runPolicyIs("golden") ? 1.08 : 1;
 
-  let m = levelGrowth(owned, 0.008) * policyBonus;
+  // sim R.spiceOwn=0.0512(2026-07-27 片側parity修復: ゲームだけ 0.008 の旧値)
+  let m = levelGrowth(owned, 0.0512) * policyBonus;
 
   if (goldenActive) {
-    m *= 8 * levelGrowth(owned, 0.006);
+    m *= 7 * levelGrowth(owned, 0.0096); // sim R.spiceGold=7 / R.spiceGoldOwn=0.0096(同上)
   }
 
   m *= orderSpiceMultiplier();
@@ -11032,12 +11032,12 @@ function researchUpgradeMultiplier(u) {
 
   // おばあちゃん台数スケール(×1.02^台数)は撤去(2026-07-15 ユーザー訂正「設備は生産固定で増やすだけ・研究前に倍率かけない」)=台数×固定1/秒。増幅は研究/報酬/熟練から
   if (u.id === "grandma" && state.research.grandmaCrowd) m *= 12; // 9→12(sim grandmaSelf 30→40同期・シム比1/3スケール維持。①希釈対策 2026-07-12)
-  if (u.id === "oven" && state.research.ovenBatch) m *= 9 * ovenStageMultiplier();
+  if (u.id === "oven" && state.research.ovenBatch) m *= 20 * ovenStageMultiplier(); // sim R.ovenSelf=20(2026-07-27 片側parity修復: ゲームだけ9のままだった)
   if (u.id === "oven") m *= 1 + 0.12 * equipLv("ovenMitt"); // 断熱オーブン手袋(焼き加減廃止で再係留・sim同期)
   m *= msMulOf("up", u.id); // 実績研究(設備の熟練/極み)
-  if (u.id === "factory" && state.research.factoryNetwork) m *= 9 * factoryNetworkMultiplier();
+  if (u.id === "factory" && state.research.factoryNetwork) m *= 14 * factoryNetworkMultiplier(); // sim R.factorySelf=14(同上)
   if (u.id === "spiceRack" && state.research.spiceBlend) m *= spiceRackMultiplier();
-  if (u.id === "portal" && state.research.portalNetwork) m *= 9;
+  if (u.id === "portal" && state.research.portalNetwork) m *= 6; // sim R.portalSelf=6(同上: ゲームだけ9=1.5倍高かった)
   if (u.id === "galaxyFactory" && state.research.galaxyAssembly) m *= galaxyAssemblyMultiplier();
   if (u.id === "quantumBakery" && state.research.quantumProofing) m *= quantumProofingMultiplier();
 
@@ -11838,7 +11838,14 @@ function equipDirectCps() {
   const cfg = DIRECT_CFG.equip;
   let anchor = directBaseCps();
   if (cfg.anchorGolden > 0) anchor = Math.max(anchor, cfg.anchorGolden * expectedGoldenRateCps());
-  return genreDirectCps(anchor, state.upgrades.oven || 0, cfg) * directOtherMul(cfg, "bake") * upperAmpMul();
+  // 工場ネットワーク段階2: 上位設備の種類数ボーナスは量産ラインの出口=設備直送に乗る(sim sim.js:2300 と同式)
+  let fnM = 1;
+  if (resStage2("factoryNetwork")) {
+    let hi = 0;
+    for (let j = 4; j < UPGRADES.length; j++) if ((state.upgrades[UPGRADES[j].id] || 0) > 0) hi++;
+    fnM = 1 + 0.018 * hi;
+  }
+  return genreDirectCps(anchor, state.upgrades.oven || 0, cfg) * directOtherMul(cfg, "bake") * fnM * upperAmpMul();
 }
 // 金直送: 投資量=金カテゴリ報酬の所持枚数(全7種)
 function goldenDirectCps() {

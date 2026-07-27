@@ -46,9 +46,12 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
   // 実績研究(ms)と討伐報酬(perk)も揃える(2026-07-27 最初の版で入れ忘れ、実機だけ倍率が欠けた状態で
   // 比べてしまった=判定器を先に測る原則どおり、比を出す前に「両者が同じ盤面か」を揃える)。
   const msBought = Object.assign({}, (run.ms && run.ms.bought) || {});
+  // 一時窓(金取得後の香料ブースト等)も揃える: sim がその窓の中にいるなら実機も中にする。
+  // 揃えないと「香料棚だけ比が0.08」と出て parity破れに見える(2026-07-27 実際にそう見えた)。
+  const spiceBoostOn = (run.spiceBoostUntil || 0) > sim.t;
   const perks = {}; for (const k in (run.perks || {})) if (run.perks[k] > 0) perks[k] = run.perks[k];
   console.log(`== sim ${STRAT} を run0 の ${Math.round(stopAt)}秒(終了${Math.round(r0.endT)}秒の${MARGIN}秒前)まで進めた ==`);
-  console.log(`  設備 ${Object.keys(ups).length}種/計${Object.values(ups).reduce((a, b) => a + b, 0)}台 / 研究${res.length}件(段2=${res2.length}・段3=${res3.length}) / スキル${skills.length}個 / 実績研究${Object.keys(msBought).length}件 / 報酬perk${Object.keys(perks).length}種 / ノルマ層${Math.round(prod.stage || 1)} / 金ブースト×${(prod.boostM || 1).toFixed(2)}`);
+  console.log(`  設備 ${Object.keys(ups).length}種/計${Object.values(ups).reduce((a, b) => a + b, 0)}台 / 研究${res.length}件(段2=${res2.length}・段3=${res3.length}) / スキル${skills.length}個 / 実績研究${Object.keys(msBought).length}件 / 報酬perk${Object.keys(perks).length}種 / ノルマ層${Math.round(prod.stage || 1)} / 金ブースト×${(prod.boostM || 1).toFixed(2)} / 香料窓${spiceBoostOn ? '中' : '外'}`);
   console.log(`  sim: 毎秒生産 ${prod.cps.toExponential(3)} / 直送合計 ${simDirect.toExponential(3)} / 合計 ${(prod.cps + simDirect).toExponential(3)} / 所持 ${run.cookies.toExponential(2)}`);
 
   // 3) 実機に同じ購入内容を入れて収入を読む
@@ -63,7 +66,7 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
   await p.click('#titleStartBtn').catch(() => {});
   await p.clock.runFor(800);
 
-  const game = await p.evaluate(({ ups, res, res2, res3, skills, stage, kills, msBought, perks, layer }) => {
+  const game = await p.evaluate(({ ups, res, res2, res3, skills, stage, kills, msBought, perks, spiceBoostOn, layer }) => {
     // 購入内容をそのまま置く(=同じ盤面にする)。経済の式には触らない。
     for (const id in ups) state.upgrades[id] = ups[id];
     for (const id of res) state.research[id] = true;
@@ -76,6 +79,7 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
     state.perks = state.perks || {};
     for (const id in perks) state.perks[id] = perks[id];
     state.monstersDefeated = kills || 0;
+    if (spiceBoostOn) state.spiceBoostUntil = Date.now() + 30000;
     // ノルマ層(=生産倍率に効く)。ここを揃えないと「同じ盤面」にならない(2026-07-27 実測で追加)。
     if (layer > 1) { state.maxQuotaStage = layer; state.maxQuotaStageEver = Math.max(layer, state.maxQuotaStageEver || 1); }
     if (stage > 1) { state.stageUnlocked = Math.max(state.stageUnlocked || 1, stage); state.stage = stage; }
@@ -91,7 +95,7 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
       direct: (typeof directIncomeTotalCps === 'function') ? num(directIncomeTotalCps()) : 0,
       missing
     };
-  }, { ups, res, res2, res3, skills, stage: run.maxStage || 1, kills: run.kills || 0, msBought, perks, layer: Math.max(1, Math.round(prod.stage || 1)) });
+  }, { ups, res, res2, res3, skills, stage: run.maxStage || 1, kills: run.kills || 0, msBought, perks, spiceBoostOn, layer: Math.max(1, Math.round(prod.stage || 1)) });
 
   // 設備ごとの内訳(どこで桁が違うか)。同じ台数のはずなので、比が1から外れた設備が原因の所在。
   const simContrib = S.upgradeContribs(sim);
