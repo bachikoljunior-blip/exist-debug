@@ -43,7 +43,11 @@ function applyToSim(sim, b) {
   for (const id in r.research) r.research[id] = b.res.includes(id);
   for (const id in r.perks) r.perks[id] = b.perks[id] || 0;
   r.maxStage = b.layer; r.cookies = b.cookies; r.runCookies = b.cookies;
-  r.quotaMonsterKills = b.kills || 0; // 討伐系の全生産倍率(killMul)はノルマ中討伐数で伸びる=両側で揃える
+  r.quotaMonsterKills = b.kills || 0;
+  // 実績研究は両側とも「無し」に揃える(sim は 0.02h の暖機中に安い実績研究を自動購入してしまうため。
+  // 揃えないとオーブンだけ比0.956と出て parity破れに見える=2026-07-27 実測)
+  r.ms = { up: {}, click: 1, cps: 1, all: 1, golden: 1, hunt: 1, dropAdd: 0, bought: {}, cpsAdd: 0, own: {}, sup: {}, critAdd: 0, momentum: false };
+  r._msRepeatT = {}; // 討伐系の全生産倍率(killMul)はノルマ中討伐数で伸びる=両側で揃える
   r.startT = 0; sim.t = b.elapsed; sim.prestigeRuns = b.runs;
   sim._stT = null; // currentStage のキャッシュを落とす
   return sim;
@@ -93,6 +97,33 @@ function applyToSim(sim, b) {
         rawSum: UPGRADES.reduce((a, u) => a + n(rawUpgradeCps(u)), 0) + n(lineageBonusCps()) + n(msCpsAdd()) };
     });
     console.log(`  [${b.name}] 内訳(sim/実機): 素合計 ${simG.cpsRaw.toExponential(3)}/${gameG.rawSum.toExponential(3)} 比${(gameG.rawSum / simG.cpsRaw).toFixed(4)} ・ スキル系 ${simG.cpsSkillMul.toFixed(3)}/${gameG.cpsSkill.toFixed(3)} ・ 転生 ${simG.prestigeMul.toFixed(3)}/${gameG.prestige.toFixed(3)} ・ 研究全体 ${simG.globalRes.toFixed(4)}/${gameG.globalRes.toFixed(4)} ・ 討伐系 ${(simG.killMulAll * simG.killMulCps).toFixed(3)}/${gameG.reward.toFixed(3)}`);
+    // 局在用: 設備ごとの直接生産と、タップ力の内訳(NGのとき手で追わないため常に出す)
+    const simContrib = S.upgradeContribs(sim), simC = S.clickParts(sim);
+    const gameDet = await p.evaluate(() => {
+      const n = x => Number(String(x));
+      const per = {}; for (const u of UPGRADES) { const v = n(rawUpgradeCps(u)); if (v > 0) per[u.id] = v; }
+      let craw = 1; for (const u of UPGRADES) if (u.type === 'click') craw += n(rawUpgradeContribution(u));
+      return { per, lineage: n(lineageBonusCps()), presence: n(presenceBonusCps()),
+        clickRaw: craw, bankM: n(bankClickMultiplier()), prodLink: n(productionLinkClickPower()), base: n(baseClickPower()) };
+    });
+    const diffUp = Object.keys(simContrib).filter(id => {
+      const a = simContrib[id] || 0, g = gameDet.per[id] || 0;
+      return a > 0 && Math.abs(g / a - 1) > TOL;
+    }).map(id => `${id} ${(gameDet.per[id] / simContrib[id]).toFixed(4)}`);
+    if (diffUp.length) {
+      console.log(`    設備ごとに違うもの: ${diffUp.join(' / ')}`);
+      const det = await p.evaluate(() => {
+        const n = x => Number(String(x));
+        const u = UPGRADES.find(x => x.id === 'oven');
+        return { value: u.value, owned: state.upgrades.oven || 0, personal: n(upgradePersonalMultiplier(u)),
+          research: n(researchUpgradeMultiplier(u)), support: n(supportUpgradeMultiplier(u)),
+          mastery: n(masteryMultiplier(u)), msOwnSup: n(msDiverseUpgradeMul(u)) };
+      });
+      const simPer = (simContrib.oven || 0) / (det.owned * det.value);
+      const gamePer = (det.personal * det.research * det.support * det.mastery * det.msOwnSup);
+      console.log(`    oven 1台あたり倍率: sim ${simPer.toExponential(4)} / 実機 ${gamePer.toExponential(4)}(個別${det.personal.toFixed(3)} 研究${det.research.toExponential(3)} 支援${det.support.toFixed(4)} 熟練${det.mastery.toFixed(3)} 実績${det.msOwnSup.toFixed(3)})`);
+    }
+    console.log(`    系列/初台(実機) ${gameDet.lineage.toExponential(2)}/${gameDet.presence.toExponential(2)} ・ タップ: 加算 ${simC.clickRaw.toExponential(3)}/${gameDet.clickRaw.toExponential(3)} ・ 銀行 ${simC.bankM.toFixed(3)}/${gameDet.bankM.toFixed(3)} ・ 素 ${simC.baseClick.toExponential(3)}/${gameDet.base.toExponential(3)} ・ 生産連動(実機) ${gameDet.prodLink.toExponential(3)}`);
     for (const k of Object.keys(simVals)) {
       const a = simVals[k], g = gameVals[k];
       if (!(a > 0) && !(g > 0)) { console.log(`  ${b.name}/${k}: 両方0(判定対象外)`); continue; }
