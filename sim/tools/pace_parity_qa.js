@@ -66,7 +66,7 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
   await p.click('#titleStartBtn').catch(() => {});
   await p.clock.runFor(800);
 
-  const game = await p.evaluate(({ ups, res, res2, res3, skills, stage, kills, msBought, perks, spiceBoostOn, cookies, layer }) => {
+  const game = await p.evaluate(({ ups, res, res2, res3, skills, stage, kills, msBought, perks, spiceBoostOn, cookies, runElapsed, layer }) => {
     // 購入内容をそのまま置く(=同じ盤面にする)。経済の式には触らない。
     for (const id in ups) state.upgrades[id] = ups[id];
     for (const id of res) state.research[id] = true;
@@ -82,6 +82,9 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
     // 所持クッキーも揃える(2026-07-27 追加): 銀行配当の貯蓄項 log1p(log10(cookies)) が効くので、
     // 揃えないと同じ盤面にならない(実測でこの項だけずれていた)。
     if (cookies > 0) state.cookies = D(cookies);
+    // 周回経過秒も揃える(2026-07-27 追加): 金の出現間隔に周回テンポの傾斜 runTempoRamp() が掛かるので、
+    // 揃えないと間隔だけ2.4%ずれる(=直送すべてが同率でずれて見える)。
+    if (runElapsed > 0) { state.runStart = Date.now() - runElapsed * 1000; state.quotaPausedMs = 0; }
     if (spiceBoostOn) state.spiceBoostUntil = Date.now() + 30000;
     // ノルマ層(=生産倍率に効く)。ここを揃えないと「同じ盤面」にならない(2026-07-27 実測で追加)。
     if (layer > 1) { state.maxQuotaStage = layer; state.maxQuotaStageEver = Math.max(layer, state.maxQuotaStageEver || 1); }
@@ -98,7 +101,7 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
       direct: (typeof directIncomeTotalCps === 'function') ? num(directIncomeTotalCps()) : 0,
       missing
     };
-  }, { ups, res, res2, res3, skills, stage: run.maxStage || 1, kills: run.kills || 0, msBought, perks, spiceBoostOn, cookies: run.cookies || 0, layer: Math.max(1, Math.round(prod.stage || 1)) });
+  }, { ups, res, res2, res3, skills, stage: run.maxStage || 1, kills: run.kills || 0, msBought, perks, spiceBoostOn, cookies: run.cookies || 0, runElapsed: Math.max(0, sim.t - (run.startT || 0)), layer: Math.max(1, Math.round(prod.stage || 1)) });
 
   // 設備ごとの内訳(どこで桁が違うか)。同じ台数のはずなので、比が1から外れた設備が原因の所在。
   const simContrib = S.upgradeContribs(sim);
