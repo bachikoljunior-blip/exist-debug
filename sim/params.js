@@ -438,7 +438,12 @@ module.exports = {
   res2: {
     // 上位設備の増幅研究7件(2026-07-27 再設計v2): 設備直送に乗る素の倍率(飽和の外)。
     // v1(投資量に加算)は飽和で①1.00〜1.06のまま落ちた。深い設備ほど係数を上げて費用の階段と揃える。
-    upperAmp: { bankVault: 0.60, moonBake: 0.45, timeLayer: 0.50, eventHorizon: 0.55,
+    // bankVault は 0.40 で確定(2026-07-27 実測の比較): 0.60 にすると bankVault の最大幾何平均は
+    // 1.30→1.46・装備(a)172/172・装備(b)172/486 と良くなる一方、**⑫ 方針の1位が実在 4/5→3/5**
+    // (balancedが落ちる)+③utility 11/12→10/12 になる。⑫は方針の存在意義そのものなので 0.40 を採る。
+    // bankVault が全周回≥1.2に届かないのは factoryNetwork(1.37)/bankClickDividend(2.40)と同じ族
+    // (平均は強いが早い周回で1.2を割る)=既知NGとして扱う。
+    upperAmp: { bankVault: 0.40, moonBake: 0.45, timeLayer: 0.50, eventHorizon: 0.55,
       cosmicConvection: 0.60, singularityFlow: 0.65, annihilationCore: 0.70 },
     comboRate: 0.03, comboWindow: 30,
     // 会心フィーバー(R35)は超会心の「時間再配分」=平均保存でゲーム側のみに実装。simは超会心を不可視に扱う(mean=1)ため

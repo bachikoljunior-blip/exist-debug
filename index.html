@@ -6754,13 +6754,13 @@ const RESEARCH = [
   { id: "antimatterRecipe", name: "反物質配合", cost: 7.55e263, detail: "式：全生産×1.0032^反物質×1.032^取得スキル数。段階2(スキル「研究解析」で購入可):×(1+0.0008×最高到達層)。段階3(スキル「超越体」で購入可):対消滅=×(1+3%×転生回数)。周回をまたいで恒久成長する。", s2: "最高到達層でさらに上昇。", s3: "転生ごとに恒久+3%(周回をまたいで蓄積)。", desc: "全生産アップ(反物質数・スキル数で上昇)。段階購入で層連動と恒久成長が追加" },
 
   // ==== v2: 設備増幅研究の全設備化(効果は既存と同型: その設備の生産×9×レート^所持数。段階購入なし) ====
-  { id: "bankVault", name: "複利金庫", cost: 8000000, detail: "式：銀行生産×9×1.0096^銀行数。銀行を持つほど倍率が伸びる腐らない指数型。", desc: "銀行数で銀行の生産を増幅する" },
-  { id: "moonBake", name: "月光焼成", cost: 80000000, detail: "式：月面ベーカリー生産×9×1.008^月面ベーカリー数。", desc: "月面ベーカリー数で月面ベーカリーの生産を増幅する" },
-  { id: "timeLayer", name: "時間差焼成", cost: 150000000, detail: "式：時空オーブン生産×9×1.008^時空オーブン数。", desc: "時空オーブン数で時空オーブンの生産を増幅する" },
-  { id: "eventHorizon", name: "事象縁焼成", cost: 320000000000, detail: "式：ブラックホールミキサー生産×9×1.0064^ブラックホール数。", desc: "ブラックホール数でブラックホールミキサーの生産を増幅する" },
-  { id: "cosmicConvection", name: "宇宙対流", cost: 800000000000, detail: "式：宇宙焼成炉生産×9×1.0064^宇宙焼成炉数。", desc: "宇宙焼成炉数で宇宙焼成炉の生産を増幅する" },
-  { id: "singularityFlow", name: "特異点整流", cost: 1600000000000, detail: "式：クッキー特異点生産×9×1.0064^特異点数。", desc: "特異点数でクッキー特異点の生産を増幅する" },
-  { id: "annihilationCore", name: "対消滅炉心", cost: 128000000000000, detail: "式：反物質オーブン生産×9×1.0064^反物質オーブン数。", desc: "反物質オーブン数で反物質オーブンの生産を増幅する" }
+  { id: "bankVault", name: "複利金庫", cost: 8000000, detail: "式：直送収入(設備・金・討伐・タップ・銀行配当のすべて)×1.4。クッキー銀行を軸にした量産の販路そのものが太くなる。", desc: "直送収入すべてを+40%する" },
+  { id: "moonBake", name: "月光焼成", cost: 80000000, detail: "式：直送収入(設備・金・討伐・タップ・銀行配当のすべて)×1.45。月面ベーカリーを軸にした量産の販路そのものが太くなる。", desc: "直送収入すべてを+45%する" },
+  { id: "timeLayer", name: "時間差焼成", cost: 150000000, detail: "式：直送収入(設備・金・討伐・タップ・銀行配当のすべて)×1.5。時空オーブンを軸にした量産の販路そのものが太くなる。", desc: "直送収入すべてを+50%する" },
+  { id: "eventHorizon", name: "事象縁焼成", cost: 320000000000, detail: "式：直送収入(設備・金・討伐・タップ・銀行配当のすべて)×1.55。ブラックホールミキサーを軸にした量産の販路そのものが太くなる。", desc: "直送収入すべてを+55%する" },
+  { id: "cosmicConvection", name: "宇宙対流", cost: 800000000000, detail: "式：直送収入(設備・金・討伐・タップ・銀行配当のすべて)×1.6。宇宙焼成炉を軸にした量産の販路そのものが太くなる。", desc: "直送収入すべてを+60%する" },
+  { id: "singularityFlow", name: "特異点整流", cost: 1600000000000, detail: "式：直送収入(設備・金・討伐・タップ・銀行配当のすべて)×1.65。クッキー特異点を軸にした量産の販路そのものが太くなる。", desc: "直送収入すべてを+65%する" },
+  { id: "annihilationCore", name: "対消滅炉心", cost: 128000000000000, detail: "式：直送収入(設備・金・討伐・タップ・銀行配当のすべて)×1.7。反物質オーブンを軸にした量産の販路そのものが太くなる。", desc: "直送収入すべてを+70%する" }
 ].sort((a, b) => a.cost - b.cost);
 
 const REWARD_POOL = [
@@ -11042,13 +11042,6 @@ function researchUpgradeMultiplier(u) {
   if (u.id === "quantumBakery" && state.research.quantumProofing) m *= quantumProofingMultiplier();
 
   // v2: 設備増幅研究の全設備化(その設備の生産×9×レート^所持数)
-  if (u.id === "bank" && state.research.bankVault) m *= 9 * levelGrowth(state.upgrades.bank || 0, 0.0096);
-  if (u.id === "moonBakery" && state.research.moonBake) m *= 9 * levelGrowth(state.upgrades.moonBakery || 0, 0.008);
-  if (u.id === "timeOven" && state.research.timeLayer) m *= 9 * levelGrowth(state.upgrades.timeOven || 0, 0.008);
-  if (u.id === "blackHoleMixer" && state.research.eventHorizon) m *= 9 * levelGrowth(state.upgrades.blackHoleMixer || 0, 0.0064);
-  if (u.id === "universeOven" && state.research.cosmicConvection) m *= 9 * levelGrowth(state.upgrades.universeOven || 0, 0.0064);
-  if (u.id === "cookieSingularity" && state.research.singularityFlow) m *= 9 * levelGrowth(state.upgrades.cookieSingularity || 0, 0.0064);
-  if (u.id === "antimatterOven" && state.research.annihilationCore) m *= 9 * levelGrowth(state.upgrades.antimatterOven || 0, 0.0064);
 
   return m;
 }
@@ -11830,12 +11823,22 @@ function directBaseCps() {
   return currentCps() + currentClickPower() * recentTapsPerSec;
 }
 // 設備直送: 投資量=オーブン所持数。量産品も金相場で売れる(アンカー=max(基準, 0.15×金相場))
+// 上位設備の増幅研究7件の倍率(2026-07-27 sim同期・sim.js upperAmpMul と同値)。
+// 旧形(その設備の建物cps ×9×(1+k)^台数)は sim の①判定で 1.01〜1.06=払っても何も起きない札だった
+// (建物cpsは直送収入時代の総収入の0.05%未満)。直送5系統すべてに同じ倍率を掛ける形へ移した=
+// 「上位設備を持つほど量産の販路そのものが太くなる」。方針間の相対を動かさないので⑫に中立(sim実測4/5)。
+const UPPER_AMP_RES = {"bankVault": 0.4, "moonBake": 0.45, "timeLayer": 0.5, "eventHorizon": 0.55, "cosmicConvection": 0.6, "singularityFlow": 0.65, "annihilationCore": 0.7};
+function upperAmpMul() {
+  let m = 1;
+  for (const id in UPPER_AMP_RES) if (state.research[id]) m *= 1 + UPPER_AMP_RES[id];
+  return m;
+}
 function equipDirectCps() {
   if (!(state.research.ovenBatch && resStage2("ovenBatch"))) return 0;
   const cfg = DIRECT_CFG.equip;
   let anchor = directBaseCps();
   if (cfg.anchorGolden > 0) anchor = Math.max(anchor, cfg.anchorGolden * expectedGoldenRateCps());
-  return genreDirectCps(anchor, state.upgrades.oven || 0, cfg) * directOtherMul(cfg, "bake");
+  return genreDirectCps(anchor, state.upgrades.oven || 0, cfg) * directOtherMul(cfg, "bake") * upperAmpMul();
 }
 // 金直送: 投資量=金カテゴリ報酬の所持枚数(全7種)
 function goldenDirectCps() {
@@ -11843,7 +11846,7 @@ function goldenDirectCps() {
   const cfg = DIRECT_CFG.golden, p = state.perks || {};
   const inv = (p.goldenAmount || 0) + (p.goldenPower || 0) + (p.goldenRate || 0)
     + (p.goldenChain || 0) + (p.goldenTarget || 0) + (p.goldenFirstHit || 0) + (p.beastScent || 0);
-  return genreDirectCps(directBaseCps(), inv, cfg) * directOtherMul(cfg, "golden");
+  return genreDirectCps(directBaseCps(), inv, cfg) * directOtherMul(cfg, "golden") * upperAmpMul();
 }
 // 討伐直送(行商): 投資量=討伐カテゴリ報酬の所持枚数(全8種)。基準=金相場。図鑑で買い取り増(上限+50%)
 function huntPeddlerCps() {
@@ -11861,7 +11864,7 @@ function huntPeddlerCps() {
   // 回転ボーナス(2026-07-14 sim同期): 出現率perkは行商の在庫回転を上げる(飽和と独立・上限1.45)
   const mrLv = p.monsterRate || 0;
   const rateM = 1 + (cfg.rateBonus || 0) * mrLv / (mrLv + (cfg.rateHalf || 25));
-  return genreDirectCps(expectedGoldenRateCps(), inv, cfg) * directOtherMul(cfg, "hunt") * gateM * almanacM * rateM;
+  return genreDirectCps(expectedGoldenRateCps(), inv, cfg) * directOtherMul(cfg, "hunt") * gateM * almanacM * rateM * upperAmpMul();
 }
 // タップ直送(屋台): 投資量=神の指+強い指÷10。神の指登場前だけ金相場アンカー(下位投資の換金)
 function tapStallCps() {
@@ -11878,7 +11881,7 @@ function tapStallCps() {
   const cfgEff = (lateEra && cfg.satMaxLate) ? Object.assign({}, cfg, { satMax: cfg.satMaxLate }) : cfg;
   let anchor = directBaseCps();
   if (cfg.anchorGolden > 0 && !lateEra) anchor = Math.max(anchor, cfg.anchorGolden * expectedGoldenRateCps());
-  return genreDirectCps(anchor, inv, cfgEff) * polM * gateM;
+  return genreDirectCps(anchor, inv, cfgEff) * polM * gateM * upperAmpMul();
 }
 // 銀行配当(直送): 所持数(log床+累乗)×貯蓄(桁)で毎秒へ加算。クリック方針で厚い
 function bankDirectCps() {
@@ -11891,7 +11894,7 @@ function bankDirectCps() {
   const saved = Math.log10(Math.max(1, state.cookies.toNumberClamped(1e300)) + 10);
   const polM = runPolicyIs("click") ? cfg.clickBonus : cfg.otherMul;
   const ownM = 1 + cfg.ownRate * Math.log10(1 + bank) + cfg.countCoef * Math.pow(bank / cfg.ref, cfg.countPow);
-  return cfg.coef * base * ownM * (1 + Math.log1p(saved) * cfg.savedCoef) * polM;
+  return cfg.coef * base * ownM * (1 + Math.log1p(saved) * cfg.savedCoef) * polM * upperAmpMul();
 }
 function directIncomeTotalCps() {
   return equipDirectCps() + goldenDirectCps() + huntPeddlerCps() + tapStallCps() + bankDirectCps();
