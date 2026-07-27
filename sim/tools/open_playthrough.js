@@ -275,7 +275,7 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
       const dishes=(typeof DISHES!=='undefined')?DISHES.map(d=>d.id+':'+((typeof dishRecipeRevealed==='function'&&dishRecipeRevealed(d))?'開示':'未')) :[];
       let craftable=0; try{ for(const it of equip2Items()) if(equip2CraftableNow(it)&&equip2Afford(it))craftable++; }catch(e){}
       return { stage:(typeof currentStageNo==='function'?currentStageNo():0), unlocked:state.stageUnlocked||1,
-        runs:state.prestigeRuns||0, skills:Object.keys(state.skills||{}).length,
+        runs:state.prestigeRuns||0, skills:Object.values(state.skills||{}).filter(Boolean).length,
         wsTab:(typeof workshopTabUnlocked==='function'&&workshopTabUnlocked()), craft:(typeof workshopCraftUnlocked==='function'&&workshopCraftUnlocked()),
         mats, dishes, craftable, eqOwned:Object.keys(state.eq2Owned||{}).filter(k=>state.eq2Owned[k]>0).length,
         activeDishes:(typeof activeDishList==='function'?activeDishList().length:0),
