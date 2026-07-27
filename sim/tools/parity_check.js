@@ -42,11 +42,15 @@ const P = S.P;
   const body = seg.slice(0, lim > 0 ? lim : 200000);
   while ((mm = re.exec(body))) g2[mm[1]] = Number(mm[2]);
   // sim が模型化していないゲーム内容(BACKLOG OPEN1 で追跡中)。ここに無い新規が出たら落とす。
-  const KNOWN_UNMODELED = ['bankVault', 'moonBake', 'timeLayer', 'eventHorizon', 'cosmicConvection', 'singularityFlow', 'annihilationCore'];
+  // 2026-07-27: 7件は sim へ移植したので除外は空。ここに足すのは「模型化しないと決めた」ときだけ。
+  const KNOWN_UNMODELED = [];
+  // 比べるのは**実際に請求される額**(両側とも q5cost を通す: sim researchCostOf / game researchCost)。
+  // 素の表の値は片方だけ丸め済みという歴史があり(例: annihilationCore sim 1.28e14 / game 1.28e14 →
+  // どちらも請求は q5cost=1.25e14)、素の値で比べると偽の不一致が出る。
   for (const id in P.resCost) {
     if (g2[id] == null) { bad.push(`研究 ${id}: sim にあるがゲームに無い`); continue; }
-    const w = S.q5cost(P.resCost[id]);
-    if (w !== g2[id] && Math.abs(w / g2[id] - 1) > 1e-12) bad.push(`研究費用 ${id}: sim(q5)=${w} game=${g2[id]}`);
+    const w = S.q5cost(P.resCost[id]), gv = S.q5cost(g2[id]);
+    if (w !== gv && Math.abs(w / gv - 1) > 1e-12) bad.push(`研究費用 ${id}: sim(請求額)=${w} game(請求額)=${gv}`);
   }
   for (const id in g2) {
     if (P.resCost[id] != null) continue;
@@ -119,4 +123,4 @@ if (bad.length) {
   console.error('sim が判定基準。ゲームを sim に合わせる(sim を変えるなら平均保存の確認込みでバッテリー再走)。');
   process.exit(1);
 }
-console.log(`parity OK: 設備${ids.length}件(cps+click)・研究費用14件・研究段階26件・実績研究216件・報酬カード20件・すべて一致(sim未模型のゲーム研究7件は BACKLOG OPEN1 で追跡)`);
+console.log(`parity OK: 設備${ids.length}件(cps+click)・研究費用21件・研究段階26件・実績研究216件・報酬カード20件・すべて一致(sim未模型のゲーム内容ゼロ)`);

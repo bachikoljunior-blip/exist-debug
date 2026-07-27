@@ -44,6 +44,10 @@ const RESEARCH = [
   { id: 'bankClickDividend' }, { id: 'moonGlobalYeast' }, { id: 'portalGlobalFold' },
   { id: 'galaxyAssembly' }, { id: 'blackHoleCompression' }, { id: 'quantumProofing' },
   { id: 'antimatterRecipe' },
+  // 上位設備の指数増幅研究(2026-07-27 ゲーム→sim移植: ゲームには前からあったが sim が模型化しておらず、
+  // 判定基準が見ていない後半レバーになっていた。式は index.html:11018-11024 と同一 = 生産×9×(1+k)^台数)
+  { id: 'bankVault' }, { id: 'moonBake' }, { id: 'timeLayer' }, { id: 'eventHorizon' },
+  { id: 'cosmicConvection' }, { id: 'singularityFlow' }, { id: 'annihilationCore' },
   { id: 'cpsStrike' } // 生産火力転換(2026-07-13 ユーザー指示「研究3000万クッキー、モンスターダメージに毎秒生産が乗る」)
 ];
 
@@ -54,6 +58,9 @@ const RES_EQUIP = {
   bankClickDividend: 'bank', moonGlobalYeast: 'moonBakery', portalGlobalFold: 'portal',
   galaxyAssembly: 'galaxyFactory', blackHoleCompression: 'blackHoleMixer',
   quantumProofing: 'quantumBakery', antimatterRecipe: 'antimatterOven',
+  bankVault: 'bank', moonBake: 'moonBakery', timeLayer: 'timeOven',
+  eventHorizon: 'blackHoleMixer', cosmicConvection: 'universeOven',
+  singularityFlow: 'cookieSingularity', annihilationCore: 'antimatterOven',
   cpsStrike: 'portal' // 生産火力転換: 異世界炉(モンスター系)を購入済みの周回で買える
 };
 // ovenBatch段2の解放=auto_1(2026-07-10 ㉘bake対策): cheapestFirst系の方針はスキルを毎周回1個ずつ
@@ -1749,6 +1756,14 @@ function computeProd(sim) {
       }
       resM *= m;
     }
+    // 上位設備の指数増幅研究(2026-07-27 ゲーム同期・index.html:11018-11024 と同式)
+    if (u.id === 'bank' && resActive(sim, 'bankVault')) resM *= 9 * lg(capOwn(owned), 0.0096);
+    if (u.id === 'moonBakery' && resActive(sim, 'moonBake')) resM *= 9 * lg(capOwn(owned), 0.008);
+    if (u.id === 'timeOven' && resActive(sim, 'timeLayer')) resM *= 9 * lg(capOwn(owned), 0.008);
+    if (u.id === 'blackHoleMixer' && resActive(sim, 'eventHorizon')) resM *= 9 * lg(capOwn(owned), 0.0064);
+    if (u.id === 'universeOven' && resActive(sim, 'cosmicConvection')) resM *= 9 * lg(capOwn(owned), 0.0064);
+    if (u.id === 'cookieSingularity' && resActive(sim, 'singularityFlow')) resM *= 9 * lg(capOwn(owned), 0.0064);
+    if (u.id === 'antimatterOven' && resActive(sim, 'annihilationCore')) resM *= 9 * lg(capOwn(owned), 0.0064);
     if (u.id === 'portal' && resActive(sim, 'portalNetwork')) resM *= R.portalSelf;
     if (u.id === 'galaxyFactory' && resActive(sim, 'galaxyAssembly')) {
       const types = UPGRADES.filter(x => (r.upgrades[x.id] || 0) > 0).length;
@@ -3654,6 +3669,14 @@ function upgradeUnitMult(sim, u) {
     resM *= R.factorySelf * lg(low, R.factoryLow) * lg(owned, R.factoryOwn);
   }
   if (u.id === 'spiceRack' && resActive(sim, 'spiceBlend')) resM *= lg(owned, R.spiceOwn);
+  // 上位設備の指数増幅研究(2026-07-27 ゲーム同期・index.html:11018-11024 と同式)
+  if (u.id === 'bank' && resActive(sim, 'bankVault')) resM *= 9 * lg(capOwn(owned), 0.0096);
+  if (u.id === 'moonBakery' && resActive(sim, 'moonBake')) resM *= 9 * lg(capOwn(owned), 0.008);
+  if (u.id === 'timeOven' && resActive(sim, 'timeLayer')) resM *= 9 * lg(capOwn(owned), 0.008);
+  if (u.id === 'blackHoleMixer' && resActive(sim, 'eventHorizon')) resM *= 9 * lg(capOwn(owned), 0.0064);
+  if (u.id === 'universeOven' && resActive(sim, 'cosmicConvection')) resM *= 9 * lg(capOwn(owned), 0.0064);
+  if (u.id === 'cookieSingularity' && resActive(sim, 'singularityFlow')) resM *= 9 * lg(capOwn(owned), 0.0064);
+  if (u.id === 'antimatterOven' && resActive(sim, 'annihilationCore')) resM *= 9 * lg(capOwn(owned), 0.0064);
   if (u.id === 'portal' && resActive(sim, 'portalNetwork')) resM *= R.portalSelf;
   if (u.id === 'galaxyFactory' && resActive(sim, 'galaxyAssembly')) {
     const types = UPGRADES.filter(x => (r.upgrades[x.id] || 0) > 0).length;

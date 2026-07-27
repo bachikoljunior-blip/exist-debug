@@ -295,7 +295,10 @@ module.exports = {
     factoryNetwork: 1000000, spiceBlend: 20000000, cpsStrike: 30000000,
     // ①初回希釈対策の固定(2026-07-14): grandmaCrowd/ovenBatchはR19fの①合格構成(この値+買い控えゲート)。
     // weave再焼きがgrandmaCrowdを1.4e56へ動かした(ゲート後の初買い観測のため)がこちらを優先する。
-    grandmaCrowd: 100000, ovenBatch: 300000
+    grandmaCrowd: 100000, ovenBatch: 300000,
+    // 上位設備の指数増幅研究(2026-07-27 ゲーム→sim移植・値はゲームの絶対値そのまま)
+    bankVault: 8000000, moonBake: 80000000, timeLayer: 150000000, eventHorizon: 320000000000,
+    cosmicConvection: 800000000000, singularityFlow: 1600000000000, annihilationCore: 128000000000000
   }),
 
   // ---- モンスター報酬効果 ----
