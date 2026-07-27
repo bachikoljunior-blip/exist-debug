@@ -100,6 +100,7 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   const snap=async()=>withTO('snap',()=>p.evaluate(()=>({sec:Math.round(state.totalPlaySec||0),cookies:Number(state.cookies.toString()),cps:Number(currentCps().toString()),
     unlocked:!!(prestigeUnlocked&&prestigeUnlocked()),gain:(prestigeGain?Number(prestigeGain()):0),cost:(prestigeCookieCost?Number(prestigeCookieCost()):0),
     runs:state.prestigeRuns||0,skills:Object.values(state.skills||{}).filter(Boolean).length,
+    stageUnlocked:Number(state.stageUnlocked||1),
     co:Number(state.completedOrders||0),xo:Number(state.expiredOrders||0)})));
 
   // 1刻みの処理を発生順に返す(討伐→報酬→金→研究→設備→タップ)。実プレイヤの購入判断=価値/費用の貪欲(毎手ROI再評価)。
@@ -185,6 +186,9 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   let activeUntilSec=ACTIVE_SEC;
   const wall0=now(); let reason='blkcap', stallCount=0, banking=false, huntDry=0;
   let orderSeen={co:0,xo:0};
+  // ステージ解放は狩り枝の中だけで見ていたため、活動窓や序盤で開いた回が記録から漏れていた
+  // (実走で「解放3回なのに最終ステージ5」という食い違いを観測)。毎刻み state.stageUnlocked を見る。
+  let unlockedSeen=0;
   try{
   for(let i=0;i<8000;i++){
     let s=await snap();
@@ -288,6 +292,8 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     for(const [label,cnt] of await workshopActions()){ await rec(label,cnt); progressed=true; }
     // 注文は行動の副産物として達成/期限切れになる(プレイヤーは選べない)。起きたことだけ記録する。
     { const s3=await snap();
+      if(!unlockedSeen)unlockedSeen=s3.stageUnlocked||1;
+      while(unlockedSeen<(s3.stageUnlocked||1)){ unlockedSeen++; await rec(`ステージ${unlockedSeen}を解放`,1); progressed=true; }
       if(s3.co>orderSeen.co)await rec('注文を達成(報酬を受け取る)',s3.co-orderSeen.co);
       if(s3.xo>orderSeen.xo)await rec('注文の期限切れ(次の注文を待つ)',s3.xo-orderSeen.xo);
       if(s3.co>orderSeen.co||s3.xo>orderSeen.xo)progressed=true;
