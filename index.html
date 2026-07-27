@@ -11482,20 +11482,20 @@ function quotaTrialMultiplier() {
   return Math.pow(1 + QUOTA_TRIAL_COEF, Math.max(0, maxQuotaStage() - floor));
 }
 
-// ==== ノルマ終了(転生準備連動・2026-07-27 ユーザー指示「ノルマ前回周回長に依存するのやめて」) ====
-// 旧(第12次H・提案9 到達連動ノルマ): 未達 = 進行比 ρ=周回内経過秒 ÷ 前回周回の長さ(prevDuration)が
-//   ρ*≈0.98 を越えた時点。終了時刻が「前回どれだけ長く遊んだか」で決まるため、短い周回の次はさらに
-//   短く終わる(逆も同じ)ぶれがあり、同じ進み方をしても周回ごとに終了時刻が変わっていた。
-// 新: 終了の基準を「時計」から「この周回の稼ぎ」へ。sim の確定形(⑧ reachGainFrac=0.983)と同じく
-//   「転生の一歩手前=この周回が仕事を終えた時点」で終了する。
-//   終了 = 経過 ≥ QUOTA_END_MIN_SEC かつ 今転生した場合の獲得PT ≥ 目標PT × QUOTA_END_GAIN_FRAC
-//   目標PT = max(次に取れる最安スキル, 前周回の獲得PT × QUOTA_END_LADDER)  ←sim の tgt と同式
-//   参照するのは「前回どこまで進んだか(総生産)」だけで、「前回どれだけ長く遊んだか(周回長)」は見ない。
-//   同じ進み方をすれば同じ時点で終わる=短い周回が次の周回をさらに短くするスパイラルが消える。
-// 位置の実測(sim 全16方針の軌道で新旧を突き合わせ・S1/S4/S10 400h):
-//   未達位置の中央値 = 旧82% に対し 新52〜78%(次スキルだけを目標にすると16〜45%へ頭寄りに崩れる=採らない)。
+// ==== ノルマ終了(2026-07-27 ユーザー指示「ノルマ前回周回長に依存するのやめて」
+//      +「総クッキーに依存してるならそれもなし」) ====
+// 旧1(第12次H・提案9 到達連動ノルマ): 未達 = 進行比 ρ=周回内経過秒 ÷ 前回周回の長さ(prevDuration)が
+//   ρ*≈0.98 を越えた時点 → 「前回どれだけ長く遊んだか」で今回の終了時刻が決まる=撤去。
+// 旧2(同日の第1版): 目標PTに「前周回の獲得PT×1.57」を混ぜていた → 前周回の総クッキー(総生産)に
+//   依存する=ユーザー指示で撤去。持ち越しの数値は周回長・総クッキーとも一切参照しない。
+// 現: 終了 = 経過 ≥ QUOTA_END_MIN_SEC かつ 今転生した場合の獲得PT ≥ 目標PT × QUOTA_END_GAIN_FRAC
+//   目標PT = **次に取れる最安スキルの必要PT**(スキルの固定コスト表=何を取得済みかだけで決まる)。
+//   前回の周回長も、前回の総クッキーも、累計の総クッキーも見ない。周回をまたぐ数値は
+//   「どのスキルを持っているか」だけ=同じ進み方をすれば毎周回いつも同じ時点で終わる。
+// 位置の実測(sim 全16方針の軌道に本ルールを重ねた未達位置の中央値・S1/S4/S10 400h): 45%/18%/33%
+//   (旧1の前回周回長基準は82%)。速い方針ほど目標に早く届くぶん前寄りになるが、
+//   これ以上後ろへ倒すには前周回の総クッキーを持ち出すしかないため採らない(上記指示)。
 const QUOTA_END_GAIN_FRAC = 0.983; // sim params.quota.reachGainFrac と同期
-const QUOTA_END_LADDER = 1.57;     // 転生梯子の段比(sim strategies の目標ラチェット ×1.57 と同期)
 const QUOTA_END_MIN_SEC = 1176;    // 時間下限=sim の周回下限 1200×0.98 と同期(これより前は基礎ノルマ側が効く)
 const QUOTA_END_MAX_SEC = 7200;    // 保険の上限(sim の周回上限)。目標に届かない周回で無限に伸びるのを防ぐ
 // QoL/解析系ノード(はしごを消費しない「おまけ価格」)は「次の1個」の基準にしない=sim の isUtilitySkill と同一集合
@@ -11526,24 +11526,15 @@ function cheapestNextSkillCost() {
   return bestAny !== Infinity ? bestAny : null;
 }
 
-// この周回の目標PT: 「次に取れる最安スキル」と「前周回の獲得PT×はしご1段」の大きい方。
-// 前周回の獲得PT は保存済みの前周回総生産(prevRunCookies)から復元する=新しいセーブ項目は要らない。
-// 第0周回(前周回なし)は次スキルのみが目標。sim の tgt = max(次スキル最安, 前回目標×1.57) と同式。
-function quotaEndTargetPt() {
-  const next = cheapestNextSkillCost();
-  const prevGain = totalPrestigeFromCookies(state.prevRunCookies || 0);
-
-  return Math.max(next !== null ? next : 0, prevGain * QUOTA_END_LADDER);
-}
-
-// ノルマ終了の理由。前回の「周回長」には依存しない=経過とこの周回の稼ぎだけで決まる。
+// ノルマ終了の理由。前回の周回長にも前回/累計の総クッキーにも依存しない=
+// 「経過」と「この周回の稼ぎ」と「次に取れる最安スキルの固定コスト」だけで決まる。
 // "goal"=目標PTに到達(通常の終わり方) / "cap"=保険の上限 / ""=継続。
 function quotaEndReason(elapsed) {
   if (elapsed >= QUOTA_END_MAX_SEC) return "cap";
   if (elapsed < QUOTA_END_MIN_SEC) return "";
 
-  const target = quotaEndTargetPt();
-  if (!(target > 0)) return ""; // 目標が立たない周回は基礎ノルマだけで判定する
+  const target = cheapestNextSkillCost();
+  if (target === null || target <= 0) return ""; // ツリー完成=目標が無い周回は基礎ノルマだけで判定する
 
   return prestigeGain() >= target * QUOTA_END_GAIN_FRAC ? "goal" : "";
 }
