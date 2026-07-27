@@ -24,13 +24,15 @@ function readEnv() {
     saveReach: Number(process.env.SAVE_REACH || 3.0),      // ただし手持ちのこの倍以内で買える台に限る
     // 段階研究(=直送などの新システムの入口)のために貯める射程。手持ちのこの倍以内なら設備を止めて貯める。
     stageSaveReach: Number(process.env.STAGE_SAVE_REACH || 50),
+    // 限界収入の測り方: measured=1台足して実収入の差分を測る(直送を含む) / analytic=旧近似(建物cpsだけ)
+    marg: process.env.BUY_MARG || 'analytic',
   };
 }
 
 async function installBuyPolicy(page, override) {
   const cfg = Object.assign(readEnv(), override || {});
-  await page.evaluate(({ policy, tps, saveRatio, saveReach, stageSaveReach }) => {
-    window.__BUY = { policy, tps, saveRatio, saveReach, stageSaveReach };
+  await page.evaluate(({ policy, tps, saveRatio, saveReach, stageSaveReach, marg }) => {
+    window.__BUY = { policy, tps, saveRatio, saveReach, stageSaveReach, marg };
 
     // 1台買ったときの毎秒の増分。全体倍率(研究/スキル/perk等)は全候補に共通なので順位付けでは
     // 相殺する=個別強化ぶんだけ乗せれば十分。クリック系は実効タップ毎秒で毎秒換算する。
@@ -40,6 +42,33 @@ async function installBuyPolicy(page, override) {
       return (u.type === 'click') ? per * pm * window.__BUY.tps : per * pm;
     };
 
+    // 実測版(2026-07-27 追加): 1台足したときの**実際の収入の増分**を測る。
+    // 旧 __margCps は「設備の素値×個別強化」だけの近似で、この経済の主役である直送収入
+    // (研究の段階2で始まる売上。ジャンルごとの投資量で伸びる)が順位に入っていなかった。
+    // 実プレイヤは画面の「毎秒」と「売上」を見て選ぶので、両方を足した値の差分で順位を付ける。
+    // 仮購入→評価→戻す(所持数を1増やして戻すだけ。購入処理は呼ばないので費用もログも動かない)。
+    window.__income = () => {
+      let v = 0;
+      try { v += Number(currentCps().toString()); } catch (e) {}
+      try { if (typeof directIncomeTotalCps === 'function') v += Number(directIncomeTotalCps().toString()); } catch (e) {}
+      return v;
+    };
+    window.__margMeasured = (u) => {
+      const before = window.__income();
+      let clickBefore = 0, clickAfter = 0;
+      try { clickBefore = Number(currentClickPower().toString()); } catch (e) {}
+      const had = state.upgrades[u.id] || 0;
+      state.upgrades[u.id] = had + 1;
+      const after = window.__income();
+      try { clickAfter = Number(currentClickPower().toString()); } catch (e) {}
+      state.upgrades[u.id] = had;
+      const dCps = after - before;
+      const dClick = Math.max(0, clickAfter - clickBefore) * window.__BUY.tps;
+      const d = dCps + dClick;
+      return isFinite(d) && d > 0 ? d : 0;
+    };
+    window.__marg = (u) => (window.__BUY.marg === 'measured' ? window.__margMeasured(u) : window.__margCps(u));
+
     window.__candidates = () => {
       const out = [];
       for (const u of UPGRADES) {
@@ -47,7 +76,7 @@ async function installBuyPolicy(page, override) {
         let c; try { c = costOf(u); } catch (e) { continue; }
         const cn = Number(c.toString());
         if (!isFinite(cn) || cn <= 0) continue;
-        const mc = window.__margCps(u);
+        const mc = window.__marg(u);
         if (!(mc > 0)) continue;
         out.push({ u, cost: cn, marg: mc, eff: mc / cn }); // eff=1クッキーあたりの毎秒増(回収時間の逆数)
       }
