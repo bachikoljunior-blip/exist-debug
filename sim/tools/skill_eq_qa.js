@@ -20,6 +20,9 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
       state.prestige = 1e6; state.prestigeRuns = 2; state.totalClicks = 5000;
       state.materials = {}; MATERIALS.forEach(m => state.materials[m.id] = 500);
     };
+    // 許容差 1e-6 の根拠(2026-07-26 実測): runTempoRamp() が偽クロックの微小進みで
+    // 1e-7 ほど揺れるため、1e-9 だと「動いた」と誤判定して同一ビルドでも結果が変わる
+    // (死に札が 5件/2件/1件 と揺れた)。実効果は最小でも0.1%あるので 1e-6 で分離できる。
     const num = v => { const n = Number(String(v)); return Number.isFinite(n) ? n : null; };
     const probe = () => ({
       毎秒: num(currentCps()), タップ: num(currentClickPower()),
@@ -34,7 +37,7 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
       系統: num(rewardCategoryBonus('golden')),
     });
     const moved = (off, on) => Object.keys(off).filter(k => off[k] != null && on[k] != null
-      && Math.abs(on[k] - off[k]) > 1e-9 * Math.max(1, Math.abs(off[k])));
+      && Math.abs(on[k] - off[k]) > 1e-6 * Math.max(1, Math.abs(off[k])));
 
     // 自己検査
     base(); const c0 = probe(); state.upgrades.finger += 100; const c1 = probe();
