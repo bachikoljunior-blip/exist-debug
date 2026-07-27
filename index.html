@@ -6815,111 +6815,111 @@ const SKILL_MAP_X_OFFSET = 60;
 
 const SKILL_NODES = [
   // 座標規則：中央x=1000。左側はタップ/金色、右側は自動/怪物、上側は研究/設備、下側は報酬/周回。各列は原則x=200刻み、各段はy=140〜160刻み。
-  { id: "core", name: "分岐炉心", branchId: "core", cost: 10, x: 340, y: 707, icon: "◎", prereqs: [], desc: "転生後に周回方針を選べる。", effects: [{ type: "unlockSystem", target: "runPolicy" }] },
+  { id: "core", name: "分岐炉心", branchId: "core", cost: 1, x: 340, y: 707, icon: "◎", prereqs: [], desc: "転生後に周回方針を選べる。", effects: [{ type: "unlockSystem", target: "runPolicy" }] },
 
   // 左上：タップ型
   { id: "click_1", name: "会心の指", branchId: "click", cost: 5, x: 1086, y: 99, icon: "◆", prereqs: ["core"], desc: "タップ生産 +200%。", effects: [{ type: "click", value: 2 }] },
   { id: "click_2", name: "連打の呼吸", branchId: "click", cost: 50, x: 1489, y: 62, icon: "◆", prereqs: ["click_1"], desc: "タップ生産 +600%(タップ系スキルと加算)。", effects: [{ type: "click", value: 6 }] },
-  { id: "click_3", name: "焼き印タップ", branchId: "click", cost: 15500, x: 1513, y: 487, icon: "◆", prereqs: ["click_2", "golden_2"], desc: "タップ生産 +1500%(加算)、金獲得量 +30%。", effects: [{ type: "click", value: 15 }, { type: "goldenAmount", value: 0.3 }] },
-  { id: "click_4", name: "神経直結", branchId: "click", cost: 13500000, x: 1991, y: 1035, icon: "◆", prereqs: ["click_3"], desc: "タップ生産 +24%、全生産 +64000%(全生産系スキルと加算・合計は生産に2回かかる)。", effects: [{ type: "click", value: 0.24 }, { type: "all", value: 640 }] },
+  { id: "click_3", name: "焼き印タップ", branchId: "click", cost: 190, x: 1513, y: 487, icon: "◆", prereqs: ["click_2", "golden_2"], desc: "タップ生産 +1500%(加算)、金獲得量 +30%。", effects: [{ type: "click", value: 15 }, { type: "goldenAmount", value: 0.3 }] },
+  { id: "click_4", name: "神経直結", branchId: "click", cost: 2550, x: 1991, y: 1035, icon: "◆", prereqs: ["click_3"], desc: "タップ生産 +24%、全生産 +64000%(全生産系スキルと加算・合計は生産に2回かかる)。", effects: [{ type: "click", value: 0.24 }, { type: "all", value: 640 }] },
 
   // 左下：金クッキー型
   { id: "golden_1", name: "金色の匂い", branchId: "golden", cost: 5, x: 644, y: 738, icon: "✦", prereqs: ["core"], desc: "金クッキー出現間隔 -35%。", effects: [{ type: "goldenRate", value: 0.24 }] },
   // 方針入口の増幅スキル(2026-07-11): 分岐炉心の各方針入口を選んだ直後に、その方針の主役効果を安価に増幅する
-  { id: "click_amp", name: "速射の指", branchId: "click", cost: 8, x: 1619, y: -159, icon: "◆", prereqs: ["click_1"], desc: "タップ生産 +75%。", effects: [{ type: "click", value: 0.75 }] },
-  { id: "golden_amp", name: "金箔集め", branchId: "golden", cost: 15, x: 665, y: 966, icon: "✦", prereqs: ["golden_1"], desc: "金クッキー即時獲得量 +50%。", effects: [{ type: "goldenAmount", value: 0.5 }] },
-  { id: "golden_echo", name: "金は金を呼ぶ", branchId: "golden", cost: 5, x: 537, y: 850, icon: "✧", prereqs: ["golden_amp"], desc: "金取得時35%で追加の金クッキー1枚(連鎖なし)。", effects: [{ type: "unlockSystem", target: "goldenEcho" }] },
-  { id: "ensemble", name: "編成の心得", branchId: "core", cost: 3, x: 728, y: 547, icon: "❖", prereqs: ["core"], desc: "標準方針で、4つの稼ぎ方が揃うほど全生産アップ(最大+15%)。", effects: [{ type: "unlockSystem", target: "ensemble" }] },
-  { id: "monster_amp", name: "仕留めの一撃", branchId: "monster", cost: 20, x: 382, y: 959, icon: "◉", prereqs: ["monster_1"], desc: "モンスター最終ダメージ +60%。", effects: [{ type: "monsterDamageSkill", value: 0.6 }] },
+  { id: "click_amp", name: "速射の指", branchId: "click", cost: 1, x: 1619, y: -159, icon: "◆", prereqs: ["click_1"], desc: "タップ生産 +75%。", effects: [{ type: "click", value: 0.75 }] },
+  { id: "golden_amp", name: "金箔集め", branchId: "golden", cost: 1, x: 665, y: 966, icon: "✦", prereqs: ["golden_1"], desc: "金クッキー即時獲得量 +50%。", effects: [{ type: "goldenAmount", value: 0.5 }] },
+  { id: "golden_echo", name: "金は金を呼ぶ", branchId: "golden", cost: 1, x: 537, y: 850, icon: "✧", prereqs: ["golden_amp"], desc: "金取得時35%で追加の金クッキー1枚(連鎖なし)。", effects: [{ type: "unlockSystem", target: "goldenEcho" }] },
+  { id: "ensemble", name: "編成の心得", branchId: "core", cost: 1, x: 728, y: 547, icon: "❖", prereqs: ["core"], desc: "標準方針で、4つの稼ぎ方が揃うほど全生産アップ(最大+15%)。", effects: [{ type: "unlockSystem", target: "ensemble" }] },
+  { id: "monster_amp", name: "仕留めの一撃", branchId: "monster", cost: 1, x: 382, y: 959, icon: "◉", prereqs: ["monster_1"], desc: "モンスター最終ダメージ +60%。", effects: [{ type: "monsterDamageSkill", value: 0.6 }] },
   // 提案10/11(2026-07-11 承認): タップ/討伐の換金収入を安いスキルで先行開始(研究の段階2でフル。消えずに出続ける)
-  { id: "click_stall", name: "土産の屋台", branchId: "click", cost: 2, x: 1999, y: -144, icon: "◆", prereqs: ["click_amp"], desc: "屋台を解放。毎秒収入(強い指系と最高到達層で上昇)。「指先の型」段階2までは5%。", effects: [{ type: "unlockSystem", target: "tapStall" }] },
-  { id: "monster_peddler", name: "戦利品の行商", branchId: "monster", cost: 20, x: 343, y: 1156, icon: "◉", prereqs: ["monster_1"], desc: "行商を解放。毎秒収入(討伐系報酬カードの所持数と最高到達層で上昇)。「異世界接続網」段階2までは6%。", effects: [{ type: "unlockSystem", target: "huntPeddler" }] },
-  { id: "auto_amp", name: "炉の熱気", branchId: "auto", cost: 35, x: 251, y: 2599, icon: "◇", prereqs: ["auto_1"], desc: "毎秒生産 +75%。", effects: [{ type: "cps", value: 0.75 }] },
-  { id: "golden_2", name: "金粉回収", branchId: "golden", cost: 1550, x: 869, y: 773, icon: "✦", prereqs: ["golden_1"], desc: "金クッキー即時獲得量 +75%。", effects: [{ type: "goldenAmount", value: 0.75 }] },
-  { id: "golden_3", name: "輝き増幅", branchId: "golden", cost: 550000, x: 1028, y: 858, icon: "✦", prereqs: ["golden_2"], desc: "金ブースト倍率 +2.1。", effects: [{ type: "goldenPower", value: 2.1 }] },
-  { id: "golden_analysis", name: "金色観測", branchId: "golden", cost: 190000, x: 1254, y: 757, icon: "✦", prereqs: ["golden_3"], desc: "金クッキーの出現間隔とブースト時間の目安を表示。", effects: [{ type: "unlockSystem", target: "goldenAnalysis" }] },
-  { id: "golden_4", name: "太陽反応", branchId: "golden", cost: 490000000, x: 1204, y: 963, icon: "✦", prereqs: ["golden_3"], desc: "金クッキー出現間隔 -58%、金獲得量 +125%。", effects: [{ type: "goldenRate", value: 0.48 }, { type: "goldenAmount", value: 1.25 }] },
+  { id: "click_stall", name: "土産の屋台", branchId: "click", cost: 1, x: 1999, y: -144, icon: "◆", prereqs: ["click_amp"], desc: "屋台を解放。毎秒収入(強い指系と最高到達層で上昇)。「指先の型」段階2までは5%。", effects: [{ type: "unlockSystem", target: "tapStall" }] },
+  { id: "monster_peddler", name: "戦利品の行商", branchId: "monster", cost: 1, x: 343, y: 1156, icon: "◉", prereqs: ["monster_1"], desc: "行商を解放。毎秒収入(討伐系報酬カードの所持数と最高到達層で上昇)。「異世界接続網」段階2までは6%。", effects: [{ type: "unlockSystem", target: "huntPeddler" }] },
+  { id: "auto_amp", name: "炉の熱気", branchId: "auto", cost: 1, x: 251, y: 2599, icon: "◇", prereqs: ["auto_1"], desc: "毎秒生産 +75%。", effects: [{ type: "cps", value: 0.75 }] },
+  { id: "golden_2", name: "金粉回収", branchId: "golden", cost: 25, x: 869, y: 773, icon: "✦", prereqs: ["golden_1"], desc: "金クッキー即時獲得量 +75%。", effects: [{ type: "goldenAmount", value: 0.75 }] },
+  { id: "golden_3", name: "輝き増幅", branchId: "golden", cost: 705, x: 1028, y: 858, icon: "✦", prereqs: ["golden_2"], desc: "金ブースト倍率 +2.1。", effects: [{ type: "goldenPower", value: 2.1 }] },
+  { id: "golden_analysis", name: "金色観測", branchId: "golden", cost: 245, x: 1254, y: 757, icon: "✦", prereqs: ["golden_3"], desc: "金クッキーの出現間隔とブースト時間の目安を表示。", effects: [{ type: "unlockSystem", target: "goldenAnalysis" }] },
+  { id: "golden_4", name: "太陽反応", branchId: "golden", cost: 6150, x: 1204, y: 963, icon: "✦", prereqs: ["golden_3"], desc: "金クッキー出現間隔 -58%、金獲得量 +125%。", effects: [{ type: "goldenRate", value: 0.48 }, { type: "goldenAmount", value: 1.25 }] },
 
   // 右上：自動焼成型
   { id: "auto_1", name: "火種", branchId: "auto", cost: 5, x: 1, y: 2083, icon: "◇", prereqs: ["core"], desc: "毎秒生産 +300%。", effects: [{ type: "cps", value: 3 }] },
-  { id: "auto_2", name: "炉の列", branchId: "auto", cost: 3850, x: 290, y: 2341, icon: "◇", prereqs: ["auto_1", "monster_2"], desc: "毎秒生産 +1000%(毎秒系スキルと加算)。", effects: [{ type: "cps", value: 10 }] },
-  { id: "auto_3", name: "同期炉", branchId: "auto", cost: 38500, x: 468, y: 2185, icon: "◇", prereqs: ["auto_2", "monster_2"], desc: "毎秒生産 +4000%(加算)、モンスターダメージ +60%。", effects: [{ type: "cps", value: 40 }, { type: "monsterDamageSkill", value: 0.6 }] },
-  { id: "auto_4", name: "無人ライン", branchId: "auto", cost: 3500000, x: 636, y: 1945, icon: "◇", prereqs: ["auto_3"], desc: "毎秒生産 +24%、全生産 +16000%(全生産系スキルと加算・合計は生産に2回かかる)。", effects: [{ type: "cps", value: 0.24 }, { type: "all", value: 160 }] },
+  { id: "auto_2", name: "炉の列", branchId: "auto", cost: 65, x: 290, y: 2341, icon: "◇", prereqs: ["auto_1", "monster_2"], desc: "毎秒生産 +1000%(毎秒系スキルと加算)。", effects: [{ type: "cps", value: 10 }] },
+  { id: "auto_3", name: "同期炉", branchId: "auto", cost: 295, x: 468, y: 2185, icon: "◇", prereqs: ["auto_2", "monster_2"], desc: "毎秒生産 +4000%(加算)、モンスターダメージ +60%。", effects: [{ type: "cps", value: 40 }, { type: "monsterDamageSkill", value: 0.6 }] },
+  { id: "auto_4", name: "無人ライン", branchId: "auto", cost: 1650, x: 636, y: 1945, icon: "◇", prereqs: ["auto_3"], desc: "毎秒生産 +24%、全生産 +16000%(全生産系スキルと加算・合計は生産に2回かかる)。", effects: [{ type: "cps", value: 0.24 }, { type: "all", value: 160 }] },
 
   // 右下：怪物狩り型
   { id: "monster_1", name: "狩りの合図", branchId: "monster", cost: 5, x: 546, y: 1126, icon: "◉", prereqs: ["core"], desc: "モンスター出現間隔 -35%。", effects: [{ type: "monsterRate", value: 0.24 }] },
-  { id: "monster_2", name: "急所割り", branchId: "monster", cost: 2450, x: 560, y: 1684, icon: "◉", prereqs: ["monster_1", "golden_2"], desc: "モンスター最終ダメージ +160%。", effects: [{ type: "monsterDamageSkill", value: 1.6 }] },
-  { id: "monster_3", name: "砕ける皮", branchId: "monster", cost: 1350000, x: 278, y: 2107, icon: "◉", prereqs: ["monster_2"], desc: "モンスターHP -50%。", effects: [{ type: "monsterHpDown", value: 0.7000000000000001 }] },
+  { id: "monster_2", name: "急所割り", branchId: "monster", cost: 40, x: 560, y: 1684, icon: "◉", prereqs: ["monster_1", "golden_2"], desc: "モンスター最終ダメージ +160%。", effects: [{ type: "monsterDamageSkill", value: 1.6 }] },
+  { id: "monster_3", name: "砕ける皮", branchId: "monster", cost: 1650, x: 278, y: 2107, icon: "◉", prereqs: ["monster_2"], desc: "モンスターHP -50%。", effects: [{ type: "monsterHpDown", value: 0.7000000000000001 }] },
   // v2: 工房解放スキル(monster枝の序盤から分岐。x=1200列のy=1440/1600は空き)
-  { id: "workshop_1", name: "素材の嗅覚", branchId: "monster", cost: 105, x: 303, y: 1332, icon: "❖", prereqs: ["monster_1"], desc: "工房タブを解放。モンスターが素材を落とすようになる。", effects: [{ type: "unlockSystem", target: "workshop" }] },
-  { id: "workshop_2", name: "工房の拡張", branchId: "monster", cost: 170, x: 460, y: 1368, icon: "❖", prereqs: ["workshop_1"], desc: "装備の作成欄(ティア1)を解放。", effects: [{ type: "unlockSystem", target: "workshopCraft" }] },
+  { id: "workshop_1", name: "素材の嗅覚", branchId: "monster", cost: 1, x: 303, y: 1332, icon: "❖", prereqs: ["monster_1"], desc: "工房タブを解放。モンスターが素材を落とすようになる。", effects: [{ type: "unlockSystem", target: "workshop" }] },
+  { id: "workshop_2", name: "工房の拡張", branchId: "monster", cost: 1, x: 460, y: 1368, icon: "❖", prereqs: ["workshop_1"], desc: "装備の作成欄(ティア1)を解放。", effects: [{ type: "unlockSystem", target: "workshopCraft" }] },
   // 装備作成ティア解放(2026-07-15 ユーザー指示「作成のティア2以降をそれぞれスキル解放で作成欄が出る」)
-  { id: "eqcraft_t2", name: "上位工房I", branchId: "monster", cost: 5000, x: 397, y: 1559, icon: "❖", prereqs: ["workshop_2"], desc: "装備の作成欄(ティア2)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT2" }] },
-  { id: "eqcraft_t3", name: "上位工房II", branchId: "monster", cost: 800000, x: 348, y: 1748, icon: "❖", prereqs: ["eqcraft_t2"], desc: "装備の作成欄(ティア3)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT3" }] },
-  { id: "eqcraft_t4", name: "上位工房III", branchId: "monster", cost: 150000000, x: 261, y: 1924, icon: "❖", prereqs: ["eqcraft_t3"], desc: "装備の作成欄(ティア4)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT4" }] },
-  { id: "eqcraft_t5", name: "上位工房IV", branchId: "monster", cost: 20000000000, x: 198, y: 1732, icon: "❖", prereqs: ["eqcraft_t4"], desc: "装備の作成欄(ティア5)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT5" }] },
-  { id: "eqcraft_t6", name: "上位工房V", branchId: "monster", cost: 800000000000, x: 252, y: 1539, icon: "❖", prereqs: ["eqcraft_t5"], desc: "装備の作成欄(ティア6)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT6" }] },
-  { id: "hunt_analysis", name: "狩猟分析", branchId: "monster", cost: 470000, x: 146, y: 2000, icon: "◉", prereqs: ["monster_3"], desc: "HP表示に必要攻撃数を追加。", effects: [{ type: "unlockSystem", target: "huntAnalysis" }] },
-  { id: "monster_4", name: "群れ読み", branchId: "monster", cost: 1150000000, x: 1853, y: 1547, icon: "◉", prereqs: ["click_4"], desc: "モンスター滞在+6%。報酬解禁スキルの前提。", effects: [{ type: "monsterStay", value: 0.5 }] },
+  { id: "eqcraft_t2", name: "上位工房I", branchId: "monster", cost: 1, x: 397, y: 1559, icon: "❖", prereqs: ["workshop_2"], desc: "装備の作成欄(ティア2)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT2" }] },
+  { id: "eqcraft_t3", name: "上位工房II", branchId: "monster", cost: 1, x: 348, y: 1748, icon: "❖", prereqs: ["eqcraft_t2"], desc: "装備の作成欄(ティア3)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT3" }] },
+  { id: "eqcraft_t4", name: "上位工房III", branchId: "monster", cost: 1, x: 261, y: 1924, icon: "❖", prereqs: ["eqcraft_t3"], desc: "装備の作成欄(ティア4)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT4" }] },
+  { id: "eqcraft_t5", name: "上位工房IV", branchId: "monster", cost: 1, x: 198, y: 1732, icon: "❖", prereqs: ["eqcraft_t4"], desc: "装備の作成欄(ティア5)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT5" }] },
+  { id: "eqcraft_t6", name: "上位工房V", branchId: "monster", cost: 1, x: 252, y: 1539, icon: "❖", prereqs: ["eqcraft_t5"], desc: "装備の作成欄(ティア6)を解放。", effects: [{ type: "unlockSystem", target: "eqcraftT6" }] },
+  { id: "hunt_analysis", name: "狩猟分析", branchId: "monster", cost: 575, x: 146, y: 2000, icon: "◉", prereqs: ["monster_3"], desc: "HP表示に必要攻撃数を追加。", effects: [{ type: "unlockSystem", target: "huntAnalysis" }] },
+  { id: "monster_4", name: "群れ読み", branchId: "monster", cost: 9550, x: 1853, y: 1547, icon: "◉", prereqs: ["click_4"], desc: "モンスター滞在+6%。報酬解禁スキルの前提。", effects: [{ type: "monsterStay", value: 0.5 }] },
 
   // 上：研究と設備解放。研究解放は1つずつ。
   { id: "economy_1", name: "仕入れ", branchId: "economy", cost: 50, x: 201, y: 2826, icon: "⬡", prereqs: ["auto_1"], desc: "アップグレード費用 -21%、研究費用 -21%。", effects: [{ type: "upgradeDiscount", value: 0.24 }, { type: "researchDiscount", value: 0.24 }] },
-  { id: "research_1", name: "研究机", branchId: "research", cost: 205000, x: 760, y: 3039, icon: "⌬", prereqs: ["economy_2"], desc: "研究費用 -38%。", effects: [{ type: "researchDiscount", value: 0.48 }] },
-  { id: "research_remodel", name: "研究改造室", branchId: "research", cost: 340000, x: 971, y: 2770, icon: "⌬", prereqs: ["research_1"], desc: "研究費用 -30%。", effects: [{ type: "researchDiscount", value: 0.36 }, { type: "unlockSystem", target: "researchRemodel" }] },
-  { id: "economy_2", name: "まとめ買い", branchId: "economy", cost: 6350, x: 526, y: 2835, icon: "⬡", prereqs: ["economy_1"], desc: "アップグレード費用 -45%。", effects: [{ type: "upgradeDiscount", value: 0.6 }] },
-  { id: "economy_analysis", name: "経済分析", branchId: "economy", cost: 2200, x: 502, y: 2514, icon: "⬡", prereqs: ["economy_2"], desc: "強化カードに価格あたりの増加量を表示。", effects: [{ type: "unlockSystem", target: "economyAnalysis" }] },
-  { id: "mastery_low", name: "職人の手", branchId: "economy", cost: 10500, x: 644, y: 2436, icon: "⚒", prereqs: ["economy_2"], desc: "下位設備に熟練: 買うほど1台の生産+0.3%(複利)。", effects: [{ type: "unlockSystem", target: "masteryLow" }] },
-  { id: "mastery_high", name: "工程の極み", branchId: "economy", cost: 150000000, x: 754, y: 2126, icon: "⚒", prereqs: ["mastery_low", "upgrade_galaxy"], desc: "上位設備に熟練: 買うほど1台の生産+0.5%(複利)。", effects: [{ type: "unlockSystem", target: "masteryHigh" }] },
-  { id: "order_board", name: "注文ボード", branchId: "economy", cost: 770, x: 616, y: 2200, icon: "⬡", prereqs: ["economy_analysis"], desc: "注文タブを解放。時間内に納品で報酬。", effects: [{ type: "unlockSystem", target: "orderBoard" }] },
+  { id: "research_1", name: "研究机", branchId: "research", cost: 455, x: 760, y: 3039, icon: "⌬", prereqs: ["economy_2"], desc: "研究費用 -38%。", effects: [{ type: "researchDiscount", value: 0.48 }] },
+  { id: "research_remodel", name: "研究改造室", branchId: "research", cost: 705, x: 971, y: 2770, icon: "⌬", prereqs: ["research_1"], desc: "研究費用 -30%。", effects: [{ type: "researchDiscount", value: 0.36 }, { type: "unlockSystem", target: "researchRemodel" }] },
+  { id: "economy_2", name: "まとめ買い", branchId: "economy", cost: 65, x: 526, y: 2835, icon: "⬡", prereqs: ["economy_1"], desc: "アップグレード費用 -45%。", effects: [{ type: "upgradeDiscount", value: 0.6 }] },
+  { id: "economy_analysis", name: "経済分析", branchId: "economy", cost: 20, x: 502, y: 2514, icon: "⬡", prereqs: ["economy_2"], desc: "強化カードに価格あたりの増加量を表示。", effects: [{ type: "unlockSystem", target: "economyAnalysis" }] },
+  { id: "mastery_low", name: "職人の手", branchId: "economy", cost: 120, x: 644, y: 2436, icon: "⚒", prereqs: ["economy_2"], desc: "下位設備に熟練: 買うほど1台の生産+0.3%(複利)。", effects: [{ type: "unlockSystem", target: "masteryLow" }] },
+  { id: "mastery_high", name: "工程の極み", branchId: "economy", cost: 4000, x: 754, y: 2126, icon: "⚒", prereqs: ["mastery_low", "upgrade_galaxy"], desc: "上位設備に熟練: 買うほど1台の生産+0.5%(複利)。", effects: [{ type: "unlockSystem", target: "masteryHigh" }] },
+  { id: "order_board", name: "注文ボード", branchId: "economy", cost: 7, x: 616, y: 2200, icon: "⬡", prereqs: ["economy_analysis"], desc: "注文タブを解放。時間内に納品で報酬。", effects: [{ type: "unlockSystem", target: "orderBoard" }] },
 
-{ id: "upgrade_moon", name: "月面許可", branchId: "upgrade", cost: 63500, x: 731, y: 2615, icon: "◌", prereqs: ["economy_2"], desc: "月面ベーカリーを解放。", effects: [{ type: "unlockUpgrade", target: "moonBakery" }] },
-  { id: "upgrade_time", name: "時空免許", branchId: "upgrade", cost: 865000, x: 900, y: 2355, icon: "◌", prereqs: ["upgrade_moon", "research_remodel"], desc: "時空オーブンを解放。", effects: [{ type: "unlockUpgrade", target: "timeOven" }] },
-  { id: "upgrade_galaxy", name: "銀河契約", branchId: "upgrade", cost: 53000000, x: 871, y: 1921, icon: "✺", prereqs: ["upgrade_time", "auto_4"], desc: "銀河工場を解放。", effects: [{ type: "unlockUpgrade", target: "galaxyFactory" }] },
-  { id: "upgrade_blackhole", name: "重力設備", branchId: "upgrade", cost: 3900000000, x: 1113, y: 1976, icon: "●", prereqs: ["upgrade_galaxy"], desc: "ブラックホールミキサーを解放。", effects: [{ type: "unlockUpgrade", target: "blackHoleMixer" }] },
-  { id: "research_analysis", name: "研究解析", branchId: "research", cost: 115000, x: 774, y: 2819, icon: "⌬", prereqs: ["research_remodel"], desc: "研究カードに現在効果・相性・弱点を表示。", effects: [{ type: "unlockSystem", target: "researchAnalysis" }] },
+{ id: "upgrade_moon", name: "月面許可", branchId: "upgrade", cost: 190, x: 731, y: 2615, icon: "◌", prereqs: ["economy_2"], desc: "月面ベーカリーを解放。", effects: [{ type: "unlockUpgrade", target: "moonBakery" }] },
+  { id: "upgrade_time", name: "時空免許", branchId: "upgrade", cost: 1050, x: 900, y: 2355, icon: "◌", prereqs: ["upgrade_moon", "research_remodel"], desc: "時空オーブンを解放。", effects: [{ type: "unlockUpgrade", target: "timeOven" }] },
+  { id: "upgrade_galaxy", name: "銀河契約", branchId: "upgrade", cost: 4000, x: 871, y: 1921, icon: "✺", prereqs: ["upgrade_time", "auto_4"], desc: "銀河工場を解放。", effects: [{ type: "unlockUpgrade", target: "galaxyFactory" }] },
+  { id: "upgrade_blackhole", name: "重力設備", branchId: "upgrade", cost: 9550, x: 1113, y: 1976, icon: "●", prereqs: ["upgrade_galaxy"], desc: "ブラックホールミキサーを解放。", effects: [{ type: "unlockUpgrade", target: "blackHoleMixer" }] },
+  { id: "research_analysis", name: "研究解析", branchId: "research", cost: 245, x: 774, y: 2819, icon: "⌬", prereqs: ["research_remodel"], desc: "研究カードに現在効果・相性・弱点を表示。", effects: [{ type: "unlockSystem", target: "researchAnalysis" }] },
 
   // 下：報酬。選択肢数は有限スキルでのみ増える。
-  { id: "reward_1", name: "選択の目", branchId: "reward", cost: 400000000, x: 1685, y: 1239, icon: "✧", prereqs: ["monster_4"], desc: "モンスター報酬の選択肢 +1。", effects: [{ type: "rewardChoices", value: 1 }] },
-  { id: "reward_synergy", name: "報酬系統化", branchId: "reward", cost: 140000000, x: 1841, y: 1043, icon: "✧", prereqs: ["reward_1"], desc: "金色系・狩猟系・危険系の報酬を取るほどその系統が強化(+0.3%/枚・重ねるほど伸びは緩やか)。", effects: [{ type: "unlockSystem", target: "rewardSynergy" }] },
-  { id: "reward_choice_2", name: "選択の眼光", branchId: "reward", cost: 49000000, x: 1839, y: 1268, icon: "✧", prereqs: ["reward_synergy"], desc: "モンスター報酬の選択肢 +1(選択肢が増えるのはここまで)。", effects: [{ type: "rewardChoices", value: 1 }] },
+  { id: "reward_1", name: "選択の目", branchId: "reward", cost: 3300, x: 1685, y: 1239, icon: "✧", prereqs: ["monster_4"], desc: "モンスター報酬の選択肢 +1。", effects: [{ type: "rewardChoices", value: 1 }] },
+  { id: "reward_synergy", name: "報酬系統化", branchId: "reward", cost: 1150, x: 1841, y: 1043, icon: "✧", prereqs: ["reward_1"], desc: "金色系・狩猟系・危険系の報酬を取るほどその系統が強化(+0.3%/枚・重ねるほど伸びは緩やか)。", effects: [{ type: "unlockSystem", target: "rewardSynergy" }] },
+  { id: "reward_choice_2", name: "選択の眼光", branchId: "reward", cost: 400, x: 1839, y: 1268, icon: "✧", prereqs: ["reward_synergy"], desc: "モンスター報酬の選択肢 +1(選択肢が増えるのはここまで)。", effects: [{ type: "rewardChoices", value: 1 }] },
   // 強化圧縮も退役(2026-07-26 砕粉ミルと同じ理由・同じ判断): 効果 upgradePerkPower は upgradeBoostRate に
   // しか乗らず、それは upgradePerks[id](恒久0)と積になるので効果は常に0。依存ノードは退役した砕粉ミルだけ
   // (=この枝を閉じても到達不能になる他ノードは無い)。1.2e12PTを払って何も起きない札を残さない。
-  { id: "reward_2", name: "強化圧縮(退役)", retired: true, branchId: "reward", cost: 1200000000000, x: 1508, y: 2974, icon: "✧", prereqs: ["upgrade_singularity"], desc: "退役: 報酬『設備の個別強化』が2026-07-08のプール変更で出現しなくなり、この強化の効果が0のままだったため退役しました。取得は不要です。", effects: [] },
+  { id: "reward_2", name: "強化圧縮(退役)", retired: true, branchId: "reward", cost: 305000, x: 1508, y: 2974, icon: "✧", prereqs: ["upgrade_singularity"], desc: "退役: 報酬『設備の個別強化』が2026-07-08のプール変更で出現しなくなり、この強化の効果が0のままだったため退役しました。取得は不要です。", effects: [] },
 
-  { id: "unlock_reward_crackedFang", name: "割れた牙", branchId: "reward", cost: 7800000000, x: 1533, y: 1266, icon: "✧", prereqs: ["monster_4"], desc: "報酬カード『割れた牙』を解禁。", effects: [{ type: "unlockReward", target: "crackedFang" }] },
-  { id: "unlock_reward_chainPrep", name: "連戦準備", branchId: "reward", cost: 52000000000, x: 1703, y: 1028, icon: "✧", prereqs: ["unlock_reward_crackedFang"], desc: "報酬カード『連戦準備』を解禁。", effects: [{ type: "unlockReward", target: "chainPrep" }] },
-  { id: "unlock_reward_huntFocus", name: "狩猟集中", branchId: "reward", cost: 78000000000, x: 1573, y: 1516, icon: "✧", prereqs: ["unlock_reward_crackedFang"], desc: "報酬カード『狩猟集中』を解禁。", effects: [{ type: "unlockReward", target: "huntFocus" }] },
-  { id: "unlock_reward_biteRecovery", name: "甘噛み回収", branchId: "reward", cost: 3000000000000, x: 1691, y: 1765, icon: "✧", prereqs: ["unlock_reward_huntFocus"], desc: "報酬カード『甘噛み回収』を解禁。", effects: [{ type: "unlockReward", target: "biteRecovery" }] },
-  { id: "unlock_reward_beastHeatFerment", name: "獣熱発酵", branchId: "reward", cost: 4750000000000, x: 1493, y: 1790, icon: "✧", prereqs: ["unlock_reward_biteRecovery"], desc: "報酬カード『獣熱発酵』を解禁。", effects: [{ type: "unlockReward", target: "beastHeatFerment" }] },
-  { id: "unlock_reward_huntingCore", name: "狩猟炉心", branchId: "reward", cost: 7450000000000, x: 1650, y: 2133, icon: "✧", prereqs: ["unlock_reward_beastHeatFerment"], desc: "報酬カード『狩猟炉心』を解禁。", effects: [{ type: "unlockReward", target: "huntingCore" }] },
-  { id: "unlock_reward_brandHunt", name: "焼き印狩り", branchId: "reward", cost: 26000000000000, x: 1860, y: 1932, icon: "✧", prereqs: ["unlock_reward_biteRecovery"], desc: "報酬カード『焼き印狩り』を解禁。", effects: [{ type: "unlockReward", target: "brandHunt" }] },
-  { id: "unlock_reward_deepPursuit", name: "深追いの契約", branchId: "reward", cost: 71000000000000, x: 1420, y: 1984, icon: "✧", prereqs: ["unlock_reward_huntingCore"], desc: "報酬カード『深追いの契約』を解禁。", effects: [{ type: "unlockReward", target: "deepPursuit" }] },
+  { id: "unlock_reward_crackedFang", name: "割れた牙", branchId: "reward", cost: 14500, x: 1533, y: 1266, icon: "✧", prereqs: ["monster_4"], desc: "報酬カード『割れた牙』を解禁。", effects: [{ type: "unlockReward", target: "crackedFang" }] },
+  { id: "unlock_reward_chainPrep", name: "連戦準備", branchId: "reward", cost: 17500, x: 1703, y: 1028, icon: "✧", prereqs: ["unlock_reward_crackedFang"], desc: "報酬カード『連戦準備』を解禁。", effects: [{ type: "unlockReward", target: "chainPrep" }] },
+  { id: "unlock_reward_huntFocus", name: "狩猟集中", branchId: "reward", cost: 54000, x: 1573, y: 1516, icon: "✧", prereqs: ["unlock_reward_crackedFang"], desc: "報酬カード『狩猟集中』を解禁。", effects: [{ type: "unlockReward", target: "huntFocus" }] },
+  { id: "unlock_reward_biteRecovery", name: "甘噛み回収", branchId: "reward", cost: 475000, x: 1691, y: 1765, icon: "✧", prereqs: ["unlock_reward_huntFocus"], desc: "報酬カード『甘噛み回収』を解禁。", effects: [{ type: "unlockReward", target: "biteRecovery" }] },
+  { id: "unlock_reward_beastHeatFerment", name: "獣熱発酵", branchId: "reward", cost: 1100000, x: 1493, y: 1790, icon: "✧", prereqs: ["unlock_reward_biteRecovery"], desc: "報酬カード『獣熱発酵』を解禁。", effects: [{ type: "unlockReward", target: "beastHeatFerment" }] },
+  { id: "unlock_reward_huntingCore", name: "狩猟炉心", branchId: "reward", cost: 1750000, x: 1650, y: 2133, icon: "✧", prereqs: ["unlock_reward_beastHeatFerment"], desc: "報酬カード『狩猟炉心』を解禁。", effects: [{ type: "unlockReward", target: "huntingCore" }] },
+  { id: "unlock_reward_brandHunt", name: "焼き印狩り", branchId: "reward", cost: 735000, x: 1860, y: 1932, icon: "✧", prereqs: ["unlock_reward_biteRecovery"], desc: "報酬カード『焼き印狩り』を解禁。", effects: [{ type: "unlockReward", target: "brandHunt" }] },
+  { id: "unlock_reward_deepPursuit", name: "深追いの契約", branchId: "reward", cost: 2700000, x: 1420, y: 1984, icon: "✧", prereqs: ["unlock_reward_huntingCore"], desc: "報酬カード『深追いの契約』を解禁。", effects: [{ type: "unlockReward", target: "deepPursuit" }] },
 
-  { id: "unlock_reward_goldenChain", name: "黄金連鎖", branchId: "reward", cost: 21000000000, x: 1412, y: 920, icon: "✧", prereqs: ["golden_4", "unlock_reward_crackedFang"], desc: "報酬カード『黄金連鎖』を解禁。", effects: [{ type: "unlockReward", target: "goldenChain" }] },
-  { id: "unlock_reward_goldenTarget", name: "金色標的", branchId: "reward", cost: 205000000000, x: 1528, y: 698, icon: "✧", prereqs: ["unlock_reward_goldenChain"], desc: "報酬カード『金色標的』を解禁。", effects: [{ type: "unlockReward", target: "goldenTarget" }] },
-  { id: "unlock_reward_goldenFirstHit", name: "金粉の初撃", branchId: "reward", cost: 500000000000, x: 1550, y: 1002, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『金粉の初撃』を解禁。", effects: [{ type: "unlockReward", target: "goldenFirstHit" }] },
-  { id: "unlock_reward_beastScent", name: "獣の嗅覚", branchId: "reward", cost: 790000000000, x: 1650, y: 822, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『獣の嗅覚』を解禁。", effects: [{ type: "unlockReward", target: "beastScent" }] },
-  { id: "unlock_reward_goldenBeastMutation", name: "金獣変異", branchId: "reward", cost: 110000000000000, x: 1524, y: 2256, icon: "✧", prereqs: ["unlock_reward_deepPursuit"], desc: "報酬カード『金獣変異』を解禁。", effects: [{ type: "unlockReward", target: "goldenBeastMutation" }] },
+  { id: "unlock_reward_goldenChain", name: "黄金連鎖", branchId: "reward", cost: 22500, x: 1412, y: 920, icon: "✧", prereqs: ["golden_4", "unlock_reward_crackedFang"], desc: "報酬カード『黄金連鎖』を解禁。", effects: [{ type: "unlockReward", target: "goldenChain" }] },
+  { id: "unlock_reward_goldenTarget", name: "金色標的", branchId: "reward", cost: 83500, x: 1528, y: 698, icon: "✧", prereqs: ["unlock_reward_goldenChain"], desc: "報酬カード『金色標的』を解禁。", effects: [{ type: "unlockReward", target: "goldenTarget" }] },
+  { id: "unlock_reward_goldenFirstHit", name: "金粉の初撃", branchId: "reward", cost: 195000, x: 1550, y: 1002, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『金粉の初撃』を解禁。", effects: [{ type: "unlockReward", target: "goldenFirstHit" }] },
+  { id: "unlock_reward_beastScent", name: "獣の嗅覚", branchId: "reward", cost: 195000, x: 1650, y: 822, icon: "✧", prereqs: ["unlock_reward_goldenTarget"], desc: "報酬カード『獣の嗅覚』を解禁。", effects: [{ type: "unlockReward", target: "beastScent" }] },
+  { id: "unlock_reward_goldenBeastMutation", name: "金獣変異", branchId: "reward", cost: 4150000, x: 1524, y: 2256, icon: "✧", prereqs: ["unlock_reward_deepPursuit"], desc: "報酬カード『金獣変異』を解禁。", effects: [{ type: "unlockReward", target: "goldenBeastMutation" }] },
   // 砕粉ミル退役に伴い、この解禁ノードも retired(2026-07-26)。ノード自体は残す=木のレイアウト座標と
   // 既存セーブの hasSkill を壊さないため。retired は表示も購入も止める(空札にPTを払わせない)。
   // 葉ノード(このidを前提にする他ノードは0件)なので、隠しても到達不能になる枝は無い。
-  { id: "unlock_reward_crushedMill", name: "砕粉ミル(退役)", retired: true, branchId: "reward", cost: 44500000000000, x: 1653, y: 2591, icon: "✧", prereqs: ["reward_2", "unlock_reward_huntingCore"], desc: "退役: 報酬カード『砕粉ミル』は、土台となる報酬『設備の個別強化』が2026-07-08のプール変更で出現しなくなり効果が0のままだったため、カードごと退役しました。取得は不要です。", effects: [] },
+  { id: "unlock_reward_crushedMill", name: "砕粉ミル(退役)", retired: true, branchId: "reward", cost: 4150000, x: 1653, y: 2591, icon: "✧", prereqs: ["reward_2", "unlock_reward_huntingCore"], desc: "退役: 報酬カード『砕粉ミル』は、土台となる報酬『設備の個別強化』が2026-07-08のプール変更で出現しなくなり効果が0のままだったため、カードごと退役しました。取得は不要です。", effects: [] },
 
   // 周回支援
-  { id: "start_1", name: "帰還貯蔵", branchId: "start", cost: 170000000, x: 1033, y: 1091, icon: "▣", prereqs: ["golden_4"], desc: "転生後75万クッキーで開始。", effects: [{ type: "startCookies", value: 750000 }] },
-  { id: "offline_1", name: "長期保存", branchId: "start", cost: 1200000, x: 705, y: 1593, icon: "▣", prereqs: ["auto_4"], desc: "放置上限 +4時間。", effects: [{ type: "offlineHours", value: 4 }] },
-  { id: "start_2", name: "帰還神殿", branchId: "start", cost: 59500000, x: 816, y: 1263, icon: "▣", prereqs: ["start_1", "offline_1"], desc: "転生後 計1475万クッキーで開始、放置上限+4時間。", effects: [{ type: "startCookies", value: 14000000 }, { type: "offlineHours", value: 4 }] },
-  { id: "endless_oven", name: "終わらぬ焼窯", branchId: "start", cost: 20500000, x: 902, y: 983, icon: "▣", prereqs: ["start_2"], desc: "放置生産の時間上限を撤廃。", effects: [{ type: "unlockSystem", target: "offlineInfinite" }] },
+  { id: "start_1", name: "帰還貯蔵", branchId: "start", cost: 2150, x: 1033, y: 1091, icon: "▣", prereqs: ["golden_4"], desc: "転生後75万クッキーで開始。", effects: [{ type: "startCookies", value: 750000 }] },
+  { id: "offline_1", name: "長期保存", branchId: "start", cost: 575, x: 705, y: 1593, icon: "▣", prereqs: ["auto_4"], desc: "放置上限 +4時間。", effects: [{ type: "offlineHours", value: 4 }] },
+  { id: "start_2", name: "帰還神殿", branchId: "start", cost: 750, x: 816, y: 1263, icon: "▣", prereqs: ["start_1", "offline_1"], desc: "転生後 計1475万クッキーで開始、放置上限+4時間。", effects: [{ type: "startCookies", value: 14000000 }, { type: "offlineHours", value: 4 }] },
+  { id: "endless_oven", name: "終わらぬ焼窯", branchId: "start", cost: 260, x: 902, y: 983, icon: "▣", prereqs: ["start_2"], desc: "放置生産の時間上限を撤廃。", effects: [{ type: "unlockSystem", target: "offlineInfinite" }] },
 
   // 後半設備
-  { id: "upgrade_universe", name: "宇宙炉心", branchId: "upgrade", cost: 33000000000, x: 1160, y: 2415, icon: "✺", prereqs: ["upgrade_blackhole"], desc: "宇宙焼成炉を解放。", effects: [{ type: "unlockUpgrade", target: "universeOven" }] },
-  { id: "upgrade_godfinger", name: "神指契約", branchId: "upgrade", cost: 130000000000, x: 1007, y: 2134, icon: "◆", prereqs: ["upgrade_universe"], desc: "神の指を解放。", effects: [{ type: "unlockUpgrade", target: "godFinger" }] },
-  { id: "upgrade_singularity", name: "特異点管理", branchId: "upgrade", cost: 320000000000, x: 1226, y: 2878, icon: "◎", prereqs: ["upgrade_universe"], desc: "クッキー特異点を解放、全生産 +255000%(全生産系スキルと加算・合計は生産に2回かかる)。", effects: [{ type: "unlockUpgrade", target: "cookieSingularity" }, { type: "all", value: 2550 }] },
-  { id: "upgrade_quantum", name: "量子厨房", branchId: "upgrade", cost: 1900000000000, x: 1410, y: 2789, icon: "✺", prereqs: ["upgrade_singularity"], desc: "量子ベーカリーを解放。", effects: [{ type: "unlockUpgrade", target: "quantumBakery" }] },
-  { id: "upgrade_antimatter", name: "反物質炉", branchId: "upgrade", cost: 11500000000000, x: 1501, y: 2580, icon: "✹", prereqs: ["upgrade_quantum"], desc: "反物質オーブンを解放。", effects: [{ type: "unlockUpgrade", target: "antimatterOven" }] },
+  { id: "upgrade_universe", name: "宇宙炉心", branchId: "upgrade", cost: 17500, x: 1160, y: 2415, icon: "✺", prereqs: ["upgrade_blackhole"], desc: "宇宙焼成炉を解放。", effects: [{ type: "unlockUpgrade", target: "universeOven" }] },
+  { id: "upgrade_godfinger", name: "神指契約", branchId: "upgrade", cost: 83500, x: 1007, y: 2134, icon: "◆", prereqs: ["upgrade_universe"], desc: "神の指を解放。", effects: [{ type: "unlockUpgrade", target: "godFinger" }] },
+  { id: "upgrade_singularity", name: "特異点管理", branchId: "upgrade", cost: 125000, x: 1226, y: 2878, icon: "◎", prereqs: ["upgrade_universe"], desc: "クッキー特異点を解放、全生産 +255000%(全生産系スキルと加算・合計は生産に2回かかる)。", effects: [{ type: "unlockUpgrade", target: "cookieSingularity" }, { type: "all", value: 2550 }] },
+  { id: "upgrade_quantum", name: "量子厨房", branchId: "upgrade", cost: 475000, x: 1410, y: 2789, icon: "✺", prereqs: ["upgrade_singularity"], desc: "量子ベーカリーを解放。", effects: [{ type: "unlockUpgrade", target: "quantumBakery" }] },
+  { id: "upgrade_antimatter", name: "反物質炉", branchId: "upgrade", cost: 1100000, x: 1501, y: 2580, icon: "✹", prereqs: ["upgrade_quantum"], desc: "反物質オーブンを解放。", effects: [{ type: "unlockUpgrade", target: "antimatterOven" }] },
 
-  { id: "master_final", name: "超越体", branchId: "master", cost: 175000000000000, x: 1337, y: 2384, icon: "✹", prereqs: ["upgrade_antimatter", "unlock_reward_goldenBeastMutation"], desc: "全生産 +1000000%(全生産系スキルと加算・合計は生産に2回かかる)、タップ +20%、毎秒 +20%、モンスター報酬の獲得量(報酬Lv)の期待値 +80%。", effects: [{ type: "all", value: 10000 }, { type: "click", value: 0.2 }, { type: "cps", value: 0.2 }, { type: "rewardBonus", value: 0.8 }] }
+  { id: "master_final", name: "超越体", branchId: "master", cost: 6400000, x: 1337, y: 2384, icon: "✹", prereqs: ["upgrade_antimatter", "unlock_reward_goldenBeastMutation"], desc: "全生産 +1000000%(全生産系スキルと加算・合計は生産に2回かかる)、タップ +20%、毎秒 +20%、モンスター報酬の獲得量(報酬Lv)の期待値 +80%。", effects: [{ type: "all", value: 10000 }, { type: "click", value: 0.2 }, { type: "cps", value: 0.2 }, { type: "rewardBonus", value: 0.8 }] }
 ];
 
 const SKILLS = SKILL_NODES.map(skill => ({
@@ -15508,12 +15508,15 @@ function totalPrestigeFromCookies(totalCookies) {
   const total = D(totalCookies);
   if (total.lt(10000)) return 0;
 
-  // double 範囲内(〜1e301)は従来式そのまま=到達可能域のPTを完全一致させる。
-  // それを超える場合のみ、指数部から対数形で算出(値は常に double 内に収まる)
+  // 係数(2026-07-27 sim同期): pB=14・pG=0.023(sim/params.js P.prestige)。
+  // 旧値 11 / 0.075 は sim の第13次(④=1億倍/周回)より前の値で、sim側だけが更新されていた=
+  // ゲームのPT供給が判定基準より多く、スキルコスト表も旧梯子のまま残っていた(2026-07-27 parity修復)。
+  // pA=0 なので sim式 pA*(1-exp(-t/pD1)) の項は常に0=省略しても同値。pMin=1e4 は上のガードと同じ。
+  // double 範囲内(〜1e301)は素の式、それを超える場合だけ指数部から対数形で算出(値は常に double 内)。
   if (total.e <= 300) {
-    return Math.max(1, Math.floor(11 * Math.pow(total.toNumber() / 10000, 0.075)));
+    return Math.max(1, Math.floor(14 * Math.pow(total.toNumber() / 10000, 0.023)));
   }
-  return Math.max(1, Math.floor(11 * Math.pow(10, 0.075 * (total.log10() - 4))));
+  return Math.max(1, Math.floor(14 * Math.pow(10, 0.023 * (total.log10() - 4))));
 }
 
 function quotaPrestigeBonusFactor() {

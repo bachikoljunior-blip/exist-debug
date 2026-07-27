@@ -110,6 +110,10 @@ if git diff --cached --name-only | grep -qE '^index\.html$'; then
   # 転生・やり直しの持ち越し列挙から漏れた state(=永久消失する進捗)が無いかを静的検査
   node "$top/sim/tools/persist_wiring_check.js" || exit 1
 fi
+# スキルコスト/転生PT供給が sim(判定基準)と一致しているかを静的検査(ゲームだけ旧梯子に取り残される腐り)
+if git diff --cached --name-only | grep -qE '^(index\.html|sim/(sim\.js|params\.js|rung_costs\.json))$'; then
+  node "$top/sim/tools/skill_cost_parity_check.js" || exit 1
+fi
 exit 0
 HOOK
     chmod +x "$hook"
