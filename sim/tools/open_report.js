@@ -63,7 +63,7 @@ const kind=op=>{
   if(/注文/.test(op))return['注文','ord'];
   if(/転生/.test(op))return['転生','p']; if(/スキル/.test(op))return['スキル','s']; if(/装備/.test(op))return['装備','e'];
   if(/研究/.test(op))return['研究','r']; if(/討伐|モンスター/.test(op))return['討伐','m']; if(/金クッキー/.test(op))return['金','g'];
-  if(/報酬/.test(op))return['報酬','w']; if(/タップ/.test(op))return['タップ','t']; if(/開始/.test(op))return['開始','o'];
+  if(/報酬/.test(op))return['報酬','w']; if(/金ブースト/.test(op))return['金','g']; if(/タップ/.test(op))return['タップ','t']; if(/開始/.test(op))return['開始','o'];
   // 離席/放置は「設備」に落とすと嘘になる(何も買っていない)ので独自区分にする(2026-07-26 離席モデル追加に合わせて)
   if(/放置|離席/.test(op))return['放置','idle'];
   return['設備','b']; };
