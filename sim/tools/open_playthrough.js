@@ -105,6 +105,11 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     const out=[]; const add=(l,c)=>{ if(c>0)out.push([l,c]); };
     if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster){ const b4=state.monstersDefeated||0; for(const m of monsters.slice())for(let k=0;k<200&&monsters.indexOf(m)>=0;k++)hitMonster(m.id); add('モンスターを討伐',(state.monstersDefeated||0)-b4); }
     { let c=0; for(let n=0;n<12;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length){chooseReward(pendingRewardChoices[0]);c++;}else break; } add('討伐報酬を選択',c); }
+    // 落ちた素材アイコンを拾う(2026-07-27): 素材は報酬選択後にアイコンとして落ち、タップで入手する設計
+    // (6秒放置でも工房へ自動回収されるが、実プレイヤは拾う=実況にも「拾う」動作が出るべき)。
+    { const els=document.querySelectorAll('.matDrop'); let c=0;
+      for(const el of els){ try{ el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true})); c++; }catch(e){} }
+      add('落ちた素材を拾う',c); }
     if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie){collectGoldenCookie();add('金クッキーを回収',1);}
     if(typeof RESEARCH!=='undefined')for(const r of RESEARCH){try{ if(!state.research[r.id]&&(typeof researchUnlocked!=='function'||researchUnlocked(r))&&state.cookies.gte(D(r.cost))){ buyResearch(r.id); add('研究「'+r.name+'」を購入',1);} }catch(e){}}
     // 購入判断は buy_policy.js の共有ルール(回収時間+次ティアへ貯める)。旧「価値/費用」貪欲は
@@ -239,7 +244,8 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
       let done=0; const sub=4000; while(done<step){ const st=Math.min(sub,step-done); await withTO('clock(序盤)',()=>p.clock.runFor(st)); done+=st;
         if(done<step)await withTO('序盤の処理',()=>p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
           if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster)for(const m of monsters.slice())for(let k=0;k<200&&monsters.indexOf(m)>=0;k++)hitMonster(m.id);
-          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); })); }
+          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie();
+          for(const el of document.querySelectorAll('.matDrop')){ try{ el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true})); }catch(e){} } })); }
     } else if(wantHunt){
       // 狩りセッション: 座って湧きを待ち、出たら倒す。討伐が進めば報酬・素材・クエストが同時に進む。
       // 待ち方は「次の湧き時刻までクロックを飛ばす」(2026-07-26 実測で固定刻みから変更):
@@ -260,7 +266,8 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         await withTO('clock(狩り: 次の湧きまで)',()=>p.clock.runFor(jump)); done+=jump;
         await withTO('狩りの処理',()=>p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
           if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster)for(const m of monsters.slice())for(let k=0;k<400&&monsters.indexOf(m)>=0;k++)hitMonster(m.id);
-          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); }));
+          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie();
+          for(const el of document.querySelectorAll('.matDrop')){ try{ el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true})); }catch(e){} } }));
       }
       const q2=await questSnap();
       const killed=Math.max(0,(q2.kills||0)-k0);
@@ -278,7 +285,8 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
       let done=0; const sub=ACTIVE_SUB; while(done<step){ const st=Math.min(sub,step-done); await withTO('clock(活動窓)',()=>p.clock.runFor(st)); done+=st;
         await withTO('活動窓の処理',()=>p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
           if(typeof monsters!=='undefined'&&monsters&&monsters.length&&hitMonster)for(const m of monsters.slice())for(let k=0;k<200&&monsters.indexOf(m)>=0;k++)hitMonster(m.id);
-          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie(); })); }
+          if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie)collectGoldenCookie();
+          for(const el of document.querySelectorAll('.matDrop')){ try{ el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true})); }catch(e){} } })); }
     }
     // 実クロックで進めた区間は「居る」区間なので、その中では稼働HIで叩く。買い方の評価に渡す
     // 実効タップ率は「1日の中でどれだけ叩くか」なので、離席込みの平均(活動窓/(活動窓+離席))で出す。
