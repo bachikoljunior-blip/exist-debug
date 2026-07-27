@@ -9542,7 +9542,7 @@ function matSourceText(id) {
   if (stageOfFerment.length) parts.push(`ステージ${stageOfFerment.join("・")}でノルマに2倍以上の余裕を持って撃破(発酵枠)`);
   if (stageOfRare.length) parts.push(`ステージ${stageOfRare.join("・")}でオーバーキル撃破(残りHPの5倍以上のダメージ)`);
   if (id === "goldDust") parts.push("金ブースト中に撃破(唯一の入手経路)");
-  if (id === "omniFlour") parts.push("周回方針が「均衡」のときの討伐(高確率)");
+  if (id === "omniFlour") parts.push("周回方針が「標準」のときの討伐(高確率・唯一の入手経路)");
   if (id === "voidSugar") parts.push("深層領域の討伐(ボス撃破では多めに落ちる)");
   if (/^bossCore(\d+)$/.test(id)) { const s = /^bossCore(\d+)$/.exec(id)[1]; parts.push(`ステージ${s}のボス撃破`, "狩り窓の中で3体連続撃破"); }
   if (id === "deepCore") parts.push("深層領域のボス撃破", "狩り窓の中で3体連続撃破");
