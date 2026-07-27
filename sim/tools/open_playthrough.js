@@ -317,6 +317,23 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   }
   }catch(e){ timedOut=e.message; reason='中断: '+e.message.slice(0,60); }
   fs.writeFileSync(DIR+'/ops.json',JSON.stringify(L,null,1));
+  // 終了時の到達状態を必ず吐く(2026-07-27): 走行が終わるとページが閉じて中を見られないので、
+  // 「工房が開いたのに装備も料理も出ていない」ときに素材と開示状況を後から確認できるようにする。
+  try{
+    const fin=await p.evaluate(()=>{
+      const mats={}; for(const k in (state.materials||{})) if(state.materials[k]>0) mats[k]=state.materials[k];
+      const dishes=(typeof DISHES!=='undefined')?DISHES.map(d=>d.id+':'+((typeof dishRecipeRevealed==='function'&&dishRecipeRevealed(d))?'開示':'未')) :[];
+      let craftable=0; try{ for(const it of equip2Items()) if(equip2CraftableNow(it)&&equip2Afford(it))craftable++; }catch(e){}
+      return { stage:(typeof currentStageNo==='function'?currentStageNo():0), unlocked:state.stageUnlocked||1,
+        runs:state.prestigeRuns||0, skills:Object.keys(state.skills||{}).length,
+        wsTab:(typeof workshopTabUnlocked==='function'&&workshopTabUnlocked()), craft:(typeof workshopCraftUnlocked==='function'&&workshopCraftUnlocked()),
+        mats, dishes, craftable, eqOwned:Object.keys(state.eq2Owned||{}).filter(k=>state.eq2Owned[k]>0).length,
+        activeDishes:(typeof activeDishList==='function'?activeDishList().length:0),
+        orders:{done:state.completedOrders||0,expired:state.expiredOrders||0}, cps:String(currentCps()) };
+    });
+    console.log('終了状態: '+JSON.stringify(fin));
+    fs.writeFileSync(DIR+'/final.json',JSON.stringify(fin,null,1));
+  }catch(e){ console.log('終了状態の取得に失敗: '+e.message); }
   console.log('DONE reason='+reason,'blocks='+L.length,'lastT='+(L.length?L[L.length-1].t:'-'),'errors='+errs.length);
   await b.close();
 })().catch(e=>{console.error('FATAL',e.message);process.exit(1);});
