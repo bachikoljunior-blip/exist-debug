@@ -1,4 +1,12 @@
 // reachMaxSec(denom上限クランプ)の掃引。T3a full/full と未達位置中央を全方針で測る。
+// 【廃止 2026-07-27】この掃引の対象(到達連動ノルマの時間比 reachCoef/reachPow/reachMinSec/reachMaxSec)は
+// ユーザー指示「ノルマ前回周回長に依存するのやめて」で機構ごと撤去済み。params からキーも消えているため
+// 走らせても未達位置は一切動かない(記録として残置)。未達は reachGainFrac(転生の一歩手前)だけで決まる。
+if (!process.env.RUN_OBSOLETE) {
+  console.log('[廃止] 到達連動ノルマの時間比は撤去済み(2026-07-27)。この掃引は何も変えません。RUN_OBSOLETE=1 で強制実行。');
+  process.exit(0);
+}
+
 const fs = require('fs');
 const P = require('./params.js');
 const G = require('./sim.js');

@@ -30,6 +30,14 @@
 3. **固定転生テーブル=min-envelope焼き**: 全16方針の実走の下限包絡(116本・初回500万固定)。
    単一方針(S1)焼きは遅い方針が転生不能=全解放×になる(実測)。
 
+## 追記 R35(2026-07-27): ノルマ終了が前回周回長から独立(ユーザー指示「ノルマ前回周回長に依存するのやめて」)
+- ゲームのノルマ終了は **経過≥1176s かつ 獲得予定PT ≥ max(次に取れる最安スキル, 前周回の獲得PT×1.57)×0.983**。
+  前回の**周回長**(prevDuration)は sim/ゲームとも撤去(params の reachCoef/reachPow/reachMinSec/reachMaxSec/reachEmaAlpha も削除)。
+  前周回の獲得PT は既存の `prevRunCookies`(㉚節目解放で保存済み)から復元=新規セーブ項目なし。
+- sim は 2026-07-16 の⑧確定形(reachGainFrac)以降その枝を通っていなかったため**挙動は不変**:
+  `V100_HOURS=60 node verify100.js S1,S4` が撤去前後で完全一致(㉚<30s 0本・④全緑)=㉚100%/④100%の達成は無傷。
+- 詳細と目標の選定実測(A:次スキルのみ=位置18-45%で頭寄り / B:転生コスト=1% / C:採用=52-78%)は HANDOFF.md の R35 を参照。
+
 ## ゲーム(index.html)への移植チェックリスト(未実施=次の作業)
 - params.js の全値(prestige/pG/skillCost.rungShare1.2/upCost(knee400/ownPow2 0.60/firstUnitCost)/
   コスト4表/res効果値/rw/golden/quest2[205,190,250,350,410]/goldenDirect/huntDirect等)

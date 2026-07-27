@@ -6949,7 +6949,6 @@ function freshState() {
     stageUnlocked: 1,
     deepLayer: 1,
     prevMaxQuotaStage: 0,       // 提案8: 前回周回の最高到達層(=再登坂の天井)。層の試練を新規開拓層基準へ相対化する。表示層数(maxQuotaStage)は絶対累積のまま不変更。
-    prevDuration: 0,            // 提案9(到達連動ノルマ): 前回周回の長さ(秒)。未達判定の進行比 ρ=経過秒/前回長 の分母。
     prevRunCookies: D(0),       // ㉚節目解放(2026-07-25): 前周回の総生産(転生時に保存)。ステージ進出アンカーの基準
     stageAnchorIdx: 0,          // ㉚節目解放: 今周回で通過済みの進行量アンカー数(周回内変数=転生で0)
     lifeRewardCat: {},          // ㉚通算報酬カウント(golden/hunt/equipment/risk): 報酬系統ボーナスの基準。転生でリセットしない
@@ -7060,8 +7059,8 @@ function ensureState() {
   state.lastPrestigeCps = Math.max(0, Number(state.lastPrestigeCps) || 0);
   // 提案8(第12次H): 前回周回の天井(層の試練の相対基準)。旧セーブは0補完。
   state.prevMaxQuotaStage = Math.max(0, Math.floor(Number(state.prevMaxQuotaStage) || 0));
-  // 提案9(第12次H): 前回周回の長さ(到達連動ノルマの進行比の分母)。旧セーブは0補完。
-  state.prevDuration = Math.max(0, Number(state.prevDuration) || 0);
+  // 提案9(第12次H)の前回周回長 prevDuration は廃止(2026-07-27 ユーザー指示)。旧セーブの値は読まずに捨てる。
+  delete state.prevDuration;
   // ㉚節目解放(2026-07-25): 前周回総生産(Decimal)と今周回のアンカー通過数。旧セーブは0補完。
   state.prevRunCookies = D(state.prevRunCookies || 0);
   state.stageAnchorIdx = Math.max(0, Math.floor(Number(state.stageAnchorIdx) || 0));
@@ -11483,15 +11482,71 @@ function quotaTrialMultiplier() {
   return Math.pow(1 + QUOTA_TRIAL_COEF, Math.max(0, maxQuotaStage() - floor));
 }
 
-// ==== 到達連動ノルマ(第12次H・提案9・ユーザー承認) ====
-// T3a(未達を全周回・後半に置く)用。層ゲージには触れず未達判定にだけ「到達項」を上乗せする:
-// 未達 = runCookies < max(従来ノルマ, runCookies×REACH_COEF×ρ^REACH_POW)。
-// ρ = 周回内経過秒 ÷ max(前回周回の長さ prevDuration, REACH_MIN_SEC)。runCookies が相殺 → 実質
-// 「ρ が ρ*=(1/REACH_COEF)^(1/REACH_POW)≈0.80 を越えたら未達」。絶対クッキー桁に非依存。sim と同式。
-const REACH_COEF = 1.2; // 2.0→1.2(sim同期2026-07-11): T3a廃止で未達はT3b専用=ρ*0.93→0.98へ後ろ倒し(前回より長い周回の維持率割れを救う)
-const REACH_POW = 10;
-const REACH_MIN_SEC = 600;
-const REACH_MAX_SEC = 6000; // denom(前回周回長)の上限クランプ(0=無効)。直前が極端に長い→短い周回で reach 未発火を防ぐ。
+// ==== ノルマ終了(転生準備連動・2026-07-27 ユーザー指示「ノルマ前回周回長に依存するのやめて」) ====
+// 旧(第12次H・提案9 到達連動ノルマ): 未達 = 進行比 ρ=周回内経過秒 ÷ 前回周回の長さ(prevDuration)が
+//   ρ*≈0.98 を越えた時点。終了時刻が「前回どれだけ長く遊んだか」で決まるため、短い周回の次はさらに
+//   短く終わる(逆も同じ)ぶれがあり、同じ進み方をしても周回ごとに終了時刻が変わっていた。
+// 新: 終了の基準を「時計」から「この周回の稼ぎ」へ。sim の確定形(⑧ reachGainFrac=0.983)と同じく
+//   「転生の一歩手前=この周回が仕事を終えた時点」で終了する。
+//   終了 = 経過 ≥ QUOTA_END_MIN_SEC かつ 今転生した場合の獲得PT ≥ 目標PT × QUOTA_END_GAIN_FRAC
+//   目標PT = max(次に取れる最安スキル, 前周回の獲得PT × QUOTA_END_LADDER)  ←sim の tgt と同式
+//   参照するのは「前回どこまで進んだか(総生産)」だけで、「前回どれだけ長く遊んだか(周回長)」は見ない。
+//   同じ進み方をすれば同じ時点で終わる=短い周回が次の周回をさらに短くするスパイラルが消える。
+// 位置の実測(sim 全16方針の軌道で新旧を突き合わせ・S1/S4/S10 400h):
+//   未達位置の中央値 = 旧82% に対し 新52〜78%(次スキルだけを目標にすると16〜45%へ頭寄りに崩れる=採らない)。
+const QUOTA_END_GAIN_FRAC = 0.983; // sim params.quota.reachGainFrac と同期
+const QUOTA_END_LADDER = 1.57;     // 転生梯子の段比(sim strategies の目標ラチェット ×1.57 と同期)
+const QUOTA_END_MIN_SEC = 1176;    // 時間下限=sim の周回下限 1200×0.98 と同期(これより前は基礎ノルマ側が効く)
+const QUOTA_END_MAX_SEC = 7200;    // 保険の上限(sim の周回上限)。目標に届かない周回で無限に伸びるのを防ぐ
+// QoL/解析系ノード(はしごを消費しない「おまけ価格」)は「次の1個」の基準にしない=sim の isUtilitySkill と同一集合
+const QUOTA_END_UTILITY_SKILLS = new Set([
+  "golden_analysis", "hunt_analysis", "economy_analysis", "research_analysis",
+  "order_board", "reward_synergy", "reward_1", "reward_choice_2",
+  "start_1", "offline_1", "start_2", "workshop_1", "workshop_2",
+  "eqcraft_t2", "eqcraft_t3", "eqcraft_t4", "eqcraft_t5", "eqcraft_t6",
+  "click_amp", "golden_amp", "monster_amp", "auto_amp"
+]);
+
+// 次に取れる(前提を満たした未取得の)最安スキルの必要PT。おまけ価格ノードしか残っていなければその最安。
+// 取れるノードが無い(=ツリー完成)なら null。sim の cheapestNextSkillCostSim と同処方。
+function cheapestNextSkillCost() {
+  let best = Infinity;
+  let bestAny = Infinity;
+
+  for (const skill of SKILLS) {
+    if (hasSkill(skill.id)) continue;
+    if (!skill.prereqs.every(id => hasSkill(id))) continue;
+
+    const cost = Number(skill.cost) || 0;
+    if (cost < bestAny) bestAny = cost;
+    if (!QUOTA_END_UTILITY_SKILLS.has(skill.id) && cost < best) best = cost;
+  }
+
+  if (best !== Infinity) return best;
+  return bestAny !== Infinity ? bestAny : null;
+}
+
+// この周回の目標PT: 「次に取れる最安スキル」と「前周回の獲得PT×はしご1段」の大きい方。
+// 前周回の獲得PT は保存済みの前周回総生産(prevRunCookies)から復元する=新しいセーブ項目は要らない。
+// 第0周回(前周回なし)は次スキルのみが目標。sim の tgt = max(次スキル最安, 前回目標×1.57) と同式。
+function quotaEndTargetPt() {
+  const next = cheapestNextSkillCost();
+  const prevGain = totalPrestigeFromCookies(state.prevRunCookies || 0);
+
+  return Math.max(next !== null ? next : 0, prevGain * QUOTA_END_LADDER);
+}
+
+// ノルマ終了の理由。前回の「周回長」には依存しない=経過とこの周回の稼ぎだけで決まる。
+// "goal"=目標PTに到達(通常の終わり方) / "cap"=保険の上限 / ""=継続。
+function quotaEndReason(elapsed) {
+  if (elapsed >= QUOTA_END_MAX_SEC) return "cap";
+  if (elapsed < QUOTA_END_MIN_SEC) return "";
+
+  const target = quotaEndTargetPt();
+  if (!(target > 0)) return ""; // 目標が立たない周回は基礎ノルマだけで判定する
+
+  return prestigeGain() >= target * QUOTA_END_GAIN_FRAC ? "goal" : "";
+}
 
 function monsterQuotaRequiredAtElapsed(seconds) {
   const s = Math.max(0, Number(seconds) || 0);
@@ -11554,20 +11609,18 @@ function checkQuotaState() {
   const quota = monsterQuotaRequired();
   const elapsed = quotaElapsedSeconds();
 
-  // 到達連動ノルマ(提案9): 進行比 ρ=経過秒/max(前回周回長,REACH_MIN_SEC) が ρ* を越えたら未達。
-  // 層ゲージ(monsterQuotaRequired)には触れず、ここの未達判定にだけ到達項を max で上乗せする。
-  let need = (quota !== null && quota > 0) ? D(quota) : null;
-  // 第0回はreach非適用(sim同期2026-07-11: 前回長が無く床600秒基準で発火→ノルマ維持が22%に潰れるため)
-  if (need !== null && REACH_COEF && (state.prevDuration || 0) > 0) {
-    let denom = Math.max(state.prevDuration || 0, REACH_MIN_SEC);
-    if (REACH_MAX_SEC) denom = Math.min(denom, REACH_MAX_SEC);
-    if (denom > 0) {
-      const reach = state.runCookies.mul(REACH_COEF * Math.pow(elapsed / denom, REACH_POW));
-      if (reach.gt(need)) need = reach;
-    }
-  }
-  if (need !== null && state.runCookies.lt(need)) {
+  // 基礎ノルマ(層ゲージと同じ時間の関数)に今周回の総生産が届かなければ未達。
+  if (quota !== null && quota > 0 && state.runCookies.lt(quota)) {
     failQuota("ノルマ終了：この周回のモンスターチャンス終了");
+    return;
+  }
+
+  // ノルマ終了(2026-07-27): 旧ρ判定(前回周回長が分母)の置き換え。転生の一歩手前で終了する。
+  const endReason = quotaEndReason(elapsed);
+  if (endReason) {
+    failQuota(endReason === "goal"
+      ? "ノルマ終了：目標PTに到達(この周回のモンスターチャンス終了)"
+      : "ノルマ終了：この周回のモンスターチャンス終了");
     return;
   }
 
@@ -15568,11 +15621,8 @@ function prestigeReset() {
   // 層の試練の天井持ち越し=直近2周回のmax(R3・trialFloorRuns=2相当・sim同期)
   const keepPrevMaxQuotaStage = Math.max(maxQuotaStage(), Math.floor(Number(state._prevMaxStage1) || 0));
   const keepPrevMaxStage1 = maxQuotaStage();
-  // 提案9(第12次H): 今周回の長さを次周回の到達連動ノルマの進行比の分母として持ち越す。
-  // EMA平滑化(R3・sim同期): 生の前回長だと軽い周回⇔重い周回の交互振動になるため減衰付きで持ち越す(α=0.35)
-  const keepPrevDuration = (Number(state.prevDuration) || 0) > 0
-    ? 0.65 * Number(state.prevDuration) + 0.35 * quotaElapsedSeconds()
-    : quotaElapsedSeconds();
+  // 提案9(第12次H)の周回長の持ち越し(prevDuration)は廃止(2026-07-27 ユーザー指示
+  // 「ノルマ前回周回長に依存するのやめて」)。ノルマ終了は今周回の経過と稼ぎだけで決まる。
   // ㉚節目解放(2026-07-25): 前周回総生産=この周回のrunCookiesを保存(次周回のステージ進出アンカーの基準)
   const keepPrevRunCookies = state.runCookies;
   // ㉚生涯記録(転生でリセットしない): 初回固定コスト判定と通算報酬カウント
@@ -15625,7 +15675,6 @@ function prestigeReset() {
   state.lastPrestigeCps = keepLastPrestigeCps;
   state.prevMaxQuotaStage = keepPrevMaxQuotaStage;
   state._prevMaxStage1 = keepPrevMaxStage1;
-  state.prevDuration = keepPrevDuration;
   state.prevRunCookies = keepPrevRunCookies; // ㉚節目解放: 前周回総生産(stageAnchorIdxはfreshStateで0=周回内変数)
   state.everUpgrades = keepEverUpgrades;
   state.everResearch = keepEverResearch;

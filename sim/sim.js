@@ -422,7 +422,6 @@ function newSim(strategy, opts) {
     // 永続
     prestige: 0, prestigeTotal: 0, prestigeRuns: 0, totalCookies: 0, lastPrestigeCps: 0,
     prevMaxStage: 0,            // 提案8: 前回周回の最高到達層(=再登坂の天井)。層の試練を新規開拓層基準へ相対化するのに使う。層数の表示・カウント(run.maxStage)は絶対累積のまま不変更。
-    prevDuration: 0,            // 提案9(到達連動ノルマ): 前回周回の長さ(秒)。未達判定の進行比 ρ=経過秒/前回長 の分母。
     skills: {},
     everUpgrade: {}, everResearch: {}, everStage: {},
     unlockEvents: [],           // {t, kind, id}
@@ -3119,15 +3118,8 @@ function doPrestige(sim) {
   const tfr = (P.quota.trialFloorRuns || 1);
   sim.prevMaxStage = tfr >= 2 ? Math.max(r.maxStage, sim._prevMaxStage1 || 0) : r.maxStage;
   sim._prevMaxStage1 = r.maxStage;
-  // 提案9: 今周回の長さを持ち越す(次周回の到達連動ノルマの進行比の分母)。
-  // EMA平滑化(第12次R3・T1 S10の交互振動対策): 生の前回長だと「軽い周回45m→未達が早発(33m)→
-  // モンスター停止で重い周回175m→分母が上限クランプ→未達が遅発→また軽い周回」の周期2振動になる
-  // (数列 d_{n+1}=D(d_n) の D'<-1 型)。減衰付き d ← (1-α)d + α×今回長 で不動点へ収束させる。α=1で従来どおり。
-  {
-    const durNow = sim.t - r.startT;
-    const alpha = (P.quota.reachEmaAlpha != null ? P.quota.reachEmaAlpha : 1);
-    sim.prevDuration = sim.prevDuration > 0 ? (1 - alpha) * sim.prevDuration + alpha * durNow : durNow;
-  }
+  // 提案9の周回長持ち越し(prevDuration とそのEMA平滑化)は撤去(2026-07-27 ユーザー指示
+  // 「ノルマ前回周回長に依存するのやめて」)。未達は転生準備の進み(gain基準)だけで決まるため不要。
 
   // 新周回
   sim.run = newRun(sim);
@@ -3392,16 +3384,14 @@ function advanceTick(sim, strategy) {
     if (!r.quotaFailed) {
       let quota = monsterQuotaRequired(sim);
       const el = elapsed(sim);
-      // 到達連動ノルマ(提案9): 進行比 ρ=周回内経過秒/max(前回周回長,reachMinSec) が ρ* を越えたら未達。
-      // 層ゲージ(quotaAtElapsed)には触れず、ここでの未達判定にだけ到達項を上乗せする(max)。
-      // runCookies×reachCoef×ρ^reachPow と runCookies を比べる=クッキー桁に依存せず ρ で未達位置が決まる。
-      // 進行を層比でなく時間比にする(未達で層が凍結するため層比は序盤に寄る=第12次H実測)。
-      // 到達連動ノルマの発火基準を時間比→転生準備の進みへ(2026-07-11 第2再設計・式変更):
+      // 到達連動ノルマ(提案9)の発火基準を時間比→転生準備の進みへ(2026-07-11 第2再設計・式変更):
       // 旧・時間比(ρ=経過/前回長)は「前の周回より大幅に長い周回」で早発し、T3b維持が54-75%に割れる
       // (S4 run27: 前回3102s→今回4965s・未達2677s=54%と実測)。周回の経済的な終点=「獲得予定PTが
       // 次スキル費用に届く瞬間」に追従する gain 基準へ: gain ≥ 次スキル最安 × reachGainFrac で未達。
       // 末期は超成長のため gain 90%→100% は数十秒=維持率は周回長のブレに関係なく9割前後で安定する。
-      // 従来の時間比はフォールバック(ツリー完成後 next=null の周回は基礎ノルマのみ=未達なしでOK)。
+      // 旧・時間比(ρ=経過秒/前回周回長)のフォールバックは撤去(2026-07-27 ユーザー指示
+      // 「ノルマ前回周回長に依存するのやめて」)。前回周回長(prevDuration)はsim/ゲームとも参照しない。
+      // ツリー完成後(next=null)の周回は基礎ノルマのみ=未達なしでOK。
       // ⑧対応の再設計(2026-07-16): 未達の発火を「その戦略の実際の転生条件」に係留する。
       // 戦略は sim._prGainFactor(転生のgain係数1.0〜4.0)と sim._prMinSec(時間下限)を毎tick公開する。
       // 未達 = 経過 ≥ 下限×0.98 かつ gain ≥ max(次スキル束, 前回目標×1.57)×係数×reachGainFrac(0.983)。
@@ -3423,14 +3413,6 @@ function advanceTick(sim, strategy) {
             r.quotaFailed = true;
             r.quotaFailAt = el;
           }
-        }
-      } else if (quota !== null && quota > 0 && P.quota.reachCoef && (sim.prevDuration || 0) > 0) {
-        let denom = Math.max(sim.prevDuration || 0, P.quota.reachMinSec || 0);
-        if (P.quota.reachMaxSec) denom = Math.min(denom, P.quota.reachMaxSec);
-        if (denom > 0) {
-          const rho = el / denom;
-          const reach = r.runCookies * P.quota.reachCoef * Math.pow(rho, P.quota.reachPow);
-          if (reach > quota) quota = reach;
         }
       }
       if (quota !== null && quota > 0 && r.runCookies < quota) {
@@ -3514,7 +3496,7 @@ function takeSnapshot(sim) {
   return structuredClone({
     t: sim.t, prestige: sim.prestige, prestigeTotal: sim.prestigeTotal,
     prestigeRuns: sim.prestigeRuns, totalCookies: sim.totalCookies,
-    prevMaxStage: sim.prevMaxStage, prevDuration: sim.prevDuration,
+    prevMaxStage: sim.prevMaxStage,
     everMs: sim.everMs || {}, lastPrestigeCps: sim.lastPrestigeCps || 0,
     skills: sim.skills, rotIdx: sim.rotIdx, upRotIdx: sim.upRotIdx, goldenAlt: sim.goldenAlt,
     firstResearchBuy: sim.firstResearchBuy, firstPerk: sim.firstPerk, firstStageBuy: sim.firstStageBuy,
@@ -3530,7 +3512,6 @@ function replayRun(strategy, snap, opts, capSec) {
   sim.t = s.t; sim.prestige = s.prestige; sim.prestigeTotal = s.prestigeTotal;
   sim.prestigeRuns = s.prestigeRuns; sim.totalCookies = s.totalCookies;
   sim.prevMaxStage = s.prevMaxStage || 0;
-  sim.prevDuration = s.prevDuration || 0;
   sim.everMs = s.everMs || {}; sim.lastPrestigeCps = s.lastPrestigeCps || 0;
   sim.skills = s.skills; sim.rotIdx = s.rotIdx; sim.upRotIdx = s.upRotIdx; sim.goldenAlt = s.goldenAlt;
   sim.firstResearchBuy = s.firstResearchBuy; sim.firstPerk = s.firstPerk; sim.firstStageBuy = s.firstStageBuy;
