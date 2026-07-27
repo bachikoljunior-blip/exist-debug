@@ -2289,16 +2289,16 @@ function equipDirectIncome(sim, base, prod) {
     for (let j = UPIDX.bank; j < UPGRADES.length; j++) if ((r2.upgrades[UPGRADES[j].id] || 0) > 0) hi++;
     fnM = 1 + P.res2.factoryEqKind * hi;
   }
-  // 上位設備の指数増幅研究(2026-07-27 再設計): 「その設備を積むと量産ラインの出口=設備直送が伸びる」。
-  // 建物cpsに乗せる旧形は総収入の0.05%未満で①1.01〜1.06=死に札だった。投資量に足す形なら
-  // 「どの設備を積むか」の選択が直送の太さに直結する(増幅変数は投資量ひとつ=承認済みの規約どおり)。
-  const UPPER_AMP = [['bankVault', 'bank'], ['moonBake', 'moonBakery'], ['timeLayer', 'timeOven'],
-    ['eventHorizon', 'blackHoleMixer'], ['cosmicConvection', 'universeOven'],
-    ['singularityFlow', 'cookieSingularity'], ['annihilationCore', 'antimatterOven']];
-  let inv = sim.run.upgrades.oven || 0;
-  const w = (P.res2.upperAmpWeight != null) ? P.res2.upperAmpWeight : 1;
-  for (const [rid, uid] of UPPER_AMP) if (resActive(sim, rid)) inv += (sim.run.upgrades[uid] || 0) * w;
-  return genreDirect(sim, anchor, inv, P.equipDirect) * polM * fnM;
+  // 上位設備の増幅研究7件(2026-07-27 再設計v2): **飽和項の外**に乗る倍率にする。
+  //  v1(投資量に台数を足す)は測って落ちた: 設備直送の投資項は satMax で飽和済みなので、
+  //  台数をいくら足しても ①1.00〜1.06 のまま(=建物cpsに乗せる旧形と同じ死に方)。
+  //  ③utility も 11/12→10/12 に下がったので v1 は棄却。
+  // v2: factoryNetwork段2 の fnM と同じ形(飽和の外の素の倍率)。深い設備ほど係数を上げる=
+  //  費用の階段(8e6→1.28e14)と揃え、7件が同じ効果に潰れないようにする。
+  let upperM = 1;
+  const UA = P.res2.upperAmp || {};
+  for (const rid in UA) if (resActive(sim, rid)) upperM *= 1 + UA[rid];
+  return genreDirect(sim, anchor, sim.run.upgrades.oven || 0, P.equipDirect) * polM * fnM * upperM;
 }
 // 金直送: 投資量=金perk合計。ゲート=香料調合 段階2(スキル golden_1→段階2購入→効果)。
 function goldenDirectIncome(sim, base) {
