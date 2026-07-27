@@ -2267,6 +2267,19 @@ function otherMulOf(sim, cfg, mainPol) {
   return om;
 }
 // 設備直送: 投資量=オーブン所持数。ゲート=オーブン大量焼成 段階2(スキル auto_3→段階2購入→効果)。
+// 上位設備の増幅研究7件の倍率(2026-07-27 再設計v3)。設計の経緯:
+//  旧形(建物cpsに ×9×(1+k)^台数)= ①1.01〜1.06。建物cpsは直送時代の総収入の0.05%未満という既知の構造で死んでいた。
+//  v1(設備直送の投資量に台数を足す)= ①1.00〜1.06。投資項は satMax で飽和済みなので伸びない。③utilityも低下→棄却。
+//  v2(設備直送だけに素の倍率)= ①17/20まで回復したが **⑫ 方針の1位が実在 4/5→2/5**(設備直送=焼成の販路だけを
+//    太らせるので bake/hunt しか勝てなくなる)→棄却。
+//  v3(これ): **直送5系統すべてに同じ倍率**を掛ける=「上位設備を持つほど、量産の販路そのものが太くなる」。
+//    方針間の相対関係を動かさないので⑫に中立で、①の持ち上げは v2 と同規模を保てる。
+function upperAmpMul(sim) {
+  const UA = P.res2.upperAmp || {};
+  let m = 1;
+  for (const rid in UA) if (resActive(sim, rid)) m *= 1 + UA[rid];
+  return m;
+}
 function equipDirectIncome(sim, base, prod) {
   if (!resStage2(sim, 'ovenBatch')) return 0;
   // 方針係数: ovenBatch段2の早期化(run5〜)+coef0.1 を全方針に等しく効かせると、balanced(4つ≥10%)が
@@ -2289,16 +2302,7 @@ function equipDirectIncome(sim, base, prod) {
     for (let j = UPIDX.bank; j < UPGRADES.length; j++) if ((r2.upgrades[UPGRADES[j].id] || 0) > 0) hi++;
     fnM = 1 + P.res2.factoryEqKind * hi;
   }
-  // 上位設備の増幅研究7件(2026-07-27 再設計v2): **飽和項の外**に乗る倍率にする。
-  //  v1(投資量に台数を足す)は測って落ちた: 設備直送の投資項は satMax で飽和済みなので、
-  //  台数をいくら足しても ①1.00〜1.06 のまま(=建物cpsに乗せる旧形と同じ死に方)。
-  //  ③utility も 11/12→10/12 に下がったので v1 は棄却。
-  // v2: factoryNetwork段2 の fnM と同じ形(飽和の外の素の倍率)。深い設備ほど係数を上げる=
-  //  費用の階段(8e6→1.28e14)と揃え、7件が同じ効果に潰れないようにする。
-  let upperM = 1;
-  const UA = P.res2.upperAmp || {};
-  for (const rid in UA) if (resActive(sim, rid)) upperM *= 1 + UA[rid];
-  return genreDirect(sim, anchor, sim.run.upgrades.oven || 0, P.equipDirect) * polM * fnM * upperM;
+  return genreDirect(sim, anchor, sim.run.upgrades.oven || 0, P.equipDirect) * polM * fnM * upperAmpMul(sim);
 }
 // 金直送: 投資量=金perk合計。ゲート=香料調合 段階2(スキル golden_1→段階2購入→効果)。
 function goldenDirectIncome(sim, base) {
@@ -2312,7 +2316,7 @@ function goldenDirectIncome(sim, base) {
   // huntDirect(hunt全8種)と対称の処方=金特化(S3)の後半周回の金シェア(㉘)も同時に立つ。
   const inv = (r.perks.goldenAmount || 0) + (r.perks.goldenPower || 0) + (r.perks.goldenRate || 0)
     + (r.perks.goldenChain || 0) + (r.perks.goldenTarget || 0) + (r.perks.goldenFirstHit || 0) + (r.perks.beastScent || 0);
-  return genreDirect(sim, base, inv, P.goldenDirect) * polM;
+  return genreDirect(sim, base, inv, P.goldenDirect) * polM * upperAmpMul(sim);
 }
 // 討伐直送: 投資量=討伐perk合計。ゲート=異世界接続網 段階2(スキル monster_3→段階2購入→効果)。
 function huntDirectIncome(sim, base) {
@@ -2342,7 +2346,7 @@ function huntDirectIncome(sim, base) {
   // モンスター図鑑: 弱点を知る=討伐の実入り増(2026-07-11 再係留: 研究インフレでダメージ飽和=図鑑の限界価値ゼロのため直送へ効かせる)
   // 上限cap(同日): 無上限だと高Lvで全方針の後半討伐が×3-5に膨れ㉘bake 40→16/48に崩壊(almanac=0で37/48復帰と実測)
   const almanacM = 1 + Math.min((P.ws.eqFx.almanacHuntPerLv || 0) * wsEqLv(sim, 'monsterAlmanac'), P.ws.eqFx.almanacHuntMax || 0.5);
-  return genreDirect(sim, base, inv, P.huntDirect) * polM * gateM * almanacM * rateM;
+  return genreDirect(sim, base, inv, P.huntDirect) * polM * gateM * almanacM * rateM * upperAmpMul(sim);
 }
 // タップ直送: 投資量=クリック系(神の指+強い指/10)。ゲート=指先の型 段階2(スキル click_2→段階2購入→効果)。
 function tapDirectIncome(sim, base, prod) {
@@ -2382,7 +2386,7 @@ function tapDirectIncome(sim, base, prod) {
   if ((P.tapDirect.anchorGolden || 0) > 0 && prod && (r.upgrades.godFinger || 0) === 0) {
     anchor = Math.max(base, P.tapDirect.anchorGolden * goldenRateValue(sim, prod));
   }
-  return genreDirect(sim, anchor, inv, cfgTap) * polM * gateM;
+  return genreDirect(sim, anchor, inv, cfgTap) * polM * gateM * upperAmpMul(sim);
 }
 // 銀行配当(直送・第12次J-3 腐り解消): 銀行の所持数と貯蓄(総クッキー桁)で毎秒生産へ加算する独立収入。
 // ゲート=銀行クリック配当研究(resActive=①測定トグル対応)。クリック方針で厚く効く(既存の×1.08と整合)。
@@ -2405,7 +2409,7 @@ function bankDirectIncome(sim, base, prod) {
   const ownM = 1 + (cfg.ownRate || 0) * Math.log10(1 + bank)
              + (cfg.countCoef || 0) * Math.pow(bank / (cfg.ref || 1), cfg.countPow || 1);
   return cfg.coef * base * ownM
-       * (1 + Math.log1p(saved) * (cfg.savedCoef || 0)) * polM;
+       * (1 + Math.log1p(saved) * (cfg.savedCoef || 0)) * polM * upperAmpMul(sim);
 }
 // 金クッキーの期待収入率(/秒): 間隔は spawnFactor、1回の価値は即時+ブーストの平均。
 // earningPower の金項の本体。討伐直送(huntDirect)のアンカーにも使う(下記)。
