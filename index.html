@@ -7537,6 +7537,7 @@ function injectImageAssetStyle() {
     .choiceIcon{width:44px;height:44px;object-fit:contain;border-radius:8px;flex:0 0 auto;margin-right:10px;vertical-align:middle}
     .orderIcon{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:6px}
     .matIcon{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:6px}
+    .matSource{font-size:11px;line-height:1.45;margin-top:2px;opacity:.85}
     .bakeBadgeIcon{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:5px}
     .tab[data-tab]{display:flex;align-items:center;justify-content:center;padding:1px !important;overflow:hidden}
     .tabIcon{width:48px;height:48px;max-width:100%;max-height:100%;object-fit:contain;display:block}
@@ -9520,6 +9521,34 @@ function matLabel(id) {
   return m ? m.name : id;
 }
 
+// 素材の入手先(2026-07-27): 素材庫は所持数しか出していなかったので、「この素材が要る」と分かっても
+// 何をすれば手に入るかが画面から読めなかった(=能動の行き先が出ていない)。実装(dropMaterialIdFor /
+// STAGE_MATERIALS / OVERKILL_RARE / FERMENT_MATERIAL / 金ブースト / 狩り窓連続 / 方針)から文言を作る。
+// 表示だけで、確率や効果は一切変えていない。
+function matSourceText(id) {
+  const m = /^ore_t(\d+)$/.exec(id);
+  if (m) {
+    const t = Number(m[1]);
+    const band = EQUIP2_CFG.layerBand || 5;
+    const from = (t - 1) * band;
+    return `討伐で落ちる色素材。2軸で出る: ①モンスターの色=最高ノルマ層${from}〜${from + band - 1}層の帯 ②今いるステージの署名色(ステージ${t})。上位色は下位の代わりに使える`;
+  }
+  const stageOfBase = Object.keys(STAGE_MATERIALS).filter(s => STAGE_MATERIALS[s].normal === id).map(Number);
+  const stageOfFerment = Object.keys(FERMENT_MATERIAL).filter(s => FERMENT_MATERIAL[s] === id).map(Number);
+  const stageOfRare = Object.keys(OVERKILL_RARE).filter(s => OVERKILL_RARE[s] === id).map(Number);
+  const parts = [];
+  if (stageOfBase.length) parts.push(`ステージ${stageOfBase.join("・")}の通常討伐`);
+  if (id === "flour") parts.push("ステージ1の通常種が低確率(30%)で落とす");
+  if (stageOfFerment.length) parts.push(`ステージ${stageOfFerment.join("・")}でノルマに2倍以上の余裕を持って撃破(発酵枠)`);
+  if (stageOfRare.length) parts.push(`ステージ${stageOfRare.join("・")}でオーバーキル撃破(残りHPの5倍以上のダメージ)`);
+  if (id === "goldDust") parts.push("金ブースト中に撃破(唯一の入手経路)");
+  if (id === "omniFlour") parts.push("周回方針が「均衡」のときの討伐(高確率)");
+  if (id === "voidSugar") parts.push("深層領域の討伐(ボス撃破では多めに落ちる)");
+  if (/^bossCore(\d+)$/.test(id)) { const s = /^bossCore(\d+)$/.exec(id)[1]; parts.push(`ステージ${s}のボス撃破`, "狩り窓の中で3体連続撃破"); }
+  if (id === "deepCore") parts.push("深層領域のボス撃破", "狩り窓の中で3体連続撃破");
+  return parts.length ? parts.join(" / ") : "討伐で落ちる";
+}
+
 function equipLv(id) {
   return Math.max(0, Math.floor(Number((state.equipment || {})[id]) || 0));
 }
@@ -10454,7 +10483,7 @@ function renderEquip2Tab() {
     body = catBar + ownedBody;
   } else {
     body = MATERIALS.filter(m => materialSeen(m.id) || /^ore_t/.test(m.id) && materialCount(m.id) > 0)
-      .map(m => `<div class="infoRow">${matIconHtml(m.id, "matIcon")}<b>${m.name}</b> ×${fmt(materialCount(m.id))}</div>`).join("")
+      .map(m => `<div class="infoRow" style="align-items:flex-start"><div>${matIconHtml(m.id, "matIcon")}<b>${m.name}</b> ×${fmt(materialCount(m.id))}${m.tier === "r" ? "(レア)" : ""}<div class="desc matSource">入手: ${matSourceText(m.id)}</div></div></div>`).join("")
       || `<div class="desc">まだ素材がない</div>`;
   }
   box.innerHTML = tabBar + body;
@@ -10489,10 +10518,7 @@ function renderWorkshop() {
 
   // 旧装備(EQUIPMENT)は廃止(2026-07-13)=カード生成なし
 
-  const matRows = MATERIALS
-    .filter(m => materialSeen(m.id))
-    .map(m => `<div class="infoRow">${matIconHtml(m.id, "matIcon")}<b>${m.name}</b> ×${fmt(materialCount(m.id))}${m.tier === "r" ? "(レア)" : m.tier === "b" ? "(ボス核)" : ""}</div>`)
-    .join("") || `<div class="desc">まだ素材がない</div>`;
+  // 素材の一覧は装備タブの「所持素材」で出す(ここで作っていた matRows は box.innerHTML に入らない死んだ計算だったので撤去・2026-07-27)
 
   // v2: 討伐記録セクション(種ごとの累計/次のマイルストーン/現在ボーナス)
   const recordRows = Object.keys(MONSTER_TYPES).map(typeId => {
