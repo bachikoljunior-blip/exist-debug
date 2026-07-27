@@ -105,6 +105,43 @@ async function installBuyPolicy(page, override) {
       return bought;
     };
 
+    // 研究の買い方(2026-07-27 追加): 実プレイヤーは研究タブに出たものを即買う。全体倍率が乗るので
+    // 回収時間の計算をしなくても常に得。**旧ドライバは「段1の研究」だけを買い、スキルで解放される
+    // 「段階2/3」を一度も買っていなかった**(研究タブに並ぶ別のカードで、買うのは別関数)。
+    // 段階はこの経済の主要な倍率源(例: オーブン大量焼成 段階3=層依存式)なので、抜けていると
+    // 転生2回目以降の伸びが判定基準(sim)より構造的に低く出る。
+    // 費用は割引後の researchCost / researchStageCost を使う(旧ドライバは素の r.cost で見ていて、
+    // 割引スキルを取ったあとも高いままの値で買い控えていた)。
+    window.__buyResearchSpree = () => {
+      const out = [];
+      try {
+        for (const r of RESEARCH) {
+          if (state.research[r.id]) continue;
+          if (typeof researchUnlocked === 'function' && !researchUnlocked(r)) continue;
+          let c; try { c = researchCost(r); } catch (e) { continue; }
+          if (!state.cookies.gte(c)) continue;
+          buyResearch(r.id);
+          if (state.research[r.id]) out.push(['研究「' + r.name + '」を購入', 1]);
+        }
+      } catch (e) {}
+      // 段階は「段2を買うと段3のカードが出る」ので、出なくなるまで繰り返す
+      for (let pass = 0; pass < 4; pass++) {
+        let did = 0;
+        let cards = [];
+        try { cards = (typeof visibleResearchStageCards === 'function') ? visibleResearchStageCards() : []; } catch (e) { cards = []; }
+        for (const sc of cards) {
+          try {
+            const c = researchStageCost(sc.r, sc.stageNo);
+            if (!state.cookies.gte(c)) continue;
+            buyResearchStage(sc.r.id, sc.stageNo);
+            if (researchStagePurchased(sc.r.id, sc.stageNo)) { out.push(['研究「' + sc.r.name + '」段階' + sc.stageNo + 'を購入', 1]); did++; }
+          } catch (e) {}
+        }
+        if (!did) break;
+      }
+      return out;
+    };
+
     // まとめ買い(実況の1ブロック分): 買った台と数を集約して返す
     window.__buySpree = (maxSteps) => {
       const agg = {}, order = [];

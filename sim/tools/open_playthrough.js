@@ -80,9 +80,13 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   const L=[]; let shotN=0;
   const gt=async()=>withTO('gt',()=>p.evaluate(()=>{try{return Math.round(state.totalPlaySec||0);}catch(e){return 0;}}));
   const fmtT=s=>{s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;return (h?h+'時間':'')+((m||h)?m+'分':'')+ss+'秒';};
+  // 撮影なしモード(NOSHOT=1): 同じドライバを「到達だけ測るプローブ」として使う。撮影が1ブロック
+  // あたりの実時間の大半なので、深部(2回目以降の転生・注文ボード)まで届くかを先に安く測るために使う。
+  // 判断ロジックは撮影版と完全に同一=片方だけ賢い状態を作らない。
+  const NOSHOT=!!Number(process.env.NOSHOT||0);
   const rec=async(op,inc)=>{ inc=(inc==null?1:inc); const t=await gt(); const last=L[L.length-1];
-    if(last && last.op===op){ last.count+=inc; last.t=fmtT(t); await withTO('screenshot(同一操作)',()=>p.screenshot({path:DIR+'/'+last.n+'.jpg',type:'jpeg',quality:50})); return; }
-    shotN++; const nm=String(shotN).padStart(3,'0'); await withTO('screenshot',()=>p.screenshot({path:DIR+'/'+nm+'.jpg',type:'jpeg',quality:50})); L.push({n:nm,t:fmtT(t),op,count:inc}); };
+    if(last && last.op===op){ last.count+=inc; last.t=fmtT(t); if(!NOSHOT)await withTO('screenshot(同一操作)',()=>p.screenshot({path:DIR+'/'+last.n+'.jpg',type:'jpeg',quality:50})); return; }
+    shotN++; const nm=String(shotN).padStart(3,'0'); if(!NOSHOT)await withTO('screenshot',()=>p.screenshot({path:DIR+'/'+nm+'.jpg',type:'jpeg',quality:50})); L.push({n:nm,t:fmtT(t),op,count:inc}); };
 
   await rec('タイトルから開始',0);
   for(let i=0;i<12;i++)await p.click('#cookie').catch(()=>{});
@@ -98,9 +102,11 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     }catch(e){ return { ok:false }; }
   }));
   const snap=async()=>withTO('snap',()=>p.evaluate(()=>({sec:Math.round(state.totalPlaySec||0),cookies:Number(state.cookies.toString()),cps:Number(currentCps().toString()),
+    dcps:((typeof directIncomeTotalCps==='function')?Number(directIncomeTotalCps().toString()):0),
     unlocked:!!(prestigeUnlocked&&prestigeUnlocked()),gain:(prestigeGain?Number(prestigeGain()):0),cost:(prestigeCookieCost?Number(prestigeCookieCost()):0),
     runs:state.prestigeRuns||0,skills:Object.values(state.skills||{}).filter(Boolean).length,
     stageUnlocked:Number(state.stageUnlocked||1),
+    ob:!!(typeof orderBoardUnlocked==='function'&&orderBoardUnlocked()),
     co:Number(state.completedOrders||0),xo:Number(state.expiredOrders||0)})));
 
   // 1刻みの処理を発生順に返す(討伐→報酬→金→研究→設備→タップ)。実プレイヤの購入判断=価値/費用の貪欲(毎手ROI再評価)。
@@ -115,7 +121,8 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
       for(const el of els){ try{ el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true})); c++; }catch(e){} }
       add('落ちた素材を拾う',c); }
     if(typeof goldenVisible!=='undefined'&&goldenVisible&&collectGoldenCookie){collectGoldenCookie();add('金クッキーを回収',1);}
-    if(typeof RESEARCH!=='undefined')for(const r of RESEARCH){try{ if(!state.research[r.id]&&(typeof researchUnlocked!=='function'||researchUnlocked(r))&&state.cookies.gte(D(r.cost))){ buyResearch(r.id); add('研究「'+r.name+'」を購入',1);} }catch(e){}}
+    // 研究(段1+段階2/3)は buy_policy.js の共有ルール。旧実装は段1だけ・素のr.costで見ていた。
+    for(const [l,c] of (window.__buyResearchSpree?window.__buyResearchSpree():[]))add(l,c);
     // 購入判断は buy_policy.js の共有ルール(回収時間+次ティアへ貯める)。旧「価値/費用」貪欲は
     // 強い指を常に最優先に選んでいた=強い指偏重(2026-07-26 ユーザー指示Aで是正)。
     if(!bank){ const sp=window.__buySpree(400);
@@ -171,10 +178,13 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         if(typeof closeStageChoiceScreen==='function')closeStageChoiceScreen();
         if(typeof beginRunAfterSkills==='function'&&state.awaitingSkillChoice){ beginRunAfterSkills(); started=true; }
       }catch(e){}
-      return { got, started, stage, awaiting:!!state.awaitingSkillChoice, pt0, pt, cheapest, shopReach, policy };
+      return { got, started, stage, awaiting:!!state.awaitingSkillChoice, pt0, pt, cheapest, shopReach, policy,
+        saving:(window.__SKILL_SAVING||null) };
     }));
-    console.log(`   転生の予算: ${res.pt0}PT → 取得${res.got.length}個で残り${res.pt}PT / 次に狙える最安=${res.cheapest?res.cheapest.name+'('+res.cheapest.cost+'PT)':'なし'} / 工房tab=${res.shopReach.tab} 作成=${res.shopReach.craft}`);
+    console.log(`   転生の予算: ${res.pt0}PT → 取得${res.got.length}個で残り${res.pt}PT / 次に狙える最安=${res.cheapest?res.cheapest.name+'('+res.cheapest.cost+'PT)':'なし'} / 工房tab=${res.shopReach.tab} 作成=${res.shopReach.craft}${res.saving?` / 貯蓄中→${res.saving.name}(${res.saving.cost}PT)`:''}`);
     for(const nm of res.got)await rec('スキル「'+nm+'」を取得',1);
+    // 貯める判断も実況に出す(何も取らなかった理由が見えないと「PTが余っているのに何もしない」ように見える)
+    if(res.saving)await rec(`スキルは取らずPTを貯める(狙い=「${res.saving.name}」${res.saving.cost}PT ・手持ち${res.saving.pt}PT)`,1);
     if(res.policy)await rec(`周回方針「${res.policy}」を選ぶ`,1);
     if(res.started)await rec(`ステージ${res.stage}を選んで新しい周回を開始`,1);
     if(res.awaiting)console.log('   ⚠ 周回開始に失敗(awaitingSkillChoiceが残った)=時間が進まない状態');
@@ -185,6 +195,10 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   // 実プレイヤは転生後に少し遊んで設備を建て直してから離れるので、転生のたびに能動セッションを挟む。
   let activeUntilSec=ACTIVE_SEC;
   const wall0=now(); let reason='blkcap', stallCount=0, banking=false, huntDry=0;
+  // 狩りの実り(1窓あたりの討伐数)。null=まだ測っていない(=一度は座って試す)。ステージが変わったら測り直す。
+  // 離席で経済を育てたあとは火力も伸びているので、HUNT_RETRY 回の離席ごとに測り直す(=永久に狩りをやめない)。
+  let huntRate=null, huntRateStage=0, awayRun=0;
+  const HUNT_RETRY=Number(process.env.HUNT_RETRY||4);
   let orderSeen={co:0,xo:0};
   // ステージ解放は狩り枝の中だけで見ていたため、活動窓や序盤で開いた回が記録から漏れていた
   // (実走で「解放3回なのに最終ステージ5」という食い違いを観測)。毎刻み state.stageUnlocked を見る。
@@ -214,8 +228,15 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
       else if(cur.cur<cur.front){ const to=await withTO('ステージ移動',()=>p.evaluate((n)=>window.__travelStage(n),cur.front));
           await rec(`素材が揃った → 最前線のステージ${to}へ戻る`,1); } }
     const q=await questSnap();
-    // 素材集め中は座って狩る(前ステージの湧きを倒さないと素材が落ちない)
-    const wantHunt = gathering || (q.ok && !q.done && (q.boss || q.remain>0) && huntDry<2);
+    // 狩るか育てるかの判断(2026-07-27 実測して入れた): 旧ルールは「クエストが残っている限り座って狩る」
+    // だったので、討伐が1体も進まない窓(=0体)以外はずっと狩り続けた。実測(395ブロックのプローブ):
+    // 討伐クエストは 100→130→170→220体と伸びるのに1窓20分で数体しか進まず、走行の実時間の9割を
+    // 狩りが食って**転生は1回で止まった**(注文ボードは前提込み148PT=転生4〜5回ぶん)。
+    // 実プレイヤの判断: 「このペースで何窓かかるか」を見て、遠すぎるなら離席して経済(=火力の素)を育てる。
+    // 育てば1窓で倒せる数が増えるので、狩りは後で安く済む。守護ボス待ちと素材集めは例外(必ず座る)。
+    const HUNT_PATIENCE=Number(process.env.HUNT_PATIENCE||4); // 残りがこの窓数以内で終わるなら座る
+    const payingHunt = (huntRate==null) ? true : (q.remain>0 && q.remain <= huntRate*HUNT_PATIENCE);
+    const wantHunt = gathering || (q.ok && !q.done && (q.boss || (q.remain>0 && payingHunt)) && huntDry<2);
     if(!banking && s.gain>0 && (s.cookies + s.cps*600) >= s.cost) banking=true;
     if(wantHunt) banking=false; // 狩り中は設備を止めない(火力=タップと毎秒生産)
     const sec=s.sec;
@@ -261,6 +282,9 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
       const killed=Math.max(0,(q2.kills||0)-k0);
       // 表示するステージは「今いるステージ」(素材集めで前へ戻っているときにクエストのステージを出すと嘘になる)
       const hereSt=await withTO('現ステージ(表示用)',()=>p.evaluate(()=>currentStageNo()));
+      // 実りの測定(この窓で何体倒せたか)。次の判断に使う=行動と評価を食い違わせない。
+      if(hereSt!==huntRateStage){ huntRateStage=hereSt; }
+      huntRate=killed; awayRun=0;
       if(killed>0){ huntDry=0; await rec(gathering?`ステージ${hereSt}で料理の素材を集める(討伐${killed}体)`:`ステージ${hereSt}に座って狩る(クエスト ${q2.got}/${q2.need})`,1); }
       else { huntDry++; await rec(`ステージ${hereSt}で狩ったが倒せない(火力不足=離席で育て直す)`,1); }
       if(q2.boss&&!q.boss)await rec('討伐ノルマ達成！守護ボスが現れる',1);
@@ -273,6 +297,8 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         const g=earn(D(bc).mul(asec)); state.totalPlaySec=(state.totalPlaySec||0)+asec;
         return { gain:String(g), cps:bc }; }, awaySec));
       await rec(`離席${AWAY_H}時間 → 戻って回収(+${got.gain.length>12?Number(got.gain).toExponential(2):got.gain})`,1);
+      // 育ったら狩りをもう一度試す(実りの測り直し)。これが無いと一度「遠い」と判断した狩りに戻らない。
+      if(++awayRun>=HUNT_RETRY){ awayRun=0; if(huntRate!=null){ huntRate=null; await rec('経済が育った → 討伐の手応えを試しに狩ってみる',1); } }
       step=ACTIVE_WIN*1000; stepSec=ACTIVE_WIN;
       let done=0; const sub=ACTIVE_SUB; while(done<step){ const st=Math.min(sub,step-done); await withTO('clock(活動窓)',()=>p.clock.runFor(st)); done+=st;
         await withTO('活動窓の処理',()=>p.evaluate(()=>{ for(let n=0;n<8;n++){ if(!(rewardModalOpen&&rewardModalOpen()))break; revealRewardChoices&&revealRewardChoices(); if(pendingRewardChoices&&pendingRewardChoices.length)chooseReward(pendingRewardChoices[0]); else break; }
@@ -307,7 +333,7 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     if(stallCount>=20){reason='stall(経済頭打ち)';break;}
     if((now()-wall0)>WALLCAP){reason='wallcap';break;}
     if(i%3===0){ try{fs.writeFileSync(DIR+'/ops.json',JSON.stringify(L,null,1));}catch(e){}
-      console.log(`i=${i} ${fmtT(s2)} blk=${L.length} ${wantHunt?'狩り':'離席'} bank=${banking} stage=${q.st} quest=${q.got}/${q.need}${q.boss?'(守護待)':''} runs=${s.runs} sk=${s.skills} cps=${s.cps.toExponential(1)} wall=${((now()-wall0)/1000).toFixed(0)}s`); }
+      console.log(`i=${i} ${fmtT(s2)} blk=${L.length} ${wantHunt?'狩り':'離席'} bank=${banking} stage=${q.st} quest=${q.got}/${q.need}${q.boss?'(守護待)':''} runs=${s.runs} sk=${s.skills} cps=${s.cps.toExponential(1)}+直送${s.dcps.toExponential(1)} 注文板=${s.ob?'解放':'未'}(達成${s.co}) wall=${((now()-wall0)/1000).toFixed(0)}s`); }
   }
   }catch(e){ timedOut=e.message; reason='中断: '+e.message.slice(0,60); }
   fs.writeFileSync(DIR+'/ops.json',JSON.stringify(L,null,1));
