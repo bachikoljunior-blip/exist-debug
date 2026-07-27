@@ -91,7 +91,7 @@ async function installSkillPolicy(page, opt) {
           if (!(s.effects || []).some(e => e.type === 'unlockSystem' || e.type === 'unlockReward')) continue;
           const ch = chain(s);
           if (ch.cost <= 0) continue;
-          if (!best || ch.cost < best.cost) best = { cost: ch.cost, ids: new Set(ch.path.map(x => x.id)), name: s.name };
+          if (!best || ch.cost < best.cost) best = { cost: ch.cost, id: s.id, ids: new Set(ch.path.map(x => x.id)), name: s.name };
         }
         return best;
       };
@@ -100,6 +100,18 @@ async function installSkillPolicy(page, opt) {
       const saving = !!(target && target.cost > pt && target.cost <= pt * window.__SKILLPOL.reserveReach);
       window.__SKILL_SAVING = saving ? { name: target.name, cost: target.cost, pt } : null;
       if (saving) return [];   // 目標のシステムまで貯める(このPTでは何も買わない)
+      // 貯めた目標が買えるようになったら**先に買う**(2026-07-27 実測して追加): 単価順の貪欲に戻すと、
+      // 223PT あっても安い札から埋めてしまい、貯めていた鎖(経済分析135PT)を買えないまま残り58PTになる、
+      // という走行を実測した。貯めた人は貯めた物を先に買う。
+      if (target && target.cost <= pt) {
+        const tn = SKILLS.find(x => x.id === target.id);
+        const ch = tn ? chain(tn) : { path: [] };
+        for (const q of (ch.path || [])) {
+          if (hasSkill(q.id) || !skillCanBuy(q)) continue;
+          selectSkill(q.id); takeSelectedSkill();
+          if (hasSkill(q.id)) got.push(q.name || q.id);
+        }
+      }
       for (let n = 0; n < 300; n++) {
         const base = score();
         let best = null;
