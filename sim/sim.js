@@ -1795,6 +1795,7 @@ function computeProd(sim) {
     const pfN = (r.parfaitUps && !wsOff(sim, 'dish:stardustParfait')) ? (r.parfaitUps[u.id] || 0) : 0;
     if (pfN > 0 && owned > 0) contrib *= 1 + (P.ws.fx.parfaitProdMul - 1) * Math.min(1, pfN / owned);
     directContrib[i] = contrib; // 系列ボーナスの参照元(この設備の直接生産。系列ぶんは含まない)
+    if (sim._contribOut) sim._contribOut[u.id] = contrib; // 測定用の覗き穴(pace_parity_qa)。既定は未設定=何もしない
     if (u.type === 'click') clickRaw += contrib; else cpsRaw += contrib;
   }
   // 系列ボーナス(2026-07-06 ユーザー採用・第11次): スキル解放の上位設備の固有能力(研究不要)。
@@ -3737,5 +3738,18 @@ module.exports = {
   equip2Items,
   // 得意装備の割り振り用(R19 2026-07-18): 戦略の装備選好スコア(equip2Scoreと同式)を擬似simで計算
   eq2ScoreOf: (strategy, item) => equip2Score({ strat: strategy, run: { policy: (strategy.pickPolicy ? strategy.pickPolicy(null) : 'balanced') } }, item),
-  EQUIP2_FX_TABLE: () => EQUIP2_FX // 診断用(probe_chain.js: 装備(b)鎖の切断リンク検査)
+  EQUIP2_FX_TABLE: () => EQUIP2_FX, // 診断用(probe_chain.js: 装備(b)鎖の切断リンク検査)
+  // 測定用(2026-07-27 pace_parity_qa): sim の「今の生産」と「直送収入の合計」を外から読む。
+  // 経済は変えない(読み出しの口を開けるだけ)。実機と同じ購入内容にしたときの収入を突き合わせて、
+  // sim と実機の到達ペース差を「模型の弱さ」と「parity破れ」に分解するために使う。
+  computeProd,
+  // 測定用: 設備ごとの直接生産(系列ボーナス前)を id→値 で返す。sim と実機のどの設備で桁が違うかを見る。
+  upgradeContribs: (sim) => { sim._contribOut = {}; computeProd(sim); const out = sim._contribOut; sim._contribOut = null; return out; },
+  directAllOf: (sim) => {
+    const prod = computeProd(sim);
+    const dirBase = prod.cps; // 実tickは clickEV×tapRate も足すが、比較は放置時(タップ0)の形で見る
+    return equipDirectIncome(sim, dirBase, prod) + goldenDirectIncome(sim, dirBase)
+      + huntDirectIncome(sim, goldenRateValue(sim, prod)) + tapDirectIncome(sim, dirBase, prod)
+      + bankDirectIncome(sim, dirBase, prod);
+  }
 };
