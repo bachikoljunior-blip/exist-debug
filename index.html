@@ -10593,7 +10593,7 @@ function renderWorkshop() {
       <button class="item ${wsSub === "dish" ? "tabSel" : ""}" data-wssub="dish" style="width:auto;padding:6px 14px">料理</button>
     </div>` : "";
   const dishSection = workshopTabUnlocked()
-    ? `<div class="infoBox"><h3>料理(時限バフ・最大${MAX_ACTIVE_DISHES}品)</h3>${dishCards || `<div class="desc">素材を集めるとレシピが並ぶ</div>`}</div>`
+    ? `<div class="infoBox"><h3>料理(時限バフ・最大${MAX_ACTIVE_DISHES}品)</h3>${dishCards || `<div class="desc">素材を集めるとレシピが並ぶ。落ちる素材はステージごとに違う(クッキー左右の矢印で解放済みステージへ移動できる)。オーバーキル・ノルマの余裕・金ブースト中の撃破では別の素材が落ちる</div>`}</div>`
     : `<div class="infoBox"><h3>料理</h3><div class="desc">スキル「素材の嗅覚」を取得すると解放される</div></div>`;
   box.innerHTML = equipTopBar + subBar + (wsSub === "equip"
     ? `${craftSection}

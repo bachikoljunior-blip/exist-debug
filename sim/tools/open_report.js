@@ -12,7 +12,7 @@ if(CUT>0)ops=ops.slice(0,CUT);
 const MAXENT=Number(process.env.MAXENT||120);
 let TOTAL=0; // 間引き前の総操作数(表示を嘘にしないため保持)
 if(!process.env.KEEPALL && ops.length>MAXENT){
-  const must=/守護ボス|を解放|^転生|^スキル|^研究|^装備|^料理|^注文|座って狩る|狩ったが倒せない|^離席|タイトル|周回を開始/;
+  const must=/守護ボス|を解放|^転生|^スキル|^研究|^装備|^料理|^注文|座って狩る|素材を集める|素材が足りない|最前線|狩ったが倒せない|^離席|タイトル|周回を開始/;
   const seen=new Set(); const keep=new Array(ops.length).fill(false);
   ops.forEach((o,i)=>{ const key=o.op.replace(/\(.*/,'').replace(/[0-9]+/g,'N');
     if(must.test(o.op)){keep[i]=true;return;}          // 山は全部残す

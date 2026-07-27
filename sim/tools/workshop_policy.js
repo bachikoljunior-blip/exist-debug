@@ -74,4 +74,43 @@ async function installWorkshopPolicy(page, opt) {
   return cfg;
 }
 
-module.exports = { installWorkshopPolicy };
+// 足りない素材のために前のステージへ戻る判断(2026-07-27)。
+// 実測: 工房(素材の嗅覚)が開くのは初転生後で、そのときプレイヤーはステージ2以降にいる。素材ドロップは
+// workshop_1 より前は一切起きないので、ステージ1の素材(バター・小麦粉)を1つも持っていない。
+// 料理7品はすべて前のステージ側の素材を要求するため、**開いた時点で1品も作れない**(全品未開示)。
+// 実プレイヤは「作りたいものがあるから素材のあるステージへ戻る」ので、その行動を入れる。
+// 戻り先は「まだ見ていない料理素材が落ちる最小のステージ」。矢印移動と同じ moveStageBy 経路を使う。
+async function installGatherPolicy(page) {
+  await page.evaluate(() => {
+    window.__gatherStage = function () {
+      try {
+        if (typeof workshopTabUnlocked !== 'function' || !workshopTabUnlocked()) return 0;
+        if (DISHES.filter(dishRecipeRevealed).length > 0) return 0; // 1品でも開示済みなら戻る動機はない
+        const need = new Set();
+        for (const d of DISHES) for (const k in d.cost) if (!materialSeen(k)) need.add(k);
+        if (!need.size) return 0;
+        let best = 0;
+        for (const s of Object.keys(STAGE_MATERIALS).map(Number).sort((a, b) => a - b)) {
+          if (s > maxUnlockedStageNo()) continue;
+          const drops = new Set(Object.values(STAGE_MATERIALS[s]));
+          if (s === 1) drops.add('flour'); // S1の通常種が30%で落とす
+          if (FERMENT_MATERIAL[s]) drops.add(FERMENT_MATERIAL[s]);
+          if (OVERKILL_RARE[s]) drops.add(OVERKILL_RARE[s]);
+          if ([...drops].some(id => need.has(id))) { best = s; break; }
+        }
+        return best;
+      } catch (e) { return 0; }
+    };
+    window.__travelStage = function (to) {
+      try {
+        const cur = currentStageNo();
+        if (!to || to === cur) return cur;
+        const dir = to > cur ? 1 : -1;
+        for (let n = 0; n < 12 && currentStageNo() !== to; n++) moveStageBy(dir);
+        return currentStageNo();
+      } catch (e) { return 0; }
+    };
+  });
+}
+
+module.exports = { installWorkshopPolicy, installGatherPolicy };

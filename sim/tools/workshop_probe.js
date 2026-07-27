@@ -14,18 +14,23 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   await p.click('#titleStartBtn').catch(() => {});
   await p.clock.runFor(800);
   const { installSkillPolicy } = require('/home/user/exist-debug/sim/tools/skill_policy.js');
-  const { installWorkshopPolicy } = require('/home/user/exist-debug/sim/tools/workshop_policy.js');
-  await installSkillPolicy(p); await installWorkshopPolicy(p);
+  const { installWorkshopPolicy, installGatherPolicy } = require('/home/user/exist-debug/sim/tools/workshop_policy.js');
+  await installSkillPolicy(p); await installWorkshopPolicy(p); await installGatherPolicy(p);
   // 転生してスキルを取る(工房まで届くのは pt_probe で実測済み)
   const sk = await p.evaluate(() => {
     state.runCookies = 1e11; state.cookies = D(1e11); state.prestigeUnlockedEver = true;
     prestigeReset();
     const got = window.__takeSkillsSmart();
-    try { state.stage = 1; if (typeof closeStageChoiceScreen === 'function') closeStageChoiceScreen();
+    state.stageUnlocked = 2;
+    try { state.stage = 2; if (typeof closeStageChoiceScreen === 'function') closeStageChoiceScreen();
       if (typeof beginRunAfterSkills === 'function' && state.awaitingSkillChoice) beginRunAfterSkills(); } catch (e) {}
     return { got, ws: workshopTabUnlocked(), craft: workshopCraftUnlocked() };
   });
   console.log(`スキル${sk.got.length}個 / 工房=${sk.ws} 作成=${sk.craft}`);
+  // 素材集めの帰省: いまステージ2で、料理素材(バター/小麦粉)を1つも持っていない状態から
+  const g0 = await p.evaluate(() => ({ gs: window.__gatherStage(), cur: currentStageNo(), revealed: DISHES.filter(dishRecipeRevealed).length }));
+  console.log('帰省判断: 行き先=ステージ' + g0.gs + '(今=' + g0.cur + ' 開示済み料理=' + g0.revealed + ')');
+  if (g0.gs > 0) { const to = await p.evaluate((n) => window.__travelStage(n), g0.gs); console.log('移動後の現ステージ=' + to); }
   // 少し設備を建てて火力を作り、狩って素材を集める
   await p.evaluate(() => { state.cookies = D(1e9); for (let i = 0; i < 40; i++) { try { buyUpgrade('grandma'); buyUpgrade('finger'); } catch (e) {} } });
   const rounds = Number(process.env.ROUNDS || 12);

@@ -72,8 +72,9 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   const BUYCFG = await installBuyPolicy(p, process.env.TPS_EFF?undefined:{tps:TPS_SELF*DUTY_HI});
   const { installSkillPolicy } = require('./skill_policy.js');
   await installSkillPolicy(p); // スキルの選び方(共有・実プレイヤー基準)
-  const { installWorkshopPolicy } = require('./workshop_policy.js');
+  const { installWorkshopPolicy, installGatherPolicy } = require('./workshop_policy.js');
   await installWorkshopPolicy(p); // 工房の行動(共有・実プレイヤー基準)
+  await installGatherPolicy(p);   // 足りない素材のために前のステージへ戻る判断
   console.log(`買い方: ${BUYCFG.policy}(タップ${TPS_SELF}/s×稼働${DUTY_HI}・最初の${ACTIVE_SEC}秒は実クロック→以降は離席${AWAY_H}h+${ACTIVE_WIN}s遊ぶの繰り返し)`);
 
   const L=[]; let shotN=0;
@@ -176,8 +177,20 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     // 狩り判断(2026-07-26 ユーザー指示A): 次のステージが「討伐クエストの残り」だけで開くなら座って狩る。
     // 離席中は湧きが起きない=討伐は1体も進まないので、離れるのは進行の放棄にあたる。
     // 守護ボス待機中は最優先(2.5秒で登場する)。狩っても実りが無い(窓で0体)ときだけ離席に戻して火力を育てる。
+    // 素材集めの帰省(2026-07-27): 作りたい料理があるのに素材が無いなら、実プレイヤは素材の落ちる
+    // ステージへ戻る。1品でも開示されたら戻る動機は消え、最前線(解放済みの最新)へ戻る=行ったきりにならない。
+    let gathering=false;
+    if(!banking){
+      const gs=await withTO('素材集めの行き先',()=>p.evaluate(()=>window.__gatherStage?window.__gatherStage():0));
+      const cur=await withTO('現ステージ',()=>p.evaluate(()=>({cur:currentStageNo(),front:maxUnlockedStageNo()})));
+      if(gs>0){ gathering=true;
+        if(gs!==cur.cur){ const to=await withTO('ステージ移動',()=>p.evaluate((n)=>window.__travelStage(n),gs));
+          await rec(`料理の素材が足りない → ステージ${to}へ戻って集める`,1); } }
+      else if(cur.cur<cur.front){ const to=await withTO('ステージ移動',()=>p.evaluate((n)=>window.__travelStage(n),cur.front));
+          await rec(`素材が揃った → 最前線のステージ${to}へ戻る`,1); } }
     const q=await questSnap();
-    const wantHunt = q.ok && !q.done && (q.boss || q.remain>0) && huntDry<2;
+    // 素材集め中は座って狩る(前ステージの湧きを倒さないと素材が落ちない)
+    const wantHunt = gathering || (q.ok && !q.done && (q.boss || q.remain>0) && huntDry<2);
     if(!banking && s.gain>0 && (s.cookies + s.cps*600) >= s.cost) banking=true;
     if(wantHunt) banking=false; // 狩り中は設備を止めない(火力=タップと毎秒生産)
     const sec=s.sec;
@@ -221,8 +234,10 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
       }
       const q2=await questSnap();
       const killed=Math.max(0,(q2.kills||0)-k0);
-      if(killed>0){ huntDry=0; await rec(`ステージ${q.st}に座って狩る(クエスト ${q2.got}/${q2.need})`,1); }
-      else { huntDry++; await rec(`ステージ${q.st}で狩ったが倒せない(火力不足=離席で育て直す)`,1); }
+      // 表示するステージは「今いるステージ」(素材集めで前へ戻っているときにクエストのステージを出すと嘘になる)
+      const hereSt=await withTO('現ステージ(表示用)',()=>p.evaluate(()=>currentStageNo()));
+      if(killed>0){ huntDry=0; await rec(gathering?`ステージ${hereSt}で料理の素材を集める(討伐${killed}体)`:`ステージ${hereSt}に座って狩る(クエスト ${q2.got}/${q2.need})`,1); }
+      else { huntDry++; await rec(`ステージ${hereSt}で狩ったが倒せない(火力不足=離席で育て直す)`,1); }
       if(q2.boss&&!q.boss)await rec('討伐ノルマ達成！守護ボスが現れる',1);
       if((q2.st||0)>(q.st||0))await rec(`守護ボス撃破！ステージ${q2.st}を解放`,1);
     } else {
