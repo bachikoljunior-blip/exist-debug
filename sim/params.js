@@ -438,7 +438,7 @@ module.exports = {
   res2: {
     // 上位設備の増幅研究7件(2026-07-27 再設計v2): 設備直送に乗る素の倍率(飽和の外)。
     // v1(投資量に加算)は飽和で①1.00〜1.06のまま落ちた。深い設備ほど係数を上げて費用の階段と揃える。
-    upperAmp: { bankVault: 0.40, moonBake: 0.45, timeLayer: 0.50, eventHorizon: 0.55,
+    upperAmp: { bankVault: 0.60, moonBake: 0.45, timeLayer: 0.50, eventHorizon: 0.55,
       cosmicConvection: 0.60, singularityFlow: 0.65, annihilationCore: 0.70 },
     comboRate: 0.03, comboWindow: 30,
     // 会心フィーバー(R35)は超会心の「時間再配分」=平均保存でゲーム側のみに実装。simは超会心を不可視に扱う(mean=1)ため
