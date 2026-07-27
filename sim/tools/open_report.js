@@ -12,7 +12,7 @@ if(CUT>0)ops=ops.slice(0,CUT);
 const MAXENT=Number(process.env.MAXENT||120);
 let TOTAL=0; // 間引き前の総操作数(表示を嘘にしないため保持)
 if(!process.env.KEEPALL && ops.length>MAXENT){
-  const must=/守護ボス|を解放|^転生|^スキル|^研究|^装備|^料理|^注文|座って狩る|素材を集める|素材が足りない|最前線|狩ったが倒せない|^離席|タイトル|周回を開始/;
+  const must=/守護ボス|を解放|^転生|^周回方針|^スキル|^研究|^装備|^料理|^注文|座って狩る|素材を集める|素材が足りない|最前線|狩ったが倒せない|^離席|タイトル|周回を開始/;
   const seen=new Set(); const keep=new Array(ops.length).fill(false);
   ops.forEach((o,i)=>{ const key=o.op.replace(/\(.*/,'').replace(/[0-9]+/g,'N');
     if(must.test(o.op)){keep[i]=true;return;}          // 山は全部残す
@@ -61,7 +61,7 @@ const kind=op=>{
   // 料理・注文は「設備」に落とすと嘘になる(離席・ステージのときと同じ取り違え)。2026-07-27 に区分を追加。
   if(/料理/.test(op))return['料理','dish'];
   if(/注文/.test(op))return['注文','ord'];
-  if(/転生/.test(op))return['転生','p']; if(/スキル/.test(op))return['スキル','s']; if(/装備/.test(op))return['装備','e'];
+  if(/周回方針/.test(op))return['方針','pol']; if(/転生/.test(op))return['転生','p']; if(/スキル/.test(op))return['スキル','s']; if(/装備/.test(op))return['装備','e'];
   if(/研究/.test(op))return['研究','r']; if(/討伐|モンスター/.test(op))return['討伐','m']; if(/金クッキー/.test(op))return['金','g'];
   if(/報酬/.test(op))return['報酬','w']; if(/金ブースト/.test(op))return['金','g']; if(/タップ/.test(op))return['タップ','t']; if(/開始/.test(op))return['開始','o'];
   // 離席/放置は「設備」に落とすと嘘になる(何も買っていない)ので独自区分にする(2026-07-26 離席モデル追加に合わせて)
@@ -92,7 +92,7 @@ const css=`:root{--bg:#F7F3EC;--panel:#FFFDF9;--ink:#241E18;--muted:#786B5C;--li
 .shot{margin:0;display:flex;justify-content:center}.shot img{width:250px;max-width:82%;height:auto;display:block;border-radius:14px;border:1px solid var(--line);box-shadow:0 2px 6px rgba(0,0,0,.12)}
 .say{min-width:0}.meta{display:flex;align-items:center;gap:9px;margin-bottom:5px}
 .tag{font-size:11px;font-weight:800;border-radius:7px;padding:2px 8px;color:#fff;line-height:1.5}
-.t-o{background:#8a7a5c}.t-t{background:#c77f2b}.t-b{background:#4f7d5a}.t-m{background:#b04a3a}.t-w{background:#9a6cae}.t-g{background:#c9a227;color:#2a2210}.t-r{background:#3f7391}.t-p{background:#7a4fae}.t-s{background:#2f8a7a}.t-e{background:#6d6a8c}.t-idle{background:#6b7a86}.t-stg{background:#c2562e;color:#fff}.t-hunt{background:#8f3f30}.t-dish{background:#a4527a}.t-ord{background:#4a6f8f}
+.t-o{background:#8a7a5c}.t-t{background:#c77f2b}.t-b{background:#4f7d5a}.t-m{background:#b04a3a}.t-w{background:#9a6cae}.t-g{background:#c9a227;color:#2a2210}.t-r{background:#3f7391}.t-p{background:#7a4fae}.t-s{background:#2f8a7a}.t-e{background:#6d6a8c}.t-idle{background:#6b7a86}.t-stg{background:#c2562e;color:#fff}.t-hunt{background:#8f3f30}.t-dish{background:#a4527a}.t-pol{background:#5d7a3f}.t-ord{background:#4a6f8f}
 .step{font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700}
 .time{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:800;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 11px;font-size:12.5px}
 .what{margin:0;font-size:18px;font-weight:750;line-height:1.35;text-wrap:balance}

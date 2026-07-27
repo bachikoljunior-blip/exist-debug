@@ -148,6 +148,21 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         if(!cheapest||s.cost<cheapest.cost)cheapest={name:s.name,cost:s.cost}; } }catch(e){}
       const shopReach={ tab:(typeof workshopTabUnlocked==='function'&&workshopTabUnlocked()),
         craft:(typeof workshopCraftUnlocked==='function'&&workshopCraftUnlocked()) };
+      // 周回方針の選択(2026-07-27): ゲームは転生後に方針選択画面を出すが、ドライバは選ばず既定の
+      // 「標準」のままだった=実況にこの決定が出ず、方針の効果も一度も使われていなかった。
+      // 実プレイヤの決め方: 次のステージが討伐で開くなら狩猟型、そうでなければ毎秒生産の焼成型。
+      let policy=null;
+      try{
+        if(typeof runPolicyUnlocked==='function'&&runPolicyUnlocked()&&!state.runPolicyChosen){
+          const qq=(typeof questProgress==='function')?questProgress():null;
+          const wantKills=!!(qq&&!qq.done);
+          policy=wantKills?'hunt':'bake';
+          state.runPolicy=policy; state.runPolicyChosen=true;
+          if(typeof closePolicyChoiceScreen==='function')closePolicyChoiceScreen();
+          if(typeof proceedToStageChoice==='function')proceedToStageChoice();
+          policy=(typeof runPolicyName==='function')?runPolicyName():policy;
+        }
+      }catch(e){}
       let started=false, stage=0;
       try{
         // 実プレイヤはクエストが進むステージ(フロンティア=最新解放)を選ぶ
@@ -155,10 +170,11 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
         if(typeof closeStageChoiceScreen==='function')closeStageChoiceScreen();
         if(typeof beginRunAfterSkills==='function'&&state.awaitingSkillChoice){ beginRunAfterSkills(); started=true; }
       }catch(e){}
-      return { got, started, stage, awaiting:!!state.awaitingSkillChoice, pt0, pt, cheapest, shopReach };
+      return { got, started, stage, awaiting:!!state.awaitingSkillChoice, pt0, pt, cheapest, shopReach, policy };
     }));
     console.log(`   転生の予算: ${res.pt0}PT → 取得${res.got.length}個で残り${res.pt}PT / 次に狙える最安=${res.cheapest?res.cheapest.name+'('+res.cheapest.cost+'PT)':'なし'} / 工房tab=${res.shopReach.tab} 作成=${res.shopReach.craft}`);
     for(const nm of res.got)await rec('スキル「'+nm+'」を取得',1);
+    if(res.policy)await rec(`周回方針「${res.policy}」を選ぶ`,1);
     if(res.started)await rec(`ステージ${res.stage}を選んで新しい周回を開始`,1);
     if(res.awaiting)console.log('   ⚠ 周回開始に失敗(awaitingSkillChoiceが残った)=時間が進まない状態');
   };
