@@ -113,6 +113,8 @@ fi
 # スキルコスト/転生PT供給が sim(判定基準)と一致しているかを静的検査(ゲームだけ旧梯子に取り残される腐り)
 if git diff --cached --name-only | grep -qE '^(index\.html|sim/(sim\.js|params\.js|rung_costs\.json))$'; then
   node "$top/sim/tools/skill_cost_parity_check.js" || exit 1
+  # 設備テーブル(cps+click)の片側更新も止める(2026-07-27: finger の base が sim だけ更新されていた)
+  node "$top/sim/tools/parity_check.js" || exit 1
 fi
 exit 0
 HOOK
