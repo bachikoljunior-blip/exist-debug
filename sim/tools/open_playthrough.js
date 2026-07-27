@@ -72,6 +72,8 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
   const BUYCFG = await installBuyPolicy(p, process.env.TPS_EFF?undefined:{tps:TPS_SELF*DUTY_HI});
   const { installSkillPolicy } = require('./skill_policy.js');
   await installSkillPolicy(p); // スキルの選び方(共有・実プレイヤー基準)
+  const { installWorkshopPolicy } = require('./workshop_policy.js');
+  await installWorkshopPolicy(p); // 工房の行動(共有・実プレイヤー基準)
   console.log(`買い方: ${BUYCFG.policy}(タップ${TPS_SELF}/s×稼働${DUTY_HI}・最初の${ACTIVE_SEC}秒は実クロック→以降は離席${AWAY_H}h+${ACTIVE_WIN}s遊ぶの繰り返し)`);
 
   const L=[]; let shotN=0;
@@ -121,60 +123,8 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
     return out;
   },{tapN,bank}));
 
-  // 工房の実プレイヤー行動(2026-07-27 ユーザー指示A「実プレイヤーの購入判断を模す」)。
-  // それまでの駆動は素材を一切使わなかった=討伐で落ちた素材が延々と積むだけで、実プレイヤなら必ずやる
-  // 「装備を作って着ける」「料理を作る」が実況に出ていなかった(P1の対象事象でもある)。
-  // 良し悪しの判断は画面に出ている実数(毎秒生産・タップ力・討伐火力)で測る=カード文面の解釈でなく実測。
-  // 伸びが小さいものは作らない(素材を残す)=実プレイヤの「まだ取っておく」判断。
-  const workshopActions=async()=>withTO('工房(装備作成/装着/料理)',()=>p.evaluate(()=>{
-    const out=[];
-    try{
-      if(typeof workshopTabUnlocked!=='function'||!workshopTabUnlocked())return out;
-      const score=()=>{
-        let cps=0,clk=0,dmg=1;
-        try{ cps=Number(currentCps().toString()); }catch(e){}
-        try{ clk=Number(baseClickPower().toString()); }catch(e){}
-        try{ dmg=Number(monsterBaseDamage())*Number(monsterDamageMultiplier(null)); }catch(e){}
-        return {cps,clk,dmg};
-      };
-      // 生産を主・火力を従で1つの伸び率にまとめる(0.6/0.25/0.15)。プレイヤは「どれが一番効くか」を
-      // だいたいこの重みで見ている(毎秒生産>タップ>討伐火力)。
-      const gain=(a,b)=>{ const r=(x,y)=>((y>0&&x>0)?(x/y):1);
-        return Math.pow(r(a.cps,b.cps),0.6)*Math.pow(r(a.clk,b.clk),0.25)*Math.pow(r(a.dmg,b.dmg),0.15); };
-      if(typeof workshopCraftUnlocked==='function'&&workshopCraftUnlocked()&&typeof equip2Items==='function'){
-        const cap=(typeof EQUIP2_CFG!=='undefined'?(EQUIP2_CFG.craftPerRunCap||5):5);
-        for(let n=0;n<cap+1;n++){
-          if((state.eq2CraftTotalThisRun||0)>=cap)break;
-          const base=score(); let best=null;
-          for(const it of equip2Items()){
-            if(!equip2CraftableNow(it)||!equip2Afford(it))continue;
-            const prev=(state.eq2Equipped||{})[it.cat]||null;
-            state.eq2Equipped[it.cat]=it.id;
-            const g=gain(score(),base);
-            state.eq2Equipped[it.cat]=prev;
-            if(!best||g>best.g)best={it,g};
-          }
-          if(!best||best.g<1.01)break; // 1%未満しか伸びないなら素材を貯める
-          const owned0=(state.eq2Owned||{})[best.it.id]||0;
-          try{ craftEquip2(best.it.id); }catch(e){}
-          if(((state.eq2Owned||{})[best.it.id]||0)<=owned0)break; // 作れなかった(周回上限など)
-          try{ equipItemToSlot(best.it.id,best.it.cat); }catch(e){}
-          out.push(['装備「'+best.it.name+'」を作成して装着(生産+'+Math.round((best.g-1)*100)+'%)',1]);
-        }
-      }
-      if(typeof DISHES!=='undefined'&&typeof cookDish==='function'){
-        for(const d of DISHES){
-          if(activeDishList().length>=MAX_ACTIVE_DISHES)break;
-          if(!dishRecipeRevealed(d)||dishActive(d.id))continue;
-          if(!canAffordMaterials(d.cost))continue;
-          const n0=activeDishList().length;
-          try{ cookDish(d.id); }catch(e){}
-          if(activeDishList().length>n0)out.push(['料理「'+d.name+'」を調理',1]);
-        }
-      }
-    }catch(e){ out.push(['(工房で例外: '+String(e.message||e).slice(0,40)+')',1]); }
-    return out;
-  }));
+  // 工房の実プレイヤー行動は workshop_policy.js の共有ルール(空き枠を埋める・実測で良くなるときだけ付け替え・料理)。
+  const workshopActions=async()=>withTO('工房(装備作成/装着/料理)',()=>p.evaluate(()=>(window.__workshopActions?window.__workshopActions():[])));
 
   // 2026-07-26 修正: スキルを取っただけでは周回が始まらない。転生後は awaitingSkillChoice で
   // プレイ画面が止まり、totalPlaySec も進まない(実走で確認: 転生後に7反復ぶんゲーム内時間が
