@@ -3747,6 +3747,8 @@ module.exports = {
   // sim と実機の到達ペース差を「模型の弱さ」と「parity破れ」に分解するために使う。
   computeProd,
   // 測定用: 設備ごとの直接生産(系列ボーナス前)を id→値 で返す。sim と実機のどの設備で桁が違うかを見る。
+  // 測定用: 出現間隔の係数(金/討伐)。効果式のparity検問で使う。
+  spawnFactors: (sim) => ({ golden: goldenSpawnFactor(sim), monster: monsterSpawnFactor(sim) }),
   // 測定用: タップ力の内訳(clickRaw=設備の加算・bankM=銀行配当・その後の全体倍率)。
   clickParts: (sim) => { sim._clickOut = {}; const prod = computeProd(sim); const out = sim._clickOut; sim._clickOut = null; return Object.assign(out, { baseClick: prod.baseClick, clickEV: prod.clickEV }); },
   // 測定用: 金相場(直送のアンカー)の内訳。
