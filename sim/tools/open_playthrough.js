@@ -264,7 +264,9 @@ const fs=require('fs'); try{fs.mkdirSync(DIR,{recursive:true});}catch(e){}
       if(killed>0){ huntDry=0; await rec(gathering?`ステージ${hereSt}で料理の素材を集める(討伐${killed}体)`:`ステージ${hereSt}に座って狩る(クエスト ${q2.got}/${q2.need})`,1); }
       else { huntDry++; await rec(`ステージ${hereSt}で狩ったが倒せない(火力不足=離席で育て直す)`,1); }
       if(q2.boss&&!q.boss)await rec('討伐ノルマ達成！守護ボスが現れる',1);
-      if((q2.st||0)>(q.st||0))await rec(`守護ボス撃破！ステージ${q2.st}を解放`,1);
+      if((q2.st||0)>(q.st||0)){ await rec(`守護ボス撃破！ステージ${q2.st}を解放`,1);
+        // 汎用の解放記録(下の s3.stageUnlocked 監視)と二重に出さない
+        unlockedSeen=Math.max(unlockedSeen,q2.st||0); }
     } else {
       const awaySec=Math.round(AWAY_H*3600);
       const got=await withTO('離席のオフライン計算',()=>p.evaluate((asec)=>{ const bc=Math.max(0,Number(baseCps().toString()));

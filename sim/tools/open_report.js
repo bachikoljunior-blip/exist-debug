@@ -33,7 +33,10 @@ const REACH=(()=>{
   const all=JSON.parse(fs.readFileSync(DIR+'/ops.json','utf8'));
   const n=re=>all.filter(o=>re.test(o.op)).reduce((s,o)=>s+(o.count||1),0);
   const parts=[];
-  const stg=n(/を解放/), boss=n(/守護ボス撃破/), pres=n(/^転生/), sk=n(/^スキル/), kills=n(/モンスターを討伐/),
+  // ステージ解放は「守護ボス撃破！ステージNを解放」と汎用の「ステージNを解放」で二重に出ることがあるので、
+  // ラベルから拾ったステージ番号の**種類数**で数える(重複を数えない)。
+  const stgSet=new Set(); for(const o of all){ const m=/ステージ(\d+)を解放/.exec(o.op); if(m)stgSet.add(m[1]); }
+  const stg=stgSet.size, boss=n(/守護ボス撃破/), pres=n(/^転生/), sk=n(/^スキル/), kills=n(/モンスターを討伐/),
     eq=n(/^装備/), dish=n(/^料理/), ord=n(/^注文を達成/), res=n(/^研究/), gold=n(/金クッキーを回収/);
   // 狩りセッション中の討伐は1ブロックにまとまる(内訳はクエスト進捗に出る)ので、
   // 「実況に単発で出た討伐数」だけを討伐として数え、進行はクエストの最終値で示す=数字を嘘にしない。
