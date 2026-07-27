@@ -6948,7 +6948,6 @@ function freshState() {
     stage: 1,
     stageUnlocked: 1,
     deepLayer: 1,
-    prevMaxQuotaStage: 0,       // 提案8: 前回周回の最高到達層(=再登坂の天井)。層の試練を新規開拓層基準へ相対化する。表示層数(maxQuotaStage)は絶対累積のまま不変更。
     prevRunCookies: D(0),       // ㉚節目解放(2026-07-25): 前周回の総生産(転生時に保存)。ステージ進出アンカーの基準
     stageAnchorIdx: 0,          // ㉚節目解放: 今周回で通過済みの進行量アンカー数(周回内変数=転生で0)
     lifeRewardCat: {},          // ㉚通算報酬カウント(golden/hunt/equipment/risk): 報酬系統ボーナスの基準。転生でリセットしない
@@ -7057,8 +7056,9 @@ function ensureState() {
   state.msTaps = Math.max(0, Math.floor(Number(state.msTaps) || 0));
   state.msResearch = state.msResearch && typeof state.msResearch === "object" ? state.msResearch : {};
   state.lastPrestigeCps = Math.max(0, Number(state.lastPrestigeCps) || 0);
-  // 提案8(第12次H): 前回周回の天井(層の試練の相対基準)。旧セーブは0補完。
-  state.prevMaxQuotaStage = Math.max(0, Math.floor(Number(state.prevMaxQuotaStage) || 0));
+  // 提案8(第12次H)の前回周回の天井 prevMaxQuotaStage は層の試練ごと廃止(2026-07-27)。旧セーブの値は捨てる。
+  delete state.prevMaxQuotaStage;
+  delete state._prevMaxStage1;
   // 提案9(第12次H)の前回周回長 prevDuration は廃止(2026-07-27 ユーザー指示)。旧セーブの値は読まずに捨てる。
   delete state.prevDuration;
   // ㉚節目解放(2026-07-25): 前周回総生産(Decimal)と今周回のアンカー通過数。旧セーブは0補完。
@@ -11470,74 +11470,16 @@ function chainProductionMultiplier() {
   return 1 + CHAIN_PROD_COEF * chainCount();
 }
 
-// ==== 層の試練(第12次D・2026-07-07 ユーザー採用 / 第12次H・提案8で新規開拓層基準へ相対化) ====
-// 層が深いほどノルマが重い。提案8: 「絶対の最高層」ではなく「前回周回の天井(prevMaxQuotaStage)+開始層を超えて
-// 新しく潜った分」にだけ効かせる。再登坂(前回天井までの登り直し)は試練ゼロ=タダで、新フロンティア開拓
-// (周回後半)で初めて試練が立ち上がる → 未達位置が後半へ移る。層数の表示(maxQuotaStage)は絶対累積のまま
-// (前回基準で1から数え直さない・ユーザー指示)。相対化するのはこの指数計算だけ。
-const QUOTA_TRIAL_COEF = 0; // 層の試練は廃止(2026-07-11 ユーザー指示「ノルマ層でノルマ加速するのやめて」。0で倍率は常に1=バッジの試練表示も消える)
-const QUOTA_TRIAL_START_LAYER = 10;
-function quotaTrialMultiplier() {
-  const floor = (state.prevMaxQuotaStage || 0) + QUOTA_TRIAL_START_LAYER;
-  return Math.pow(1 + QUOTA_TRIAL_COEF, Math.max(0, maxQuotaStage() - floor));
-}
-
-// ==== ノルマ終了(2026-07-27 ユーザー指示「ノルマ前回周回長に依存するのやめて」
-//      +「総クッキーに依存してるならそれもなし」) ====
-// 旧1(第12次H・提案9 到達連動ノルマ): 未達 = 進行比 ρ=周回内経過秒 ÷ 前回周回の長さ(prevDuration)が
-//   ρ*≈0.98 を越えた時点 → 「前回どれだけ長く遊んだか」で今回の終了時刻が決まる=撤去。
-// 旧2(同日の第1版): 目標PTに「前周回の獲得PT×1.57」を混ぜていた → 前周回の総クッキー(総生産)に
-//   依存する=ユーザー指示で撤去。持ち越しの数値は周回長・総クッキーとも一切参照しない。
-// 現: 終了 = 経過 ≥ QUOTA_END_MIN_SEC かつ 今転生した場合の獲得PT ≥ 目標PT × QUOTA_END_GAIN_FRAC
-//   目標PT = **次に取れる最安スキルの必要PT**(スキルの固定コスト表=何を取得済みかだけで決まる)。
-//   前回の周回長も、前回の総クッキーも、累計の総クッキーも見ない。周回をまたぐ数値は
-//   「どのスキルを持っているか」だけ=同じ進み方をすれば毎周回いつも同じ時点で終わる。
-// 位置の実測(sim 全16方針の軌道に本ルールを重ねた未達位置の中央値・S1/S4/S10 400h): 45%/18%/33%
-//   (旧1の前回周回長基準は82%)。速い方針ほど目標に早く届くぶん前寄りになるが、
-//   これ以上後ろへ倒すには前周回の総クッキーを持ち出すしかないため採らない(上記指示)。
-const QUOTA_END_GAIN_FRAC = 0.983; // sim params.quota.reachGainFrac と同期
-const QUOTA_END_MIN_SEC = 1176;    // 時間下限=sim の周回下限 1200×0.98 と同期(これより前は基礎ノルマ側が効く)
-const QUOTA_END_MAX_SEC = 7200;    // 保険の上限(sim の周回上限)。目標に届かない周回で無限に伸びるのを防ぐ
-// QoL/解析系ノード(はしごを消費しない「おまけ価格」)は「次の1個」の基準にしない=sim の isUtilitySkill と同一集合
-const QUOTA_END_UTILITY_SKILLS = new Set([
-  "golden_analysis", "hunt_analysis", "economy_analysis", "research_analysis",
-  "order_board", "reward_synergy", "reward_1", "reward_choice_2",
-  "start_1", "offline_1", "start_2", "workshop_1", "workshop_2",
-  "eqcraft_t2", "eqcraft_t3", "eqcraft_t4", "eqcraft_t5", "eqcraft_t6",
-  "click_amp", "golden_amp", "monster_amp", "auto_amp"
-]);
-
-// 次に取れる(前提を満たした未取得の)最安スキルの必要PT。おまけ価格ノードしか残っていなければその最安。
-// 取れるノードが無い(=ツリー完成)なら null。sim の cheapestNextSkillCostSim と同処方。
-function cheapestNextSkillCost() {
-  let best = Infinity;
-  let bestAny = Infinity;
-
-  for (const skill of SKILLS) {
-    if (hasSkill(skill.id)) continue;
-    if (!skill.prereqs.every(id => hasSkill(id))) continue;
-
-    const cost = Number(skill.cost) || 0;
-    if (cost < bestAny) bestAny = cost;
-    if (!QUOTA_END_UTILITY_SKILLS.has(skill.id) && cost < best) best = cost;
-  }
-
-  if (best !== Infinity) return best;
-  return bestAny !== Infinity ? bestAny : null;
-}
-
-// ノルマ終了の理由。前回の周回長にも前回/累計の総クッキーにも依存しない=
-// 「経過」と「この周回の稼ぎ」と「次に取れる最安スキルの固定コスト」だけで決まる。
-// "goal"=目標PTに到達(通常の終わり方) / "cap"=保険の上限 / ""=継続。
-function quotaEndReason(elapsed) {
-  if (elapsed >= QUOTA_END_MAX_SEC) return "cap";
-  if (elapsed < QUOTA_END_MIN_SEC) return "";
-
-  const target = cheapestNextSkillCost();
-  if (target === null || target <= 0) return ""; // ツリー完成=目標が無い周回は基礎ノルマだけで判定する
-
-  return prestigeGain() >= target * QUOTA_END_GAIN_FRAC ? "goal" : "";
-}
+// ==== ノルマは経過秒でのみ変化する(2026-07-27 ユーザー指示) ====
+// 必要ノルマ = 経過秒だけの関数(monsterQuotaRequiredAtElapsed)。未達 = 今周回の総生産がそれに届かないこと。
+// 経過秒以外を見ていた終了条件・修飾はすべて撤去した:
+//   ・到達連動ノルマ(第12次H・提案9): ρ=周回内経過秒 ÷ 前回周回の長さ → **前回の周回長に依存**=撤去
+//   ・目標PT基準(獲得予定PT ≥ 次スキル最安 / 前周回の獲得PT×1.57) → **総クッキー・取得スキルに依存**=撤去
+//   ・層の試練(第12次D・提案4 / 第12次H・提案8): 層が深いほどノルマが重い → **到達層(総クッキー由来)に依存**=撤去
+//     (QUOTA_TRIAL_COEF=0 で既に休眠していた機構。式ごと消してノルマを経過秒の純関数にする)
+// 残るのは「プレイヤーが取ったもの」による必要量の軽減だけ: ノルマ管理(スキル+研究3種=quotaControlMultiplier)・
+// 重力圧縮(必要ノルマ×0.9982^BH数を周回1回)・霜降りケーキ/装備のノルマ減速(ノルマ時計の進みを遅くする)。
+// これらは図鑑に効果として書かれている取得物なので残置(不要ならここを消すだけで純粋な時間関数になる)。
 
 function monsterQuotaRequiredAtElapsed(seconds) {
   const s = Math.max(0, Number(seconds) || 0);
@@ -11558,7 +11500,7 @@ function monsterQuotaRequiredAtElapsed(seconds) {
     + 2.20 * Math.pow(Math.max(0, (s - 600) / 240), 2.25)
     + 9.00 * Math.pow(Math.max(0, (s - 840) / 300), 2.65);
 
-  return Math.max(1, Math.floor((base * wall * quotaTrialMultiplier()) / quotaControlMultiplier()));
+  return Math.max(1, Math.floor((base * wall) / quotaControlMultiplier()));
 }
 
 function monsterQuotaRequired() {
@@ -11600,18 +11542,9 @@ function checkQuotaState() {
   const quota = monsterQuotaRequired();
   const elapsed = quotaElapsedSeconds();
 
-  // 基礎ノルマ(層ゲージと同じ時間の関数)に今周回の総生産が届かなければ未達。
+  // 未達判定はこれだけ: 経過秒のノルマに今周回の総生産が届かなければ終了。
   if (quota !== null && quota > 0 && state.runCookies.lt(quota)) {
     failQuota("ノルマ終了：この周回のモンスターチャンス終了");
-    return;
-  }
-
-  // ノルマ終了(2026-07-27): 旧ρ判定(前回周回長が分母)の置き換え。転生の一歩手前で終了する。
-  const endReason = quotaEndReason(elapsed);
-  if (endReason) {
-    failQuota(endReason === "goal"
-      ? "ノルマ終了：目標PTに到達(この周回のモンスターチャンス終了)"
-      : "ノルマ終了：この周回のモンスターチャンス終了");
     return;
   }
 
@@ -11780,9 +11713,6 @@ function renderQuota() {
     return;
   }
 
-  // 層の試練(第12次D): 深い層に達した周回だけ倍率を表示(未到達の間は情報を出さない)
-  const trialMul = quotaTrialMultiplier();
-  const trialText = trialMul > 1 ? ` 試練 ×${trialMul >= 100 ? fmt(Math.round(trialMul)) : trialMul.toFixed(1)}` : "";
 
   // 表記は最小限に。1行の要約＋ゲージのみ(クッキー画像を大きく見せるため)。層はゲージ上のバッジで示す。
   // ゲージ下の補足テキスト(先行秒数・連鎖・説明文)は出さない(2026-07-11 ユーザー指示)。
@@ -11792,7 +11722,7 @@ function renderQuota() {
     </div>
     <div class="quotaGauge ${underTarget ? "quotaUnderTarget" : "quotaOverTarget"}" aria-label="モンスター生成ノルマ ${fmt(run)} / ${fmt(gaugeQuota)}">
       ${layerHtml}
-      <div class="quotaStageBadge" title="現在のノルマ層">第<span class="quotaStageNumber">${stageDisplay.stage}</span>層${trialText}</div>
+      <div class="quotaStageBadge" title="現在のノルマ層">第<span class="quotaStageNumber">${stageDisplay.stage}</span>層</div>
     </div>
   `;
 }
@@ -15608,10 +15538,7 @@ function prestigeReset() {
   const keepRevealedEver = { ...(state.revealedEver || {}) };
   const keepLastRevealAt = Number(state.lastRevealAt) || 0;
   // 実績研究: トリガは「その周回だけ」(2026-07-11)=カウンタも購入状態も転生でリセット(持ち越さない)
-  // 提案8(第12次H): 今周回の天井を次周回の層の試練の相対基準として持ち越す。表示層数は絶対累積のまま。
-  // 層の試練の天井持ち越し=直近2周回のmax(R3・trialFloorRuns=2相当・sim同期)
-  const keepPrevMaxQuotaStage = Math.max(maxQuotaStage(), Math.floor(Number(state._prevMaxStage1) || 0));
-  const keepPrevMaxStage1 = maxQuotaStage();
+  // 提案8(第12次H)の天井持ち越し(prevMaxQuotaStage)は層の試練ごと廃止(2026-07-27)。
   // 提案9(第12次H)の周回長の持ち越し(prevDuration)は廃止(2026-07-27 ユーザー指示
   // 「ノルマ前回周回長に依存するのやめて」)。ノルマ終了は今周回の経過と稼ぎだけで決まる。
   // ㉚節目解放(2026-07-25): 前周回総生産=この周回のrunCookiesを保存(次周回のステージ進出アンカーの基準)
@@ -15664,8 +15591,6 @@ function prestigeReset() {
   state.revealedEver = keepRevealedEver;
   state.lastRevealAt = keepLastRevealAt;
   state.lastPrestigeCps = keepLastPrestigeCps;
-  state.prevMaxQuotaStage = keepPrevMaxQuotaStage;
-  state._prevMaxStage1 = keepPrevMaxStage1;
   state.prevRunCookies = keepPrevRunCookies; // ㉚節目解放: 前周回総生産(stageAnchorIdxはfreshStateで0=周回内変数)
   state.everUpgrades = keepEverUpgrades;
   state.everResearch = keepEverResearch;

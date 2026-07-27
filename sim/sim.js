@@ -421,7 +421,6 @@ function newSim(strategy, opts) {
     t: 0,                       // 総経過秒
     // 永続
     prestige: 0, prestigeTotal: 0, prestigeRuns: 0, totalCookies: 0, lastPrestigeCps: 0,
-    prevMaxStage: 0,            // 提案8: 前回周回の最高到達層(=再登坂の天井)。層の試練を新規開拓層基準へ相対化するのに使う。層数の表示・カウント(run.maxStage)は絶対累積のまま不変更。
     skills: {},
     everUpgrade: {}, everResearch: {}, everStage: {},
     unlockEvents: [],           // {t, kind, id}
@@ -1458,17 +1457,10 @@ function quotaAtElapsed(sim, s) {
     + q.w1 * Math.pow(Math.max(0, (s - q.w1T) / q.w1D), q.w1P)
     + q.w2 * Math.pow(Math.max(0, (s - q.w2T) / q.w2D), q.w2P)
     + q.w3 * Math.pow(Math.max(0, (s - q.w3T) / q.w3D), q.w3P);
-  // 層の試練(第12次D・提案4採用 / 第12次H・提案8で新規開拓層基準へ相対化): 層が深いほどノルマが重い。
-  // 提案8: 「絶対の最高層」ではなく「前回周回の天井(prevMaxStage)+trialStartLayer を超えて新しく潜った分」に
-  // だけ効かせる。再登坂(前回天井までの登り直し)は試練ゼロ=タダで、新フロンティア開拓(周回後半)で初めて
-  // 試練が立ち上がる → 未達位置が後半へ移り、速い方針も後半に新層を開けば未達する。層数の表示(run.maxStage)は
-  // 絶対累積のまま(前回基準で1から数え直さない・ユーザー指示)。相対化するのはこの指数計算だけ。
-  const trialFloor = (sim.prevMaxStage || 0) + (q.trialStartLayer || 0);
-  const trial = q.trialCoef
-    ? Math.pow(1 + q.trialCoef, Math.max(0, sim.run.maxStage - trialFloor))
-    : 1;
+  // 層の試練(第12次D・提案4 / 第12次H・提案8)は撤去(2026-07-27 ユーザー指示「ノルマは経過秒でのみ変化」)。
+  // 到達層=総クッキー由来の量なのでノルマの式には入れない。ゲーム(index.html)も同時に撤去済み。
   const frost = (wsBuffActive(sim, 'frostCake') ? P.ws.fx.frostGauge : 1) * (1 - equip2Fx(sim).quotaSlow); // 新装備: ノルマ減速系(盾)+霜降りケーキ
-  return Math.max(1, Math.floor((base * wall * trial * frost) / quotaControlMultiplier(sim)));
+  return Math.max(1, Math.floor((base * wall * frost) / quotaControlMultiplier(sim)));
 }
 function monsterQuotaRequired(sim) {
   const r = sim.run;
@@ -3111,15 +3103,9 @@ function doPrestige(sim) {
   sim.runs[sim.runs.length - 1].skillIds = bought;
   sim._fx = {}; sim._fxHas = {}; sim._stT = -1; sim._bkT = -1;
 
-  // 提案8: 今周回の天井を持ち越す(次周回の層の試練の相対基準)。表示層数は絶対累積のまま。
-  // 平滑化(第12次R2続き・T1 S10対策): trialFloorRuns=2なら直近2周回のmax。S10は軽い周回(深層)と
-  // 重い周回(浅層150-250m=T1超過)の交互振動を作る=重い周回にも前々回の高い天井(試練フリー帯)を
-  // 残して軽い周回の挙動へ収束させる。1(既定相当)=従来どおり前回のみ。
-  const tfr = (P.quota.trialFloorRuns || 1);
-  sim.prevMaxStage = tfr >= 2 ? Math.max(r.maxStage, sim._prevMaxStage1 || 0) : r.maxStage;
-  sim._prevMaxStage1 = r.maxStage;
-  // 提案9の周回長持ち越し(prevDuration とそのEMA平滑化)は撤去(2026-07-27 ユーザー指示
-  // 「ノルマ前回周回長に依存するのやめて」)。未達は転生準備の進み(gain基準)だけで決まるため不要。
+  // 提案8の天井持ち越し(prevMaxStage)は層の試練ごと撤去、提案9の周回長持ち越し(prevDuration)も撤去
+  // (2026-07-27 ユーザー指示「ノルマ前回周回長に依存するのやめて」「ノルマは経過秒でのみ変化」)。
+  // ノルマは経過秒の関数だけになったので、周回をまたいで持ち越す量はどちらも要らない。
 
   // 新周回
   sim.run = newRun(sim);
@@ -3496,7 +3482,6 @@ function takeSnapshot(sim) {
   return structuredClone({
     t: sim.t, prestige: sim.prestige, prestigeTotal: sim.prestigeTotal,
     prestigeRuns: sim.prestigeRuns, totalCookies: sim.totalCookies,
-    prevMaxStage: sim.prevMaxStage,
     everMs: sim.everMs || {}, lastPrestigeCps: sim.lastPrestigeCps || 0,
     skills: sim.skills, rotIdx: sim.rotIdx, upRotIdx: sim.upRotIdx, goldenAlt: sim.goldenAlt,
     firstResearchBuy: sim.firstResearchBuy, firstPerk: sim.firstPerk, firstStageBuy: sim.firstStageBuy,
@@ -3511,7 +3496,6 @@ function replayRun(strategy, snap, opts, capSec) {
   const s = structuredClone(snap);
   sim.t = s.t; sim.prestige = s.prestige; sim.prestigeTotal = s.prestigeTotal;
   sim.prestigeRuns = s.prestigeRuns; sim.totalCookies = s.totalCookies;
-  sim.prevMaxStage = s.prevMaxStage || 0;
   sim.everMs = s.everMs || {}; sim.lastPrestigeCps = s.lastPrestigeCps || 0;
   sim.skills = s.skills; sim.rotIdx = s.rotIdx; sim.upRotIdx = s.upRotIdx; sim.goldenAlt = s.goldenAlt;
   sim.firstResearchBuy = s.firstResearchBuy; sim.firstPerk = s.firstPerk; sim.firstStageBuy = s.firstStageBuy;

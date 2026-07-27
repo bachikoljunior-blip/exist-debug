@@ -1,6 +1,13 @@
 // 提案8の係数掃引: params の trialCoef/trialStartLayer を実行時に差し替え、全方針で
 // T3a(未達が先)の full/full と未達位置中央値を測る。目標: 全方針で T3a=満点かつ位置が50〜100%。
 // 各点ごとに結果を OUT ファイルへ追記(進捗が見える・バッファ消失しない)。
+// 【廃止 2026-07-27】この掃引の対象(層の試練 trialCoef/trialStartLayer)はユーザー指示
+// 「ノルマは経過秒でのみ変化」で機構ごと撤去済み(params からキーも削除)。走らせても何も変わらない(記録として残置)。
+if (!process.env.RUN_OBSOLETE) {
+  console.log('[廃止] 層の試練は撤去済み(2026-07-27)。この掃引は何も変えません。RUN_OBSOLETE=1 で強制実行。');
+  process.exit(0);
+}
+
 const fs = require('fs');
 const P = require('./params.js');
 const G = require('./sim.js');
