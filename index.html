@@ -10682,9 +10682,10 @@ function cpsSkillMultiplier() {
 function goldenMultiplier() {
   const category = rewardCategoryBonus("golden");
   const policy = runPolicyIs("golden") ? 0.18 : 0;
-  const gpLv = Math.max(0, state.perks.goldenPower) / (1 + Math.max(0, state.perks.goldenPower) / 60);
+  // sim goldenMultiplierVal と同値(2026-07-27 片側parity修復: ゲームだけ 基礎2.1・Lv0.25・飽和あり の旧値)
+  const gpLv = Math.max(0, state.perks.goldenPower);
   // 香料圧搾機: 金ブースト倍率×(1+0.04×Lv)
-  return (2.1 + gpLv * 0.25 + skillEffect("goldenPower") + category + policy)
+  return (2.6 + gpLv * 0.45 + skillEffect("goldenPower") + category + policy)
     * (1 + 0.04 * equipLv("pressExtractor")) * equip2Fx().goldenBoostMul; // 新装備: 金ブースト系
 }
 
@@ -11175,6 +11176,21 @@ function globalResearchMultiplier() {
   if (state.research.antimatterRecipe) m *= antimatterRecipeMultiplier();
   m *= galaxyDivisionBonus(); // 銀河分業 段階2: 編成ボーナス
 
+  // 研究連動の全生産倍率(sim P.resGlobal と同値・2026-07-27 片側parity修復)。
+  // 対応研究を持っている間だけ立つ一律倍率と、段階3(および月面段2)の底上げ。
+  // ゲーム側にはこのブロックが丸ごと無く、同じ盤面での毎秒生産が sim の 0.80 倍になっていた
+  // (研究全体倍率 sim 1.2874 / 実機 1.0300 = 異世界接続網の ×1.25 が抜けていた)。
+  if (state.research.portalNetwork) m *= 1.25;
+  if (state.research.galaxyAssembly) m *= 1.25;
+  if (state.research.quantumProofing) m *= 1.25;
+  if (resStage3("portalNetwork")) m *= 1.06;
+  if (resStage3("galaxyAssembly")) m *= 1.06;
+  if (resStage3("factoryNetwork")) m *= 1.06;
+  if (resStage3("ovenBatch")) m *= 1.06;
+  if (resStage3("spiceBlend")) m *= 1.06;
+  if (resStage3("fingerTechnique")) m *= 1.08;
+  if (resStage2("moonGlobalYeast")) m *= 1.06;
+
   return m;
 }
 
@@ -11217,9 +11233,15 @@ function monsterDamageMultiplier(mon) {
 
 function goldenAmountMultiplier() {
   const msG = msMulOf("golden"); // 実績研究(金運)
-  const gaLv = Math.max(0, state.perks.goldenAmount) / (1 + Math.max(0, state.perks.goldenAmount) / 45);
+  // 報酬Lvの飽和は撤廃済み(sim satLv=恒等・2026-07-08)。ゲームだけ ÷(1+Lv/45) の旧飽和が残っていた。
+  const gaLv = Math.max(0, state.perks.goldenAmount);
+  // 金報酬トリオ+獣の匂い+金力は「即時獲得量」へ相乗り(sim goldenAmountMultiplier と同係数・2026-07-27 移植)
+  const p = state.perks || {};
+  const trio = Math.max(0, p.goldenChain || 0) * 0.5 + Math.max(0, p.goldenTarget || 0) * 0.9
+    + Math.max(0, p.goldenFirstHit || 0) * 0.7 + Math.max(0, p.beastScent || 0) * 0.3
+    + Math.max(0, p.goldenPower || 0) * 1;
   // ステージ補正: チョコレート火山は金クッキー獲得×1.10
-  return (1 + gaLv * 0.45 + skillEffect("goldenAmount") + rewardCategoryBonus("golden") + (runPolicyIs("golden") ? 0.10 : 0))
+  return (1 + gaLv * 0.45 + skillEffect("goldenAmount") + rewardCategoryBonus("golden") + (runPolicyIs("golden") ? 0.10 : 0) + trio)
     * (currentStageInfo().goldenGainMul || 1) * msG;
 }
 
@@ -11791,7 +11813,9 @@ const DIRECT_CFG = {
   golden: { coef: 0.15, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 10, otherMul: { click: 0.3, balanced: 0.3, hunt: 0.3, default: 1 } },
   hunt:   { coef: 0.15, stagePow: 0.5, countPow: 1.4, ref: 30,  startStage: 5, satMax: 12, otherMul: { click: 0.08, balanced: 0.22, golden: 0.9, default: 0.3 }, peddlerFrac: 0.06, rateBonus: 0.45, rateHalf: 25 },
   tap:    { coef: 0.01, stagePow: 0.5, countPow: 2,   ref: 20,  startStage: 5, clickBonus: 5.6, clickBonusLate: 31, satMax: 150, satMaxLate: 3700, anchorGolden: 0.5, stallFrac: 0.05, otherMul: { golden: 0.6, balanced: 8.0, default: 1 } },
-  bank:   { coef: 0.42, ownRate: 0.5, savedCoef: 0.05, clickBonus: 2.8, countCoef: 0.9, countPow: 1.8, ref: 150, anchorGolden: 0.12, otherMul: 0.5 }
+  // sim P.bankDirect と同値(2026-07-27 片側parity修復: ゲームだけ coef 0.42 / clickBonus 2.8 の旧値で、
+  // 同じ盤面の銀行配当が sim の1.78倍だった)
+  bank:   { coef: 0.2, ownRate: 0.5, savedCoef: 0.05, clickBonus: 1.8, countCoef: 0.9, countPow: 1.8, ref: 150, anchorGolden: 0.12, otherMul: 0.5 }
 };
 let recentTapsPerSec = 0; // 毎秒サンプラ(メインループ)で更新: 直近1秒の実タップ数
 
@@ -11815,7 +11839,8 @@ function genreDirectCps(base, invest, cfg) {
 function expectedGoldenRateCps() {
   const interval = Math.max(1, 65000 * goldenSpawnFactor() / 1000);
   const clickEV = currentClickPower() * (1 + fingerCritChance() * (fingerCritMultiplier() - 1));
-  const instant = Math.max(100, currentCps() * 2.5, clickEV * clickAnchorCoef()) * goldenAmountMultiplier() * goldenEarlyMultiplier() * equip2Fx().goldenAmtMul; // 新装備: 金獲得系
+  // 係数は sim P.golden.instantCoef=4(2026-07-27 片側parity修復: ゲームだけ 2.5 の旧値=金相場が sim の0.79倍)
+  const instant = Math.max(100, currentCps() * 4, clickEV * clickAnchorCoef()) * goldenAmountMultiplier() * goldenEarlyMultiplier() * equip2Fx().goldenAmtMul; // 新装備: 金獲得系
   const boostVal = Math.max(0, goldenMultiplier() - 1) * currentCps() * (goldenBoostDuration() / 1000);
   return (instant + boostVal) / 2 / interval;
 }
@@ -17447,7 +17472,8 @@ function hideGoldenCookie(shouldReschedule) {
 // 第0回=25タップぶん→半減期約1周回で基礎2.5へ減衰。序盤の1枚を重くし、中盤以降の稼ぎ口バランスに触れない
 function clickAnchorCoef() {
   const runs = Math.max(0, Math.floor(Number(state.prestigeRuns) || 0));
-  return 2.5 + (25 - 2.5) * Math.pow(0.5, runs / 0.98);
+  // sim clickInstantCoefEff と同値: 基礎4(=instantCoef)→序盤は40まで持ち上げ、半減 0.7×1.4=0.98周回
+  return 4 + (40 - 4) * Math.pow(0.5, runs / 0.98);
 }
 function goldenEarlyMultiplier() {
   const runs = Math.max(0, Math.floor(Number(state.prestigeRuns) || 0));

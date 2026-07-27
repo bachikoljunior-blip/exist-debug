@@ -1826,6 +1826,8 @@ function computeProd(sim) {
   let click = clickRaw * bankM * clickSkillMul * prestigeMul * globalRes * killMulAll;
   cpsRaw += (r.ms && r.ms.cpsAdd) || 0; // 効果多様化: 加算(+N/秒の固定生産)
   let cps = cpsRaw * cpsSkillMul * prestigeMul * globalRes * killMulAll * killMulCps;
+  // 測定用の覗き穴(pace_parity_qa): 全体倍率の内訳。既定は未設定=何もしない・経済に影響なし。
+  if (sim._globalsOut) Object.assign(sim._globalsOut, { cpsRaw, cpsSkillMul, prestigeMul, globalRes, killMulAll, killMulCps, msCpsAdd: (r.ms && r.ms.cpsAdd) || 0 });
 
   // 指先連動(毎秒生産×係数がタップ力に乗る)は研究「指先の型」解放後のみ(2026-07-15 ユーザー訂正
   // 「タップの毎秒生産加算も最初から入ってる=治せ。研究でどこかに追加」)。研究前はタップ力=clickRaw項だけ。
@@ -3744,6 +3746,28 @@ module.exports = {
   // sim と実機の到達ペース差を「模型の弱さ」と「parity破れ」に分解するために使う。
   computeProd,
   // 測定用: 設備ごとの直接生産(系列ボーナス前)を id→値 で返す。sim と実機のどの設備で桁が違うかを見る。
+  // 測定用: 金相場(直送のアンカー)の内訳。
+  goldenRateParts: (sim) => {
+    const prod = computeProd(sim);
+    const mean = (P.golden.spawnMin + P.golden.spawnMax) / 2;
+    return {
+      interval: Math.max(1, mean * goldenSpawnFactor(sim) / 1000),
+      cpsBranch: prod.cps * P.golden.instantCoef, clickBranch: prod.clickEV * clickInstantCoefEff(sim),
+      amt: goldenAmountMultiplier(sim), early: goldenEarlyMul(sim),
+      mult: goldenMultiplierVal(sim), dur: goldenBoostDurationMs(sim) / 1000
+    };
+  },
+  // 測定用: 直送5系統の内訳(どの系統でずれているか)。経済は変えない。
+  directBreakdown: (sim) => {
+    const prod = computeProd(sim); const b = prod.cps;
+    return {
+      equip: equipDirectIncome(sim, b, prod), golden: goldenDirectIncome(sim, b),
+      hunt: huntDirectIncome(sim, goldenRateValue(sim, prod)), tap: tapDirectIncome(sim, b, prod),
+      bank: bankDirectIncome(sim, b, prod), goldenRate: goldenRateValue(sim, prod)
+    };
+  },
+  // 測定用: 全体倍率(スキル/転生/研究グローバル/討伐系)の内訳を返す。
+  globalFactors: (sim) => { sim._globalsOut = {}; computeProd(sim); const out = sim._globalsOut; sim._globalsOut = null; return out; },
   upgradeContribs: (sim) => { sim._contribOut = {}; computeProd(sim); const out = sim._contribOut; sim._contribOut = null; return out; },
   directAllOf: (sim) => {
     const prod = computeProd(sim);

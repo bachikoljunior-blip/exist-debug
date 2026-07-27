@@ -66,7 +66,7 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
   await p.click('#titleStartBtn').catch(() => {});
   await p.clock.runFor(800);
 
-  const game = await p.evaluate(({ ups, res, res2, res3, skills, stage, kills, msBought, perks, spiceBoostOn, layer }) => {
+  const game = await p.evaluate(({ ups, res, res2, res3, skills, stage, kills, msBought, perks, spiceBoostOn, cookies, layer }) => {
     // 購入内容をそのまま置く(=同じ盤面にする)。経済の式には触らない。
     for (const id in ups) state.upgrades[id] = ups[id];
     for (const id of res) state.research[id] = true;
@@ -79,6 +79,9 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
     state.perks = state.perks || {};
     for (const id in perks) state.perks[id] = perks[id];
     state.monstersDefeated = kills || 0;
+    // 所持クッキーも揃える(2026-07-27 追加): 銀行配当の貯蓄項 log1p(log10(cookies)) が効くので、
+    // 揃えないと同じ盤面にならない(実測でこの項だけずれていた)。
+    if (cookies > 0) state.cookies = D(cookies);
     if (spiceBoostOn) state.spiceBoostUntil = Date.now() + 30000;
     // ノルマ層(=生産倍率に効く)。ここを揃えないと「同じ盤面」にならない(2026-07-27 実測で追加)。
     if (layer > 1) { state.maxQuotaStage = layer; state.maxQuotaStageEver = Math.max(layer, state.maxQuotaStageEver || 1); }
@@ -95,7 +98,7 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
       direct: (typeof directIncomeTotalCps === 'function') ? num(directIncomeTotalCps()) : 0,
       missing
     };
-  }, { ups, res, res2, res3, skills, stage: run.maxStage || 1, kills: run.kills || 0, msBought, perks, spiceBoostOn, layer: Math.max(1, Math.round(prod.stage || 1)) });
+  }, { ups, res, res2, res3, skills, stage: run.maxStage || 1, kills: run.kills || 0, msBought, perks, spiceBoostOn, cookies: run.cookies || 0, layer: Math.max(1, Math.round(prod.stage || 1)) });
 
   // 設備ごとの内訳(どこで桁が違うか)。同じ台数のはずなので、比が1から外れた設備が原因の所在。
   const simContrib = S.upgradeContribs(sim);
@@ -120,6 +123,55 @@ const INDEX = process.env.GAME_INDEX || path.join(ROOT, 'index.html');
     const perUnitSim = b2 / ups[id], perUnitGame = a / ups[id];
     console.log(`    ${id.padEnd(16)} 台数${String(ups[id]).padStart(4)}  sim ${b2.toExponential(2)}  実機 ${a.toExponential(2)}  比 ${(b2 > 0 ? a / b2 : NaN).toFixed(4)}`);
     console.log(`      1台あたり: sim ${perUnitSim.toExponential(2)} / 実機 ${perUnitGame.toExponential(2)}  実機の内訳: 素値${g.value} × 個別${(g.personal || 1).toFixed(2)} × 研究${(g.research || 1).toExponential(2)} × 支援${(g.support || 1).toFixed(2)} × 熟練${(g.mastery || 1).toFixed(2)} × 実績own/sup${(g.msOwnSup || 1).toFixed(2)}`);
+  }
+
+  // 全体倍率の内訳(設備ごとが全部1.0000になったあとの残差はここにしか無い)
+  const simG = S.globalFactors(sim);
+  const gameG = await p.evaluate(() => {
+    const n = x => Number(String(x));
+    return {
+      cpsSkill: n(cpsSkillMultiplier()), prestige: n(prestigeMultiplier()), globalRes: n(globalResearchMultiplier()),
+      runRewardAll: n(runRewardAllMultiplier()), runRewardCps: n(runRewardCpsMultiplier()), bake: n(bakeCpsMultiplier()),
+      orderTemp: n(orderTempCpsMultiplier()), dish: n(dishProductionMultiplier()), equip: n(equipProductionMultiplier()),
+      msAll: n(msMulOf('all')), msCps: n(msMulOf('cps')), lineage: n(lineageBonusCps()), presence: n(presenceBonusCps()),
+      msCpsAdd: n(msCpsAdd()), rawSum: UPGRADES.reduce((a, u) => a + n(rawUpgradeCps(u)), 0)
+    };
+  });
+  const simRawSum = Object.values(simContrib).reduce((a, b) => a + b, 0);
+  console.log('  全体倍率(sim / 実機):');
+  console.log(`    スキル系 ${simG.cpsSkillMul.toFixed(4)} / ${(gameG.cpsSkill * gameG.msAll * gameG.msCps).toFixed(4)}(実機=cpsSkill×ms(all)×ms(cps))`);
+  console.log(`    転生     ${simG.prestigeMul.toFixed(4)} / ${gameG.prestige.toFixed(4)}`);
+  console.log(`    研究全体 ${simG.globalRes.toFixed(4)} / ${gameG.globalRes.toFixed(4)}`);
+  console.log(`    討伐系   ${(simG.killMulAll * simG.killMulCps).toFixed(4)} / ${(gameG.runRewardAll * gameG.runRewardCps).toFixed(4)}(実機=報酬all×報酬cps)`);
+  console.log(`    その他実機のみ: 焼成${gameG.bake.toFixed(3)} 注文${gameG.orderTemp.toFixed(3)} 料理${gameG.dish.toFixed(3)} 装備${gameG.equip.toFixed(3)}`);
+  console.log(`    加算・系列: sim cpsAdd ${simG.msCpsAdd} / 実機 cpsAdd ${gameG.msCpsAdd}・系列 ${gameG.lineage.toExponential(2)}・初台 ${gameG.presence.toExponential(2)}`);
+  console.log(`    設備合計(系列前): sim ${simRawSum.toExponential(3)} / 実機 ${gameG.rawSum.toExponential(3)} 比 ${(gameG.rawSum / simRawSum).toFixed(4)}`);
+  console.log(`    系列込みの素合計: sim ${simG.cpsRaw.toExponential(3)} / 実機 ${(gameG.rawSum + gameG.lineage + gameG.msCpsAdd).toExponential(3)} 比 ${((gameG.rawSum + gameG.lineage + gameG.msCpsAdd) / simG.cpsRaw).toFixed(4)}`);
+
+  // 直送の内訳(5系統)
+  const simD = S.directBreakdown(sim);
+  const gameD = await p.evaluate(() => {
+    const n = x => Number(String(x));
+    return { equip: n(equipDirectCps()), golden: n(goldenDirectCps()), hunt: n(huntPeddlerCps()),
+      tap: n(tapStallCps()), bank: n(bankDirectCps()), goldenRate: n(expectedGoldenRateCps()) };
+  });
+  // 金相場の内訳(直送のアンカーなのでここがずれると全直送がずれる)
+  const simGold = S.goldenRateParts(sim);
+  const gameGold = await p.evaluate(() => {
+    const n = x => Number(String(x));
+    const clickEV = n(currentClickPower()) * (1 + n(fingerCritChance()) * (n(fingerCritMultiplier()) - 1));
+    return { interval: Math.max(1, 65000 * n(goldenSpawnFactor()) / 1000), clickEV,
+      cpsBranch: n(currentCps()) * 4, clickBranch: clickEV * n(clickAnchorCoef()),
+      amt: n(goldenAmountMultiplier()), early: n(goldenEarlyMultiplier()), eq: n(equip2Fx().goldenAmtMul),
+      mult: n(goldenMultiplier()), dur: n(goldenBoostDuration()) / 1000 };
+  });
+  console.log('  金相場の内訳(sim / 実機):');
+  console.log(`    間隔 ${simGold.interval.toFixed(2)} / ${gameGold.interval.toFixed(2)} ・ cps枝 ${simGold.cpsBranch.toExponential(3)} / ${gameGold.cpsBranch.toExponential(3)} ・ click枝 ${simGold.clickBranch.toExponential(3)} / ${gameGold.clickBranch.toExponential(3)}`);
+  console.log(`    金量 ${simGold.amt.toFixed(4)} / ${gameGold.amt.toFixed(4)} ・ 序盤 ${simGold.early.toFixed(3)} / ${gameGold.early.toFixed(3)} ・ 倍率 ${simGold.mult.toFixed(3)} / ${gameGold.mult.toFixed(3)} ・ 持続 ${simGold.dur.toFixed(1)} / ${gameGold.dur.toFixed(1)}`);
+
+  console.log('  直送の内訳(sim / 実機 / 比):');
+  for (const k of ['equip', 'golden', 'hunt', 'tap', 'bank', 'goldenRate']) {
+    console.log(`    ${k.padEnd(11)} ${simD[k].toExponential(3)} / ${gameD[k].toExponential(3)} / ${(simD[k] > 0 ? gameD[k] / simD[k] : NaN).toFixed(4)}`);
   }
 
   const total = game.currentCps + game.direct;
