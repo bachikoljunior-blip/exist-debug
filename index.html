@@ -10606,11 +10606,12 @@ function renderWorkshop() {
   box.querySelectorAll("[data-dish]").forEach(btn => addTap(btn, () => cookDish(btn.dataset.dish)));
   box.querySelectorAll("[data-eq2craft]").forEach(btn => addTap(btn, () => craftEquip2(btn.dataset.eq2craft)));
   box.querySelectorAll("[data-eq2craftcat]").forEach(b => addTap(b, () => { state.eq2CraftCat = b.dataset.eq2craftcat; renderWorkshop(); }));
-  // 必要素材アイコンをタップしたら名前を表示(2026-07-13)
+  // 必要素材アイコンをタップしたら名前と入手先を表示(名前だけだった=2026-07-27に入手先を追加。
+  // レシピを見て「足りない素材が何か」は分かるのに「どこで落ちるか」が出ていなかった)
   box.querySelectorAll("[data-matinfo]").forEach(b => addTap(b, () => {
     const v = b.dataset.matinfo;
     if (v.startsWith("prev:")) { const pit = equip2ById(v.slice(5)); showInfoPopup(b, pit ? pit.name : v.slice(5)); }
-    else if (v.startsWith("mat:")) { showInfoPopup(b, matLabel(v.slice(4))); }
+    else if (v.startsWith("mat:")) { const id = v.slice(4); showInfoPopup(b, `${matLabel(id)} — 入手: ${matSourceText(id)}`); }
   }));
   // 作成する装備のアイコンをタップしたら名前+効果をアイコン近くにポップアップ表示(行には載せない)(2026-07-13)
   box.querySelectorAll("[data-eq2info]").forEach(b => addTap(b, () => {

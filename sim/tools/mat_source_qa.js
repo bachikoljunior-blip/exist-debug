@@ -30,6 +30,23 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   }));
   console.log('matSource行=' + ov.rows + ' 横はみ出し=' + ov.wide + ' body横スクロール=' + ov.bodyOver);
   await p.screenshot({ path: process.env.SHOT || '/tmp/mat_source.jpg', type: 'jpeg', quality: 62, fullPage: false });
+  // レシピ側: 必要素材アイコンのポップアップに入手先が出るか(工房タブの作成欄)
+  const pop = await p.evaluate(() => {
+    try { document.getElementById('equipOverlay').classList.remove('active'); } catch (e) {}
+    activeTab = 'workshopTab'; state.wsSubTab = 'equip';
+    try { switchTab('workshopTab'); } catch (e) {}
+    try { renderWorkshop(); } catch (e) {}
+    const b = document.querySelector('#workshopPanel [data-matinfo^="mat:"]');
+    if (!b) return { found: false };
+    b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+    b.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true }));
+    b.click();
+    const pops = [...document.querySelectorAll('.infoPopup,.popup,[class*=popup i]')].map(e => e.textContent.trim()).filter(Boolean);
+    return { found: true, matinfo: b.dataset.matinfo, pops: pops.slice(0, 3) };
+  });
+  console.log('レシピ素材ポップアップ: ' + JSON.stringify(pop));
+  await p.clock.runFor(300);
+  await p.screenshot({ path: (process.env.SHOT || '/tmp/mat_source.jpg').replace(/\.jpg$/, '_popup.jpg'), type: 'jpeg', quality: 62 });
   console.log('pageerrors=' + errs.length + (errs.length ? ' ' + errs.slice(0, 2).join(' | ') : ''));
   await b.close();
 })().catch(e => { console.error('FATAL', e.message); process.exit(1); });
