@@ -973,7 +973,7 @@ function equip2DropOre(sim, units, strength, colorTier) {
   const ws = sim.ws;
   const oreId = 'ore_t' + t;
   // 希少化: 素の5% × 強さ × レア度 + 装備の色素材ボーナス(oreAdd=投資ぶん)
-  const exp = (P.ws.drops.dropBase * (strength || 1) * matTierDrop(oreId) + equip2Fx(sim).oreAdd) * (units || 1);
+  const exp = P.ws.drops.dropBase * (strength || 1) * matTierDrop(oreId) * (1 + equip2Fx(sim).oreAdd) * (units || 1); // 一覧#2: レア度・強さを通す倍率へ(ゲーム同期)
   // ステージ署名色(R17b 2026-07-17 ユーザー指示「ノルマ層の色違いにもステージごとの特色を」):
   // 討伐ドロップの一部(stageSigFrac)は今いるステージの署名色(S1=白銀t1〜S6=紅t6)になる。
   // 色の入手が「層を進める(帯色=進行軸)」と「そのステージへ行く(署名色=場所軸)」の二軸になり、
@@ -983,7 +983,7 @@ function equip2DropOre(sim, units, strength, colorTier) {
   if (sigFrac > 0 && sigT !== t) {
     ws.mats[oreId] = (ws.mats[oreId] || 0) + exp * (1 - sigFrac);
     const sigId = 'ore_t' + sigT;
-    const sigExp = (P.ws.drops.dropBase * (strength || 1) * matTierDrop(sigId) + equip2Fx(sim).oreAdd) * (units || 1);
+    const sigExp = P.ws.drops.dropBase * (strength || 1) * matTierDrop(sigId) * (1 + equip2Fx(sim).oreAdd) * (units || 1); // 一覧#2: 同上
     ws.mats[sigId] = (ws.mats[sigId] || 0) + sigExp * sigFrac;
   } else {
     ws.mats[oreId] = (ws.mats[oreId] || 0) + exp; // 新装備: 色素材追加系
