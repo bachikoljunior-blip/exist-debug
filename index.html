@@ -16768,13 +16768,21 @@ async function signInToCloud() {
     alert("クラウド保存は現在設定されていません。");
     return;
   }
+  let sdkReady = false;
   try {
     await ensureFirebaseReady();
+    sdkReady = true;
     const provider = new firebase.auth.GoogleAuthProvider();
     await firebaseAuth.signInWithPopup(provider);
   } catch (e) {
     console.error(e);
-    alert("ログインに失敗しました。時間をおいて再度お試しください。");
+    // 失敗の理由で文面を分ける(2026-07-28 実機確認: 通信が遮断されている環境では SDK の読み込み自体が失敗し、
+    // 「時間をおいて再度お試しください」だけだと原因が分からない)。ゲーム自体はオフラインでも続けられる。
+    if (!sdkReady || (typeof navigator !== "undefined" && navigator.onLine === false)) {
+      alert("ネットワークに繋がらないため、クラウド保存にログインできませんでした。ゲームはこのまま遊べます(セーブはこの端末に保存されます)。");
+    } else {
+      alert("ログインに失敗しました。時間をおいて再度お試しください。");
+    }
   }
 }
 
