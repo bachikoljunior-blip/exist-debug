@@ -8082,7 +8082,7 @@ function msResearchCost(ms) {
   // 生涯初の取得=固定コスト表(コストのはしご)。everMs は転生を跨いで持ち越し(セーブ対象)。
   if (MS_FIRST_COST_TABLE[ms.id] != null && !((state.everMs || {})[ms.id])) return MS_FIRST_COST_TABLE[ms.id];
   // 再購入・表に無い研究=毎秒生産×15秒の量産価格(sim msCostOf rebuySec=15 と同式)
-  return Math.max(100, Math.floor(currentCps() * 15));
+  return Decimal.max(D(100), currentCps().mul(15).floor()); // 生産がDecimalなのでコストもDecimalで返す
 }
 function buyMilestone(id) {
   const ms = MILESTONE_RESEARCH.find(m => m.id === id);
@@ -8600,8 +8600,8 @@ function unitsAffordableWith(upgradeId, budget) {
 function orderNeedFor(def) {
   const limitSec = orderTimeLimitMs() / 1000;
   // 生産系(購入): 毎秒生産×制限時間×0.25 の予算で買える個数
-  if (def.id === "ovenOrder") return unitsAffordableWith("oven", currentCps() * limitSec * 0.25);
-  if (def.id === "spiceOrder") return unitsAffordableWith("spiceRack", currentCps() * limitSec * 0.25);
+  if (def.id === "ovenOrder") return unitsAffordableWith("oven", currentCps().mul(limitSec * 0.25).toNumberClamped(1e300));
+  if (def.id === "spiceOrder") return unitsAffordableWith("spiceRack", currentCps().mul(limitSec * 0.25).toNumberClamped(1e300));
   // 討伐系: 現在の出現ペース×制限時間×0.6
   if (def.id === "monsterOrder") {
     const est = 51 * monsterSpawnFactor(); // 平均出現間隔(秒)の目安
@@ -9240,10 +9240,13 @@ function equipProductionMultiplier() {
 // 初台ボーナス(㉑対策): 記録済みの初台生産のうち、その設備を所持中の分だけ合算する
 function presenceBonusCps() {
   const pb = state.presenceBonus;
-  if (!pb || typeof pb !== "object") return 0;
-  let sum = 0;
+  if (!pb || typeof pb !== "object") return D(0);
+  let sum = D(0);
   PRESENCE_UPGRADE_IDS.forEach(id => {
-    if ((state.upgrades[id] || 0) > 0) sum += Math.max(0, Number(pb[id]) || 0);
+    if ((state.upgrades[id] || 0) > 0 && pb[id] != null) {
+      const v = D(pb[id]); // 数値・文字列("1e5")・Decimal のいずれでも読める
+      if (v.gt(0)) sum = sum.add(v);
+    }
   });
   return sum;
 }
@@ -10584,33 +10587,40 @@ function masteryMultiplier(u) {
 const LINEAGE_COEF = 0.25;
 
 function lineageBonusCps() {
-  let lowerSum = 0;
-  let bonus = 0;
+  let lowerSum = D(0);
+  let bonus = D(0);
   UPGRADES.forEach(u => {
     const owned = state.upgrades[u.id] || 0;
     if (owned > 0 && UPGRADE_UNLOCK_SKILLS[u.id] && u.id !== "godFinger") {
-      bonus += owned * LINEAGE_COEF * lowerSum;
+      bonus = bonus.add(lowerSum.mul(owned * LINEAGE_COEF));
     }
-    if (u.type === "cps") lowerSum += rawUpgradeCps(u);
+    if (u.type === "cps") lowerSum = lowerSum.add(rawUpgradeCps(u));
   });
   return bonus;
 }
 
+// ==== 生産は Decimal(上限なし)で計算する(2026-07-28 ユーザー指示「生産系も無限にして」) ====
+// 以前は素の Number だったため、毎秒生産・タップ生産が約1.79e308でInfinityに飽和し、
+// D(Infinity) が 0 に潰れて「クッキーが1枚も増えない」状態になっていた(クッキー自体はDecimalで無制限)。
+// 設備寄与→合計→各倍率→最終値までを Decimal で通す。倍率関数(素のNumber)は1つずつ mul で掛ける
+// ので、途中で double の範囲を超えても情報を失わない。
+// Number前提の系(モンスターダメージ・購入台数の見積り・表示の比率など)へ渡すときだけ
+// toNumberClamped で丸める。
 function rawUpgradeContribution(u) {
   const owned = state.upgrades[u.id] || 0;
   // 星屑パフェ: 効果中に購入した分はその周回中、生産×1.25(=+25%ぶんを加算)
   const boosted = parfaitBoostedUnits(u.id);
-  return (owned + boosted * 0.25)
-    * u.value
-    * upgradePersonalMultiplier(u)
-    * researchUpgradeMultiplier(u)
-    * supportUpgradeMultiplier(u)
-    * masteryMultiplier(u)
-    * msDiverseUpgradeMul(u); // 効果多様化: 自/他設備数連動
+  return D(owned + boosted * 0.25)
+    .mul(u.value)
+    .mul(upgradePersonalMultiplier(u))
+    .mul(researchUpgradeMultiplier(u))
+    .mul(supportUpgradeMultiplier(u))
+    .mul(masteryMultiplier(u))
+    .mul(msDiverseUpgradeMul(u)); // 効果多様化: 自/他設備数連動
 }
 
 function rawUpgradeCps(u) {
-  if (u.type !== "cps") return 0;
+  if (u.type !== "cps") return D(0);
   return rawUpgradeContribution(u);
 }
 
@@ -10698,9 +10708,10 @@ function globalResearchMultiplier() {
 }
 
 function monsterBaseDamage() {
-  const p = Math.max(1, baseClickPower());
+  // モンスターのHPは素のNumberなので、ここで丸める(生産側はDecimalのまま無制限)
+  const p = Math.max(1, baseClickPower().toNumberClamped(1e300));
   // 生産火力転換(2026-07-13 ユーザー指示): モンスターダメージに毎秒生産がそのまま乗る
-  const cpsAdd = state.research.cpsStrike ? Math.max(0, currentCps()) : 0;
+  const cpsAdd = state.research.cpsStrike ? Math.max(0, currentCps().toNumberClamped(1e300)) : 0;
   return Math.max(1, Math.floor(1 + Math.sqrt(p) * 0.45 + cpsAdd));
 }
 
@@ -10904,42 +10915,42 @@ function clickProductionLinkCoefficient() {
 function productionLinkClickPower() {
   // 指先連動(毎秒生産の一部がタップ力に乗る)は研究「指先の型」解放後のみ(2026-07-15 ユーザー訂正
   // 「タップの毎秒生産加算も最初から入ってる=治せ・研究でどこかに追加」)。研究前は0=タップ設備の加算だけ。
-  if (!state.research.fingerTechnique) return 0;
+  if (!state.research.fingerTechnique) return D(0);
   const finger = state.upgrades.finger || 0;
   return baseCps()
-    * clickProductionLinkCoefficient()
-    * (1 + 0.02 * Math.sqrt(finger))
-    * clickSkillMultiplier()
-    * bankClickMultiplier();
+    .mul(clickProductionLinkCoefficient())
+    .mul(1 + 0.02 * Math.sqrt(finger))
+    .mul(clickSkillMultiplier())
+    .mul(bankClickMultiplier());
 }
 
 function baseClickPower() {
-  let v = 1;
+  let v = D(1);
 
   UPGRADES.forEach(u => {
     if (u.type === "click") {
-      v += rawUpgradeContribution(u);
+      v = v.add(rawUpgradeContribution(u));
     }
   });
 
-  v *= bankClickMultiplier();
-  v *= clickSkillMultiplier();
-  v *= prestigeMultiplier();
-  v *= globalResearchMultiplier();
-  v *= runRewardAllMultiplier();
-  v *= dishProductionMultiplier();
-  v *= equipProductionMultiplier(); // 名匠の天板
+  v = v.mul(bankClickMultiplier());
+  v = v.mul(clickSkillMultiplier());
+  v = v.mul(prestigeMultiplier());
+  v = v.mul(globalResearchMultiplier());
+  v = v.mul(runRewardAllMultiplier());
+  v = v.mul(dishProductionMultiplier());
+  v = v.mul(equipProductionMultiplier()); // 名匠の天板
 
-  v *= msMulOf("click") * msMulOf("all"); // 実績研究(タップ系・全生産系)
+  v = v.mul(msMulOf("click")).mul(msMulOf("all")); // 実績研究(タップ系・全生産系)
 
   // 案A: 従来項+生産連動項
-  v += productionLinkClickPower();
+  v = v.add(productionLinkClickPower());
 
   // 案C: 神の指1個ごとにクリック力全体×1.012(従来の加算値はそのまま残す)
-  v *= levelGrowth(state.upgrades.godFinger || 0, 0.012);
+  v = v.mul(levelGrowth(state.upgrades.godFinger || 0, 0.012));
 
   // 系列ボーナス(神の指): 1台につきクリック力×(1+25%)の線形倍率
-  v *= 1 + LINEAGE_COEF * (state.upgrades.godFinger || 0);
+  v = v.mul(1 + LINEAGE_COEF * (state.upgrades.godFinger || 0));
 
   return v;
 }
@@ -10947,42 +10958,48 @@ function baseClickPower() {
 function currentClickPower() {
   // 討伐連鎖: 倒し続けている間だけ全生産×(1+0.02×連鎖数)。基礎値(baseClickPower)には掛けない
   // (案Aの生産連動項が baseCps 経由で二重に受けないよう、最終段で一度だけ適用)
-  return baseClickPower() * goldenBoostMultiplier() * goldenAfterheatMultiplier() * challengeMultiplier() * chainProductionMultiplier() * ensembleMul * equip2Fx().allMul * equip2Fx().clickMul * equip2HoldMul(); // 新装備: 全生産+タップ系+盾(維持中)
+  return baseClickPower()
+    .mul(goldenBoostMultiplier()).mul(goldenAfterheatMultiplier()).mul(challengeMultiplier())
+    .mul(chainProductionMultiplier()).mul(ensembleMul)
+    .mul(equip2Fx().allMul).mul(equip2Fx().clickMul).mul(equip2HoldMul()); // 新装備: 全生産+タップ系+盾(維持中)
 }
 
 function baseCps() {
-  let v = 0;
+  let v = D(0);
 
   UPGRADES.forEach(u => {
-    v += rawUpgradeCps(u);
+    v = v.add(rawUpgradeCps(u));
   });
 
   // 系列ボーナス(上位設備の固有能力): 下位の直接生産×25%×台数
-  v += lineageBonusCps();
+  v = v.add(lineageBonusCps());
 
-  v += msCpsAdd(); // 効果多様化: 加算(+N/秒・研究解放で)
+  v = v.add(msCpsAdd()); // 効果多様化: 加算(+N/秒・研究解放で)
 
-  v *= cpsSkillMultiplier();
-  v *= prestigeMultiplier();
-  v *= globalResearchMultiplier();
-  v *= runRewardAllMultiplier();
-  v *= runRewardCpsMultiplier();
-  v *= bakeCpsMultiplier();
-  v *= orderTempCpsMultiplier();
-  v *= dishProductionMultiplier(); // 料理: バタークッキー生地
-  v *= equipProductionMultiplier(); // 装備: 名匠の天板
+  v = v.mul(cpsSkillMultiplier());
+  v = v.mul(prestigeMultiplier());
+  v = v.mul(globalResearchMultiplier());
+  v = v.mul(runRewardAllMultiplier());
+  v = v.mul(runRewardCpsMultiplier());
+  v = v.mul(bakeCpsMultiplier());
+  v = v.mul(orderTempCpsMultiplier());
+  v = v.mul(dishProductionMultiplier()); // 料理: バタークッキー生地
+  v = v.mul(equipProductionMultiplier()); // 装備: 名匠の天板
 
-  v *= msMulOf("all") * msMulOf("cps"); // 実績研究(全生産系・毎秒系)
+  v = v.mul(msMulOf("all")).mul(msMulOf("cps")); // 実績研究(全生産系・毎秒系)
 
   // 初台ボーナス(㉑対策): 所持中だけ効く静的加算(購入時CPS基準の固定値のため成長とともに自然消滅)
-  v += presenceBonusCps();
+  v = v.add(presenceBonusCps());
 
   return v;
 }
 
 function currentCps() {
   // 討伐連鎖: 全生産倍率は最終段で一度だけ適用
-  return baseCps() * goldenBoostMultiplier() * goldenAfterheatMultiplier() * challengeMultiplier() * chainProductionMultiplier() * ensembleMul * equip2Fx().allMul * equip2Fx().cpsMul * equip2HoldMul(); // 新装備: 全生産+毎秒系+盾(維持中)
+  return baseCps()
+    .mul(goldenBoostMultiplier()).mul(goldenAfterheatMultiplier()).mul(challengeMultiplier())
+    .mul(chainProductionMultiplier()).mul(ensembleMul)
+    .mul(equip2Fx().allMul).mul(equip2Fx().cpsMul).mul(equip2HoldMul()); // 新装備: 全生産+毎秒系+盾(維持中)
 }
 
 // ================= 直送収入システム(sim同期・第12次J〜R5: 2026-07-11 フル移植) =================
@@ -11323,64 +11340,65 @@ function directOtherMul(cfg, mainPol) {
 }
 // 直送の共通形: coef × 基準 × (投資量/ref)^countPow(satMaxで飽和) × 層^stagePow
 function genreDirectCps(base, invest, cfg) {
-  if (!cfg || !cfg.coef) return 0;
+  if (!cfg || !cfg.coef) return D(0);
   const s = Math.max(0, maxQuotaStage() - (cfg.startStage || 0));
-  if (s <= 0) return 0;
+  if (s <= 0) return D(0);
   let raw = Math.pow(Math.max(0, invest) / (cfg.ref || 1), cfg.countPow || 2);
   if (cfg.satMax > 0) raw = raw / (1 + raw / cfg.satMax);
-  return cfg.coef * base * raw * Math.pow(s, cfg.stagePow || 0.5);
+  return D(base).mul(cfg.coef * raw * Math.pow(s, cfg.stagePow || 0.5));
 }
 // 金クッキーの期待収入率(/秒): 実際の支払い式(即時50%/ブースト50%・出現間隔)から計算。直送のアンカー(金相場)に使う
 function expectedGoldenRateCps() {
   const interval = Math.max(1, 65000 * goldenSpawnFactor() / 1000);
-  const clickEV = currentClickPower() * (1 + fingerCritChance() * (fingerCritMultiplier() - 1));
-  const instant = Math.max(100, currentCps() * 2.5, clickEV * clickAnchorCoef()) * goldenAmountMultiplier() * goldenEarlyMultiplier() * equip2Fx().goldenAmtMul; // 新装備: 金獲得系
-  const boostVal = Math.max(0, goldenMultiplier() - 1) * currentCps() * (goldenBoostDuration() / 1000);
-  return (instant + boostVal) / 2 / interval;
+  const clickEV = currentClickPower().mul(1 + fingerCritChance() * (fingerCritMultiplier() - 1));
+  const instant = Decimal.max(Decimal.max(D(100), currentCps().mul(2.5)), clickEV.mul(clickAnchorCoef()))
+    .mul(goldenAmountMultiplier()).mul(goldenEarlyMultiplier()).mul(equip2Fx().goldenAmtMul); // 新装備: 金獲得系
+  const boostVal = currentCps().mul(Math.max(0, goldenMultiplier() - 1) * (goldenBoostDuration() / 1000));
+  return instant.add(boostVal).div(2 * interval);
 }
 function directBaseCps() {
-  return currentCps() + currentClickPower() * recentTapsPerSec;
+  return currentCps().add(currentClickPower().mul(recentTapsPerSec));
 }
 // 設備直送: 投資量=オーブン所持数。量産品も金相場で売れる(アンカー=max(基準, 0.15×金相場))
 function equipDirectCps() {
-  if (!(state.research.ovenBatch && resStage2("ovenBatch"))) return 0;
+  if (!(state.research.ovenBatch && resStage2("ovenBatch"))) return D(0);
   const cfg = DIRECT_CFG.equip;
   let anchor = directBaseCps();
-  if (cfg.anchorGolden > 0) anchor = Math.max(anchor, cfg.anchorGolden * expectedGoldenRateCps());
-  return genreDirectCps(anchor, state.upgrades.oven || 0, cfg) * directOtherMul(cfg, "bake");
+  if (cfg.anchorGolden > 0) anchor = Decimal.max(anchor, expectedGoldenRateCps().mul(cfg.anchorGolden));
+  return genreDirectCps(anchor, state.upgrades.oven || 0, cfg).mul(directOtherMul(cfg, "bake"));
 }
 // 金直送: 投資量=金カテゴリ報酬の所持枚数(全7種)
 function goldenDirectCps() {
-  if (!(state.research.spiceBlend && resStage2("spiceBlend"))) return 0;
+  if (!(state.research.spiceBlend && resStage2("spiceBlend"))) return D(0);
   const cfg = DIRECT_CFG.golden, p = state.perks || {};
   const inv = (p.goldenAmount || 0) + (p.goldenPower || 0) + (p.goldenRate || 0)
     + (p.goldenChain || 0) + (p.goldenTarget || 0) + (p.goldenFirstHit || 0) + (p.beastScent || 0);
-  return genreDirectCps(directBaseCps(), inv, cfg) * directOtherMul(cfg, "golden");
+  return genreDirectCps(directBaseCps(), inv, cfg).mul(directOtherMul(cfg, "golden"));
 }
 // 討伐直送(行商): 投資量=討伐カテゴリ報酬の所持枚数(全8種)。基準=金相場。図鑑で買い取り増(上限+50%)
 function huntPeddlerCps() {
   const cfg = DIRECT_CFG.hunt;
   let gateM = 1;
   if (!(state.research.portalNetwork && resStage2("portalNetwork"))) {
-    if (!hasSkill("monster_peddler")) return 0;
+    if (!hasSkill("monster_peddler")) return D(0);
     gateM = cfg.peddlerFrac;
   }
   const p = state.perks || {};
   const inv = (p.monsterDamage || 0) + (p.crackedFang || 0) + (p.beastHeatFerment || 0) + (p.huntingCore || 0)
     + (p.monsterRate || 0) + (p.monsterStay || 0) + (p.biteRecovery || 0) + (p.brandHunt || 0);
-  if (inv <= 0) return 0;
+  if (inv <= 0) return D(0);
   const almanacM = 1 + Math.min(0.05 * equipLv("monsterAlmanac"), 0.5); // モンスター図鑑: 弱点を知る=買い取り増
   // 回転ボーナス(2026-07-14 sim同期): 出現率perkは行商の在庫回転を上げる(飽和と独立・上限1.45)
   const mrLv = p.monsterRate || 0;
   const rateM = 1 + (cfg.rateBonus || 0) * mrLv / (mrLv + (cfg.rateHalf || 25));
-  return genreDirectCps(expectedGoldenRateCps(), inv, cfg) * directOtherMul(cfg, "hunt") * gateM * almanacM * rateM;
+  return genreDirectCps(expectedGoldenRateCps(), inv, cfg).mul(directOtherMul(cfg, "hunt") * gateM * almanacM * rateM);
 }
 // タップ直送(屋台): 投資量=神の指+強い指÷10。神の指登場前だけ金相場アンカー(下位投資の換金)
 function tapStallCps() {
   const cfg = DIRECT_CFG.tap;
   let gateM = 1;
   if (!(state.research.fingerTechnique && resStage2("fingerTechnique"))) {
-    if (!hasSkill("click_stall")) return 0;
+    if (!hasSkill("click_stall")) return D(0);
     gateM = cfg.stallFrac;
   }
   const inv = (state.upgrades.godFinger || 0) + (state.upgrades.finger || 0) * 0.1;
@@ -11389,24 +11407,24 @@ function tapStallCps() {
   const polM = runPolicyIs("click") ? ((lateEra ? cfg.clickBonusLate : 0) || cfg.clickBonus) : directOtherMul(cfg, "click");
   const cfgEff = (lateEra && cfg.satMaxLate) ? Object.assign({}, cfg, { satMax: cfg.satMaxLate }) : cfg;
   let anchor = directBaseCps();
-  if (cfg.anchorGolden > 0 && !lateEra) anchor = Math.max(anchor, cfg.anchorGolden * expectedGoldenRateCps());
-  return genreDirectCps(anchor, inv, cfgEff) * polM * gateM;
+  if (cfg.anchorGolden > 0 && !lateEra) anchor = Decimal.max(anchor, expectedGoldenRateCps().mul(cfg.anchorGolden));
+  return genreDirectCps(anchor, inv, cfgEff).mul(polM * gateM);
 }
 // 銀行配当(直送): 所持数(log床+累乗)×貯蓄(桁)で毎秒へ加算。クリック方針で厚い
 function bankDirectCps() {
   const cfg = DIRECT_CFG.bank;
-  if (!state.research.bankClickDividend) return 0;
+  if (!state.research.bankClickDividend) return D(0);
   const bank = state.upgrades.bank || 0;
-  if (bank <= 0) return 0;
+  if (bank <= 0) return D(0);
   let base = directBaseCps();
-  if (cfg.anchorGolden > 0) base = Math.max(base, cfg.anchorGolden * expectedGoldenRateCps());
+  if (cfg.anchorGolden > 0) base = Decimal.max(base, expectedGoldenRateCps().mul(cfg.anchorGolden));
   const saved = Math.log10(Math.max(1, state.cookies.toNumberClamped(1e300)) + 10);
   const polM = runPolicyIs("click") ? cfg.clickBonus : cfg.otherMul;
   const ownM = 1 + cfg.ownRate * Math.log10(1 + bank) + cfg.countCoef * Math.pow(bank / cfg.ref, cfg.countPow);
-  return cfg.coef * base * ownM * (1 + Math.log1p(saved) * cfg.savedCoef) * polM;
+  return base.mul(cfg.coef * ownM * (1 + Math.log1p(saved) * cfg.savedCoef) * polM);
 }
 function directIncomeTotalCps() {
-  return equipDirectCps() + goldenDirectCps() + huntPeddlerCps() + tapStallCps() + bankDirectCps();
+  return equipDirectCps().add(goldenDirectCps()).add(huntPeddlerCps()).add(tapStallCps()).add(bankDirectCps());
 }
 
 function earn(amount) {
@@ -12725,7 +12743,7 @@ function updateTopOnly() {
       cpsEl.innerHTML = `<span class="statHalf">合計毎秒 準備中</span><span class="statHalf"></span>`;
     } else {
       // ノルマゲージ上の行に、毎秒とモンスターダメージを左右の固定枠で並べて表示する
-      const cps = currentCps() + directIncomeTotalCps();
+      const cps = currentCps().add(directIncomeTotalCps());
       const dmg = monsterBaseDamage() * monsterDamageMultiplier();
       cpsEl.innerHTML = `<span class="statHalf">毎秒 ${fmt(cps)}${statDeltaText(statDeltaCps, cps, 2000)}</span>`
         + `<span class="statHalf">ダメージ ${fmt(dmg)}${statDeltaText(statDeltaDmg, dmg, 2000)}</span>`;
@@ -12759,7 +12777,7 @@ function tapCookie() {
   let critical = false;
 
   if (Math.random() < fingerCritChance()) {
-    tapPower *= fingerCritMultiplier();
+    tapPower = tapPower.mul(fingerCritMultiplier());
     critical = true;
     // 段階2: 会心コンボ(30秒途切れでリセット、上限なし)
     if (resStage2("fingerTechnique")) {
@@ -12769,7 +12787,7 @@ function tapCookie() {
     }
     // 段階3: 会心の余熱(会心のたびに毎秒生産×最高到達層比の追加獲得)
     if (resStage3("fingerTechnique")) {
-      earn(currentCps() * 0.00025 * maxQuotaStage());
+      earn(currentCps().mul(0.00025 * maxQuotaStage()));
     }
   }
 
@@ -12909,7 +12927,7 @@ function buyUpgrade(id) {
     // 初台ボーナス(㉑対策): 生涯で初めて買う1台に、購入直前の基礎CPS×0.25を静的な生産として記録
     if (PRESENCE_UPGRADE_IDS.includes(id) && (state.upgrades[id] || 0) === 0) {
       state.presenceBonus = state.presenceBonus && typeof state.presenceBonus === "object" ? state.presenceBonus : {};
-      if (state.presenceBonus[id] === undefined) state.presenceBonus[id] = PRESENCE_FIRST_UNIT_COEF * Math.max(0, baseCps());
+      if (state.presenceBonus[id] === undefined) state.presenceBonus[id] = Decimal.max(D(0), baseCps()).mul(PRESENCE_FIRST_UNIT_COEF);
     }
 
     state.upgrades[id] += 1;
@@ -14140,10 +14158,10 @@ function upgradeShopEffectRows(u, buyCount) {
 
   // 合計・増分ともに「その設備分だけ(自分の倍率のみ・他設備への相乗は含まない)」で統一する(2026-07-14 ユーザー指示)。
   // upgradeEffectiveContribution = その設備の生産ライン(所持数×単価×自分に効く倍率)。素手ぶん・他設備への波及は含まない。
-  const own = Math.max(0, upgradeEffectiveContribution(u));                              // 現在のその設備の合計生産
-  const ownAfter = Math.max(0, upgradeEffectiveContributionAtCount(u, owned + count, true)); // count台買った後
-  const total = own;                       // 合計 = その設備分だけ
-  const add = Math.max(0, ownAfter - own); // 増分 = その設備分だけ。購入後は合計がownAfterになるので必ず一致
+  const own = Decimal.max(D(0), upgradeEffectiveContribution(u));                              // 現在のその設備の合計生産
+  const ownAfter = Decimal.max(D(0), upgradeEffectiveContributionAtCount(u, owned + count, true)); // count台買った後
+  const total = own;                            // 合計 = その設備分だけ
+  const add = Decimal.max(D(0), ownAfter.sub(own)); // 増分 = その設備分だけ。購入後は合計がownAfterになるので必ず一致
   const kind = isCps ? "毎秒" : "タップ";
 
   // 追加分は「+X」、合計は「毎秒 X(タップ X)」のみを表示する
@@ -14161,15 +14179,15 @@ function upgradeEfficiencyText(u) {
   if (includeResearchEfficiency) {
     const before = upgradeEffectiveContributionAtCount(u, owned, true);
     const after = upgradeEffectiveContributionAtCount(u, owned + 1, true);
-    const add = Math.max(0.001, after - before);
-    const ratio = cost / add;
+    const add = Decimal.max(D(0.001), after.sub(before));
+    const ratio = D(cost).div(add);
     return `お得度(研究込み)：約${fmt(ratio)}クッキーで+1 — 少ないほどお得`;
   }
 
   const baseBefore = upgradeEffectiveContributionAtCount(u, owned, false);
   const baseAfter = upgradeEffectiveContributionAtCount(u, owned + 1, false);
-  const baseAdd = Math.max(0.001, baseAfter - baseBefore);
-  const baseRatio = cost / baseAdd;
+  const baseAdd = Decimal.max(D(0.001), baseAfter.sub(baseBefore));
+  const baseRatio = D(cost).div(baseAdd);
   return `お得度：約${fmt(baseRatio)}クッキーで+1 — 少ないほどお得`;
 }
 
@@ -14809,25 +14827,25 @@ function renderPrestige() {
 
 function rawUpgradeContributionForCount(u, count, includeResearch = true) {
   const owned = Math.max(0, Number(count) || 0);
-  return owned
-    * u.value
-    * upgradePersonalMultiplier(u)
-    * (includeResearch ? researchUpgradeMultiplier(u) : 1)
-    * supportUpgradeMultiplier(u)
-    * masteryMultiplier(u);
+  return D(owned)
+    .mul(u.value)
+    .mul(upgradePersonalMultiplier(u))
+    .mul(includeResearch ? researchUpgradeMultiplier(u) : 1)
+    .mul(supportUpgradeMultiplier(u))
+    .mul(masteryMultiplier(u));
 }
 
 function upgradeEffectiveContributionAtCount(u, count, includeResearch = true) {
   let v = rawUpgradeContributionForCount(u, count, includeResearch);
 
   if (u.type === "click") {
-    v *= includeResearch ? bankClickMultiplier() : 1;
+    v = v.mul(includeResearch ? bankClickMultiplier() : 1);
   }
 
-  v *= u.type === "click" ? clickSkillMultiplier() : cpsSkillMultiplier();
-  v *= prestigeMultiplier();
-  v *= includeResearch ? globalResearchMultiplier() : 1;
-  v *= challengeMultiplier();
+  v = v.mul(u.type === "click" ? clickSkillMultiplier() : cpsSkillMultiplier());
+  v = v.mul(prestigeMultiplier());
+  v = v.mul(includeResearch ? globalResearchMultiplier() : 1);
+  v = v.mul(challengeMultiplier());
 
   return v;
 }
@@ -15500,7 +15518,7 @@ function prestigeReset() {
   try { localStorage.setItem(PREREBIRTH_KEY, JSON.stringify(state)); } catch (e) {}
 
   state.cookies = state.cookies.sub(prestigeCookieCost());
-  const keepLastPrestigeCps = Number(currentCps()) || 0; // 次回コストの基準=この瞬間の毎秒生産
+  const keepLastPrestigeCps = currentCps().toNumberClamped(1e300); // 次回コストの基準=この瞬間の毎秒生産
 
   const keepTotal = state.totalCookies;
   const keepClicks = state.totalClicks;
@@ -16534,7 +16552,8 @@ function collectGoldenCookie() {
 
   if (r < 0.5) {
     const gained = earn(
-      Math.max(100, currentCps() * 2.5, currentClickPower() * clickAnchorCoef()) * goldenAmountMultiplier() * goldenEarlyMultiplier() * equip2Fx().goldenAmtMul // 新装備: 金獲得系
+      Decimal.max(Decimal.max(D(100), currentCps().mul(2.5)), currentClickPower().mul(clickAnchorCoef()))
+        .mul(goldenAmountMultiplier()).mul(goldenEarlyMultiplier()).mul(equip2Fx().goldenAmtMul) // 新装備: 金獲得系
     );
     state.codex.goldenInstant = true;
     showMessage(`金 +${fmt(gained)}${effectSuffix}`);
@@ -16907,12 +16926,13 @@ function hitMonster(id) {
   const biteRecoveryLv = state.perks.biteRecovery || 0;
 
   if (biteRecoveryLv > 0) {
-    const rawRecovery = damage * currentClickPower() * 0.50 * biteRecoveryLv;
-    const softLine = Math.max(1, currentCps() * 2);
+    const rawRecovery = currentClickPower().mul(damage * 0.50 * biteRecoveryLv);
+    const softLine = Decimal.max(D(1), currentCps().mul(2));
 
     // 以前のようにCPSで打ち止めにせず、CPS付近から逓減しながら伸び続ける。
-    const gained = rawRecovery / (1 + rawRecovery / softLine)
-      + Math.log1p(rawRecovery / softLine) * softLine * 0.08;
+    const ratio = rawRecovery.div(softLine).toNumberClamped(1e300); // 逓減の比率(log1pに渡すため丸める)
+    const gained = rawRecovery.div(D(1).add(rawRecovery.div(softLine)))
+      .add(softLine.mul(Math.log1p(ratio) * 0.08));
 
     earn(gained);
   }
@@ -17852,7 +17872,7 @@ setInterval(() => {
     // ノルマ・注文・出現・各種ボーナスなど、その他の進行は従来どおりオーバーレイ中は止める。
     const overlayOpen = overlayFreezesGame();
     state.totalPlaySec = (state.totalPlaySec || 0) + 0.05; // v4: 総プレイ秒(転生持ち越し)
-    earn((currentCps() + directIncomeTotalCps()) / 20);
+    earn(currentCps().add(directIncomeTotalCps()).div(20));
     if (orderCookieActive()) earn((currentCps() + directIncomeTotalCps()) / 20 * ORDER_COOKIE_MUL); // 注文報酬cookie=時間窓の上乗せ(sim同期)
     // 直近稼ぎ率EMA(時定数90秒・sim同期2026-07-11): 毎秒1回、runCookiesの増分から更新
     earnEmaTick = (earnEmaTick + 1) % 20;
@@ -17873,10 +17893,11 @@ setInterval(() => {
       }
       // 提案13「編成の心得」(2026-07-11 承認・通常型限定): 4稼ぎ口のそろい具合(毎秒更新の遅延値=再帰回避)
       if (hasSkill("ensemble") && runPolicyIs("balanced")) {
-        const eq = currentCps() + equipDirectCps() + bankDirectCps();
-        const go = expectedGoldenRateCps() + goldenDirectCps();
-        const hu = huntPeddlerCps();
-        const ta = currentClickPower() * recentTapsPerSec + tapStallCps();
+        // そろい具合(比率)だけを使うので、ここでNumberへ丸めてよい(比率は1以下)
+        const eq = currentCps().add(equipDirectCps()).add(bankDirectCps()).toNumberClamped(1e300);
+        const go = expectedGoldenRateCps().add(goldenDirectCps()).toNumberClamped(1e300);
+        const hu = huntPeddlerCps().toNumberClamped(1e300);
+        const ta = currentClickPower().mul(recentTapsPerSec).add(tapStallCps()).toNumberClamped(1e300);
         const tot = eq + go + hu + ta;
         ensembleMul = tot > 0 ? 1 + 0.15 * Math.min(1, 4 * Math.max(0, Math.min(eq, go, hu, ta) / tot)) : 1;
       } else {
@@ -17895,7 +17916,7 @@ setInterval(() => {
       if (bank > 0 && state.cookies.gt(0)) {
         // 上限撤廃: 逓減しながら伸び続ける(打ち止めなし)。基準=max(毎秒生産, 直近稼ぎ率EMA×0.05)×8
         // (sim同期2026-07-11: cps係留では直送収入が主流の周回で利息が総収入の誤差になるため)
-        let soft = Decimal.max(D(Math.max(1, currentCps())), state.earnEma.mul(0.05)).mul(8.0);
+        let soft = Decimal.max(Decimal.max(D(1), currentCps()), state.earnEma.mul(0.05)).mul(8.0);
         if (resStage3("bankClickDividend")) soft = soft.mul(1 + 0.08 * maxQuotaStage());
         const rawInterest = state.cookies.mul(0.005 * Math.log10(1 + bank));
         earn(rawInterest.div(D(1).add(rawInterest.div(soft))).div(20));
