@@ -52,7 +52,9 @@ const { chromium } = require('/opt/node22/lib/node_modules/playwright');
   // 第2相: フィーバーが「実際に点火する状態」があることまで見る(点火しない結果だけでは
   // 機構が生きているのか死んでいるのか区別できない=判定の検出力が無い・2026-07-26 追加)。
   // 会心率が育った盤面(強い指2000台)で、100msずつ実時間を進めながらタップ=30秒の途切れ判定も効かせる。
-  await p.evaluate(()=>{ state.cookies=D('1e30'); state.critCombo=0; state.critFeverUntil=0;
+  // 2回目の観測はクールダウンも戻す(2026-07-28 修正): 1回目の点火で critFeverCooldownUntil=+45秒 が残り、
+  // この観測窓(400タップ×100ms=40秒)では点火できない=「機構が死んでいる」ように見えていた(判定器の穴)。
+  await p.evaluate(()=>{ state.cookies=D('1e30'); state.critCombo=0; state.critFeverUntil=0; state.critFeverCooldownUntil=0; state.superBank=0;
     for(let i=0;i<2000;i++)buyUpgrade('finger'); });
   const rate2=await p.evaluate(()=>(fingerCritChance()*100).toFixed(1)+'%');
   await p.evaluate(()=>{ window.__crits=0; const o=window.drawSuperCrit;
