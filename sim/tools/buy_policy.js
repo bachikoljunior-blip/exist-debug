@@ -25,7 +25,12 @@ function readEnv() {
     // 段階研究(=直送などの新システムの入口)のために貯める射程。手持ちのこの倍以内なら設備を止めて貯める。
     stageSaveReach: Number(process.env.STAGE_SAVE_REACH || 50),
     // 限界収入の測り方: measured=1台足して実収入の差分を測る(直送を含む) / analytic=旧近似(建物cpsだけ)
-    marg: process.env.BUY_MARG || 'analytic',
+    // 既定は measured(2026-07-28 A/B実測で決定): 同じ実時間・同じゲーム内時間(約9時間)で
+    //   旧近似 analytic = 668ブロック・転生2回・料理1品・最終cps 2.20e15
+    //   実測 measured  = 922ブロック・転生3回・料理3品・装備10個・最終cps 6.96e26
+    // 初転生の時刻は同じ(26分)=序盤を損なわずに以降が伸びる。毎購入ごとに測る版は
+    // 1ステップ45秒の上限に当たって中断したので、ブロック単位のキャッシュが必須。
+    marg: process.env.BUY_MARG || 'measured',
   };
 }
 
@@ -67,7 +72,16 @@ async function installBuyPolicy(page, override) {
       const d = dCps + dClick;
       return isFinite(d) && d > 0 ? d : 0;
     };
-    window.__marg = (u) => (window.__BUY.marg === 'measured' ? window.__margMeasured(u) : window.__margCps(u));
+    // 実測は重い(候補16件×2回の全生産評価)。**1ブロックにつき1回だけ測って使い回す**
+    // (2026-07-27 実測: 毎購入ごとに測る版は 1ステップ45秒の上限に当たって走行が中断し、到達も悪化した=
+    //  転生1回/ステージ3 対 近似版の 転生2回/ステージ4)。実プレイヤも「数字を見て→まとめて買う」ので形も合う。
+    window.__margCache = null;
+    window.__marg = (u) => {
+      if (window.__BUY.marg !== 'measured') return window.__margCps(u);
+      if (!window.__margCache) window.__margCache = {};
+      if (window.__margCache[u.id] == null) window.__margCache[u.id] = window.__margMeasured(u);
+      return window.__margCache[u.id];
+    };
 
     window.__candidates = () => {
       const out = [];
@@ -197,6 +211,7 @@ async function installBuyPolicy(page, override) {
 
     // まとめ買い(実況の1ブロック分): 買った台と数を集約して返す
     window.__buySpree = (maxSteps) => {
+      window.__margCache = null; // このブロックの先頭で測り直す(ブロック内は使い回す)
       const agg = {}, order = [];
       let saved = false, stageSave = null;
       for (let step = 0; step < (maxSteps || 200); step++) {
