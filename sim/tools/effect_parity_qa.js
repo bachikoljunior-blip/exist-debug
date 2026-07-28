@@ -76,6 +76,11 @@ function applyToSim(sim, b) {
       direct: (() => { const d = S.directBreakdown(sim); return d.equip + d.golden + d.hunt + d.tap + d.bank; })()
     };
     const gameVals = await p.evaluate((b) => {
+      // 実績研究は両側とも「無し」に固定する(2026-07-28 追加)。ゲームは autoBuyMilestones() が
+      // ティックのたびに自動購入するので、放っておくと**ゲームだけ ms(click)1.3×ms(all)1.038=1.349** が乗り、
+      // 走らせるたびに結果が変わる(実際に clickEV だけ 1.35 のNGが1回だけ出て再現しなかった)。
+      settings.autoMilestone = false;
+      state.msResearch = {};
       for (const u of UPGRADES) state.upgrades[u.id] = b.ups[u.id] || 0;
       for (const r of RESEARCH) state.research[r.id] = b.res.includes(r.id);
       for (const k in state.perks) state.perks[k] = b.perks[k] || 0;
@@ -104,7 +109,9 @@ function applyToSim(sim, b) {
       const per = {}; for (const u of UPGRADES) { const v = n(rawUpgradeCps(u)); if (v > 0) per[u.id] = v; }
       let craw = 1; for (const u of UPGRADES) if (u.type === 'click') craw += n(rawUpgradeContribution(u));
       return { per, lineage: n(lineageBonusCps()), presence: n(presenceBonusCps()),
-        clickRaw: craw, bankM: n(bankClickMultiplier()), prodLink: n(productionLinkClickPower()), base: n(baseClickPower()) };
+        clickRaw: craw, bankM: n(bankClickMultiplier()), prodLink: n(productionLinkClickPower()), base: n(baseClickPower()),
+        clickSkill: n(clickSkillMultiplier()), msClick: n(msMulOf('click')), msAll: n(msMulOf('all')),
+        linkCoef: n(clickProductionLinkCoefficient()), baseCps: n(baseCps()) };
     });
     const diffUp = Object.keys(simContrib).filter(id => {
       const a = simContrib[id] || 0, g = gameDet.per[id] || 0;
@@ -123,7 +130,7 @@ function applyToSim(sim, b) {
       const gamePer = (det.personal * det.research * det.support * det.mastery * det.msOwnSup);
       console.log(`    oven 1台あたり倍率: sim ${simPer.toExponential(4)} / 実機 ${gamePer.toExponential(4)}(個別${det.personal.toFixed(3)} 研究${det.research.toExponential(3)} 支援${det.support.toFixed(4)} 熟練${det.mastery.toFixed(3)} 実績${det.msOwnSup.toFixed(3)})`);
     }
-    console.log(`    系列/初台(実機) ${gameDet.lineage.toExponential(2)}/${gameDet.presence.toExponential(2)} ・ タップ: 加算 ${simC.clickRaw.toExponential(3)}/${gameDet.clickRaw.toExponential(3)} ・ 銀行 ${simC.bankM.toFixed(3)}/${gameDet.bankM.toFixed(3)} ・ 素 ${simC.baseClick.toExponential(3)}/${gameDet.base.toExponential(3)} ・ 生産連動(実機) ${gameDet.prodLink.toExponential(3)}`);
+    console.log(`    系列/初台(実機) ${gameDet.lineage.toExponential(2)}/${gameDet.presence.toExponential(2)} ・ タップ: 加算 ${simC.clickRaw.toExponential(3)}/${gameDet.clickRaw.toExponential(3)} ・ 銀行 ${simC.bankM.toFixed(3)}/${gameDet.bankM.toFixed(3)} ・ 素 ${simC.baseClick.toExponential(3)}/${gameDet.base.toExponential(3)} ・ 生産連動(実機) ${gameDet.prodLink.toExponential(3)}(baseCps ${gameDet.baseCps.toExponential(2)} × 係数${gameDet.linkCoef} × タップskill${gameDet.clickSkill.toFixed(3)} × ms(click)${gameDet.msClick.toFixed(3)} × ms(all)${gameDet.msAll.toFixed(3)}) / simのタップskill ${simC.clickSkillMul.toFixed(3)}`);
     for (const k of Object.keys(simVals)) {
       const a = simVals[k], g = gameVals[k];
       if (!(a > 0) && !(g > 0)) { console.log(`  ${b.name}/${k}: 両方0(判定対象外)`); continue; }
