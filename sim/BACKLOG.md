@@ -15,6 +15,7 @@ QA一巡(2026-07-26・6レンズ×敵対的反証のワークフロー)で補充
 確定済み(自分でコードを読み実測して確認)のうち未対処:
 確定済みの未対処は **現在ゼロ**(次サイクルは QA一巡で補充する)
 ## DONE(結果ログ)
+- (**コンテナが巻き戻ったが push 済みだったので全復旧**) セッションの作業ディレクトリがこの日の開始時点(2ef4d03)へ巻き戻り、今日の変更が全部消えた状態で起動した。**各ステップで push していたおかげでリモートに全部残っていた**(head f547050)ので `git fetch` + `git reset --hard origin/...` で復元。復元後に実機で再確認: parity/skillコストPT/qa_ref/measure_wiring・**効果式parity(盤面4通り×6量 ±1%以内)**・opening_qa(初購入62秒・180秒で8台)・cloud_offline_qa・phase_screen_qa 6局面 allOk・event_qa(料理3品/注文達成/オーバーキル/深層研究)=**すべてOK・pageエラー0**。教訓: 「各ステップで commit/push」はこの環境では保険ではなく前提。
 - (**QA一巡の再走=ゲーム側の新規ゼロ**) 静的6本(parity/skillコストPT/qa_ref/freeze/persist/measure)+実機16本(effect_parity・opening・cloud_offline・mintap・event・phase_screen 6局面・message_overflow・dish_empty・claim_audit・fmt_extreme 321件・res_stage・mat_source・skill_eq・crit_felt・save_robust 4形式・skill_value・rare_big・stage_visual 6面・screen・upper_amp 7件+同時)を回して**全項OK・pageエラー0**。
   唯一のNGは検問自身の非決定性だった: 効果式検問が1回だけ clickEV 1.35 を出したが、正体は**ゲーム側だけ実績研究が自動購入されていた**こと(ms(click)1.3 × ms(all)1.038 = 1.349)。検問で `settings.autoMilestone=false` + `state.msResearch={}` を固定し、3回連続グリーンを確認(=「1回出たNGを再現しないまま放置しない」)。
 - (**序盤3分の検問を新設**=`sim/tools/opening_qa.js`・ゲーム変更はゼロで決着) 新経済で「始めたばかりの3分」を実測したところ最初は「**3分たっても設備0台・クッキーが増えない**」と出た。ゲームを直す前に測り方を疑って2つ穴を見つけた: ①**タップを討伐に振り替えていた**(実測: モンスターが出ていてもクッキーのタップは通る=gain 3/秒が継続) ②**討伐後の報酬カードを選ばず放置していた**(選ぶまで進行が止まるのは仕様)。両方直すと序盤は健康だった: **初購入62秒・初モンスター49秒・初討伐63秒・120秒で2台・180秒で7〜8台・討伐9〜13体・pageエラー0**。
