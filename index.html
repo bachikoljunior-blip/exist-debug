@@ -39,6 +39,9 @@
     }
 
     :root {
+      /* セーフエリアをJS(applyGameScale)から読めるようにCSS変数化しておく */
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
       --bg: #1d130d;
       --panel: #332318;
       --panel2: #24170f;
@@ -81,7 +84,8 @@
     body {
       /* 端末のノッチ/ステータスバー(セーフエリア)分を上下に確保し、
          クッキー数などの表示が上端で見切れないようにする */
-      padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+      /* 黒の余白を出さず画面いっぱいに使う。ノッチ等のセーフエリアぶんだけ確保する(2026-07-21) */
+      padding: var(--safe-top) 0 var(--safe-bottom);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -4484,6 +4488,13 @@
       touch-action: manipulation;
     }
 
+    /* 取り消せない操作(アカウント削除)は色で区別する */
+    .settingsWideBtn.settingsDangerBtn {
+      border-color: rgba(255, 138, 138, 0.45);
+      background: linear-gradient(180deg, rgba(70, 26, 26, 0.95), rgba(38, 13, 13, 0.97));
+      color: #ffc4c4;
+    }
+
     .settingRow .settingVal {
       min-width: 30px;
       text-align: right;
@@ -5396,25 +5407,51 @@
     /* ===== クッキー画面(上部)の各表示が潰れない調整 ===== */
     /* クッキー画面はスクロールさせない。収まらない分はクッキー画像(.cookieWrap)を
        縮めて必ず画面内に全部を表示する(数値・ノルマ等は縮めない設定のまま)。 */
-    /* 縦画面でもクッキー画面とタブ内容を同じ高さ(303px)で2等分し、横並びと比率を揃える(2026-07-14 ユーザー指示)。
-       303 + 8(.top下マージン) + 303 + 53(.tabs) = 667(=.gameの固定高さ) */
+    /* クッキー画面は240px固定で比率を維持(購入欄を広く取るため303→240に縮小)。
+       タブ内容(.tabPages)は画面の高さに合わせて伸縮させ、黒の余白が出ないよう
+       ゲーム全体(--gameBoxH)で画面を使い切る(2026-07-21)。
+       240 + 8(.top下マージン) + タブ内容(可変・最小140) + 53(.tabs) = --gameBoxH */
     .top {
       overflow: hidden !important;
       scrollbar-width: none;
-      flex: 0 0 303px !important;
-      height: 303px !important;
-      min-height: 303px !important;
-      max-height: 303px !important;
+      flex: 0 0 240px !important;
+      height: 240px !important;
+      min-height: 240px !important;
+      max-height: 240px !important;
     }
     .top::-webkit-scrollbar { display: none; }
     .tabPages {
-      flex: 0 0 303px !important;
-      height: 303px !important;
-      min-height: 303px !important;
-      max-height: 303px !important;
+      flex: 1 1 auto !important;
+      height: auto !important;
+      min-height: 140px !important;
+      max-height: none !important;
     }
     .cookieWrap {
       min-height: 72px !important;
+    }
+
+    /* 設備(強化)・研究の購入カードを圧縮し、非全画面でも2〜3個見えるようにする。
+       文字・ボタンは小さくなるが、1画面で買える選択肢を見比べられることを優先(2026-07-21) */
+    #shop .item, #research .item {
+      min-height: 0 !important;
+      padding: 5px 80px 5px 9px !important;
+      margin: 4px 0 !important;
+      font-size: 10.5px !important;
+      line-height: 1.3;
+    }
+    #shop .item b, #research .item b {
+      font-size: 12px;
+    }
+    #shop .item .desc, #research .item .desc,
+    #shop .item .price, #research .item .price {
+      font-size: 10.5px !important;
+      line-height: 1.3 !important;
+      margin: 0 !important;
+    }
+    #shop .artCard::before, #research .artCard::before {
+      width: 92px;
+      height: 92px;
+      right: -12px;
     }
 
     /* ===== スキルツリーのスワイプ中はアニメ/重フィルタを止めてガクつきを防ぐ ===== */
@@ -5489,7 +5526,13 @@
        タブ全画面・クッキー全画面モードは従来どおり画面いっぱいを使う */
     body:not(.sectionFullscreen):not(.playFullscreenMode) {
       display: grid;
-      place-items: center;
+      /* 中央寄せはJS(applyGameScale)がtranslateで行う。place-items:centerだと
+         画面がゲームの基準サイズ(667px)より低いときにグリッド行ごと下へあふれ、
+         縮小表示してもタブバーが画面外に切れてしまう(2026-07-21) */
+      place-items: start;
+      /* 基底ルールのjustify-content:centerがグリッドのトラックごと中央に寄せてしまい、
+         translateと二重になって右にはみ出すため、トラックも左上起点に固定する */
+      place-content: start;
       /* 端末画面に合わせてゲーム全体が見えるよう縮め、余白は黒のレターボックスにする */
       background: #000 !important;
     }
@@ -5503,10 +5546,11 @@
          ゲーム全体を等倍スケール。全端末で文字・画像・ボタン・プレイ画面の比率がすべて同一になる。
          倍率(--gameScale)はJS(applyGameScale)がリサイズ時に計算する */
       width: 375px !important;
-      height: 667px !important;
+      /* 高さはJS(applyGameScale)が画面の高さ÷倍率で算出し、黒の余白なく画面を使い切る */
+      height: var(--gameBoxH, 667px) !important;
       margin: 0 !important;
-      transform: scale(var(--gameScale, 1));
-      transform-origin: center center;
+      transform: translate(var(--gameShiftX, 0px), var(--gameShiftY, 0px)) scale(var(--gameScale, 1));
+      transform-origin: top left;
     }
 
     /* ── 横並び(ワイド)レイアウト ──
@@ -5519,8 +5563,8 @@
       width: 750px !important;
       height: 356px !important;
       margin: 0 !important;
-      transform: scale(var(--gameScale, 1));
-      transform-origin: center center;
+      transform: translate(var(--gameShiftX, 0px), var(--gameShiftY, 0px)) scale(var(--gameScale, 1));
+      transform-origin: top left;
     }
     /* 左列: クッキー画面。縦画面と同じ 375×303 に揃える(縦横で比率を統一) */
     body.wideLayout .top {
@@ -5587,6 +5631,129 @@
       backdrop-filter: blur(6px);
     }
 
+    /* ===== 周回スタート時の広告ゲート ===== */
+    #adGateOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 30000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(4, 2, 1, 0.72);
+      backdrop-filter: blur(3px);
+    }
+
+    #adGateOverlay.active {
+      display: flex;
+    }
+
+    .adGatePanel {
+      width: min(400px, 100%);
+      border-radius: 18px;
+      padding: 18px 16px;
+      background: linear-gradient(165deg, rgba(52, 33, 18, 0.98), rgba(16, 9, 5, 0.99));
+      border: 1px solid rgba(255, 213, 138, 0.30);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+      text-align: center;
+      color: #fff4de;
+    }
+
+    .adGatePanel h2 {
+      margin: 0 0 6px;
+      color: #ffe28a;
+      font-size: 18px;
+    }
+
+    .adGatePanel p {
+      margin: 0 0 14px;
+      font-size: 12px;
+      opacity: 0.85;
+      line-height: 1.6;
+    }
+
+    .adGateBtn {
+      display: block;
+      width: 100%;
+      margin: 0 0 10px;
+      padding: 13px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 213, 132, 0.4);
+      background: linear-gradient(180deg, rgba(150, 84, 32, 0.95), rgba(96, 50, 18, 0.95));
+      color: #fff4de;
+      font-size: 14px;
+      font-weight: 900;
+      touch-action: manipulation;
+    }
+
+    .adGateBtn.buy {
+      background: linear-gradient(180deg, rgba(190, 140, 40, 0.95), rgba(128, 88, 22, 0.95));
+    }
+
+    .adGateBtn:disabled {
+      opacity: 0.55;
+    }
+
+    .adGateBackBtn {
+      display: block;
+      width: 100%;
+      margin-top: 2px;
+      padding: 9px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 213, 132, 0.22);
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff4de;
+      font-size: 12px;
+      font-weight: 800;
+      touch-action: manipulation;
+    }
+
+    .adGateNote {
+      margin-top: 2px;
+      margin-bottom: 8px;
+      font-size: 11px;
+      opacity: 0.7;
+      min-height: 1em;
+    }
+
+    /* 次にスタートできるまでの残り時間(Google Play版) */
+    .adGateTimer {
+      margin: 10px 0 14px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 213, 138, 0.28);
+      background: rgba(0, 0, 0, 0.3);
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      font-variant-numeric: tabular-nums;
+      color: #ffe3a6;
+    }
+
+    .adGateTimer small {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0;
+      opacity: 0.72;
+    }
+
+    .adGateSpinner {
+      display: inline-block;
+      width: 13px;
+      height: 13px;
+      margin-right: 7px;
+      border: 2px solid rgba(255, 226, 138, 0.3);
+      border-top-color: #ffe28a;
+      border-radius: 50%;
+      vertical-align: -2px;
+      animation: adGateSpin 0.8s linear infinite;
+    }
+
+    @keyframes adGateSpin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 
@@ -5636,7 +5803,7 @@
       <div class="titleAboutBody">
         <div class="infoBox">
           <h3>このゲームについて</h3>
-          <p>「クッキーストラテジャー」は、インストール不要・完全無料でブラウザからそのまま遊べるクッキークリッカー系の放置ゲームです。クッキーをタップして焼き上げ、稼いだクッキーで強化や研究を購入し、毎秒の自動生産をどんどん伸ばしていきます。プレイデータはお使いのブラウザ内（ローカルストレージ）にのみ保存されるため、会員登録や個人情報の入力は一切不要です。</p>
+          <p>「クッキーストラテジャー」は、ブラウザからそのまま遊べる基本プレイ無料のクッキークリッカー系放置ゲームです。クッキーをタップして焼き上げ、稼いだクッキーで強化や研究を購入し、毎秒の自動生産をどんどん伸ばしていきます。プレイデータはお使いのブラウザ内（ローカルストレージ）にのみ保存されるため、会員登録や個人情報の入力は一切不要です。</p>
         </div>
 
         <div class="infoBox">
@@ -5650,7 +5817,7 @@
 
         <div class="infoBox">
           <h3>よくある質問</h3>
-          <p><b>Q. 料金はかかりますか？</b><br>A. 完全無料です。アプリのインストールや会員登録も不要で、ブラウザだけで遊べます。</p>
+          <p><b>Q. 料金はかかりますか？</b><br>A. 基本プレイ無料です。会員登録は不要で、ブラウザだけで遊べます。周回スタート時に広告が表示されることがあります。Google Play版では、広告を非表示にする買い切りアイテム（購入は任意）を用意しています。</p>
           <p><b>Q. セーブデータはどこに保存されますか？</b><br>A. お使いのブラウザのローカルストレージに自動保存されます。同じ端末・同じブラウザで開けば続きから遊べます。ブラウザのデータを削除するとセーブデータも消えるのでご注意ください。機種変更や別のブラウザに移したいときは、設定画面からGoogleでログインすると、セーブデータがクラウドに自動保存され、別の端末でも同じアカウントで続きから遊べます。</p>
           <p><b>Q. 放置していても進みますか？</b><br>A. はい。ゲームを閉じている間も一定時間分のクッキーが自動で生産され、次に開いたときにまとめて受け取れます。</p>
           <p><b>Q. スマートフォンでも遊べますか？</b><br>A. はい。スマートフォン・タブレット・パソコンのブラウザに対応しています。</p>
@@ -5708,6 +5875,11 @@
       </div>
       <div class="settingBtnRow">
         <button id="cloudSyncNowBtn" type="button" class="settingsWideBtn" style="display:none">今すぐ同期する</button>
+      </div>
+      <!-- アカウント削除。Google Play のポリシーで「アカウント作成があるアプリはアプリ内に削除導線を置く」
+           ことが求められるため、ログイン中のみ表示する -->
+      <div class="settingBtnRow">
+        <button id="cloudDeleteAccountBtn" type="button" class="settingsWideBtn settingsDangerBtn" style="display:none">アカウントとクラウドデータを削除</button>
       </div>
     </div>
     <button id="settingsToTitleBtn" type="button" class="settingsWideBtn">タイトル画面に戻る</button>
@@ -5847,6 +6019,19 @@
   </div>
 </div>
 
+
+<!-- 周回スタート時のゲート(Web版=広告視聴 / Google Play版=5時間に1回・買い切りで解除) -->
+<div id="adGateOverlay">
+  <div class="adGatePanel">
+    <h2>周回スタート</h2>
+    <p id="adGateDesc">広告を見ると周回をスタートできます。</p>
+    <div id="adGateTimer" class="adGateTimer" style="display:none"></div>
+    <button id="adGateWatchBtn" class="adGateBtn" type="button">▶ 広告を見てスタート</button>
+    <button id="adGateBuyBtn" class="adGateBtn buy" type="button">制限を解除する(買い切り)</button>
+    <div id="adGateNote" class="adGateNote"></div>
+    <button id="adGateBackBtn" class="adGateBackBtn" type="button">← スキル選択に戻る</button>
+  </div>
+</div>
 
 <div id="debugPanel" class="collapsed">
   <button id="debugPanelMiniBtn" type="button">DBG <span id="debugStatus">OFF</span></button>
@@ -6379,7 +6564,14 @@ const ASSETS = {
     offline_1: "images/skill_offline_1.webp",
     start_2: "images/skill_start_2.webp",
     endless_oven: "images/skill_endless_oven.webp",
-    master_final: "images/skill_master_final.webp"
+    master_final: "images/skill_master_final.webp",
+    // 専用画像が未制作のノードは、テーマの近い既存画像を流用する
+    // (金は金を呼ぶ/編成の心得/土産の屋台/戦利品の行商は2026-07-22にスキルごと撤去されたため項目も削除)
+    eqcraft_t2: "images/skill_workshop_2.webp",     // 上位工房I〜V → 工房の拡張(装備作成欄と同テーマ)
+    eqcraft_t3: "images/skill_workshop_2.webp",
+    eqcraft_t4: "images/skill_workshop_2.webp",
+    eqcraft_t5: "images/skill_workshop_2.webp",
+    eqcraft_t6: "images/skill_workshop_2.webp"
   },
   currency: {
     cookie: "images/currency_cookie.webp",
@@ -6877,9 +7069,16 @@ function freshState() {
     lastSecondEarn: D(0),     // 直近1秒の実獲得(瞬間ペース): 注文報酬cookieの基準
     totalClicks: 0,
 
+    // 次に周回スタートできる時刻(ミリ秒)。Google Play版のスタート間隔制限に使う。
+    // 0 = 制限なし。初回転生後のスタートで初めてセットされる
+    nextStartAt: 0,
+    startGateBypass: false,   // やり直しで戻った周回はスタート枠を消化済み(ゲートを通さない)
+
     prestige: 0,
     prestigeTotal: 0,
     prestigeBaseTotal: 0,
+    endlessLv: 0,              // 一覧#3: 無限研鑽の段数(転生を跨いで永続)
+    saveId: "",                // 一覧#10: セーブ固有ID(スナップショットの所有者判定)。ensureState で発行
     quotaBonusTotal: 0,
     prestigeRuns: 0,
     runStart: Date.now(),
@@ -6989,9 +7188,33 @@ function ensureState() {
   state.lastSecondEarn = D(state.lastSecondEarn || 0);
   state.totalClicks = Math.floor(Number(state.totalClicks) || 0);
 
+  state.nextStartAt = Math.max(0, Math.floor(Number(state.nextStartAt) || 0));
+  state.startGateBypass = Boolean(state.startGateBypass);
+
   state.prestige = Math.floor(Number(state.prestige) || 0);
   state.prestigeTotal = Math.floor(Number(state.prestigeTotal ?? state.prestige) || 0);
   state.prestigeBaseTotal = Math.floor(Number(state.prestigeBaseTotal) || Math.min(totalPrestigeFromCookies(state.totalCookies), state.prestigeTotal) || 0);
+  state.endlessLv = Math.max(0, Math.floor(Number(state.endlessLv) || 0)); // 一覧#3: 無限研鑽の段数。旧セーブは0補完
+  state.lastSaveServer = Math.max(0, Number(state.lastSaveServer) || 0); // 一覧#12: サーバー基準の保存時刻。旧セーブは0=未取得扱い
+  // 一覧#16: まとめ買い熱量は非有限・未来時刻を持ち込ませない(セーブ経由で NaN 化するのを防ぐ)
+  if (state.upSurge && typeof state.upSurge === "object") {
+    const nowMs = Date.now();
+    for (const k of Object.keys(state.upSurge)) {
+      const sg = state.upSurge[k];
+      if (!sg || typeof sg !== "object") { delete state.upSurge[k]; continue; }
+      sg.h = Number.isFinite(Number(sg.h)) ? Math.max(0, Number(sg.h)) : 0;
+      sg.t = Number.isFinite(Number(sg.t)) ? Math.min(nowMs, Number(sg.t)) : nowMs;
+      if (sg.peak != null && !Number.isFinite(Number(sg.peak))) delete sg.peak;
+    }
+  } else {
+    state.upSurge = {};
+  }
+  // 一覧#10: セーブ固有ID。スナップショット(転生前/周回開始)が「このセーブのものか」を判定するために使う。
+  // 旧セーブには無いので初回読み込み時に発行し、同時に所有者不明の旧スナップショットを破棄する。
+  if (typeof state.saveId !== "string" || !state.saveId) {
+    state.saveId = "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    clearRunSnapshots();
+  }
   state.quotaBonusTotal = Math.floor(Number(state.quotaBonusTotal) || Math.max(0, state.prestigeTotal - state.prestigeBaseTotal) || 0);
   state.quotaActive = state.quotaActive !== false;
   state.quotaFailed = Boolean(state.quotaFailed);
@@ -7222,8 +7445,8 @@ function injectImageAssetStyle() {
     body.sectionFullscreen .tabs,body.playFullscreenMode .tabs{display:flex!important;position:fixed!important;left:0!important;right:0!important;bottom:0!important;height:var(--fsTabH,60px)!important;z-index:9600!important;background:rgba(10,6,3,.94)!important;padding:4px 6px calc(4px + env(safe-area-inset-bottom,0px))!important;margin:0!important}
     /* 全画面コンテンツはタブバー分だけ下を空ける */
     body.sectionFullscreen .tabPages{bottom:var(--fsTabH,60px)!important}
-    /* 全画面時のクッキーは直径を半分にする */
-    body.playFullscreenMode #cookie{width:min(50cqw,50cqh)!important;height:min(50cqw,50cqh)!important}
+    /* 全画面時のクッキーは大きく映す(画面の短い辺の70%) */
+    body.playFullscreenMode #cookie{width:min(70cqw,70cqh)!important;height:min(70cqw,70cqh)!important}
   `;
   document.head.appendChild(st);
 }
@@ -8077,10 +8300,27 @@ function msCpsAdd() { let a = 0; const b = state.msResearch || {}; for (const ms
 function msCritAdd() { let a = 0; const b = state.msResearch || {}; for (const ms of MILESTONE_RESEARCH) if (b[ms.id] && ms.fx.critAdd) a += ms.fx.critAdd; return a + skillGrowth().critAdd; }
 // ㉚コストのはしご(2026-07-25 sim msResearch.costTable同期): 実績研究の**生涯初**の取得だけ固定コスト表
 // (はしごの段)。再購入(毎周回)と表に無い研究は「毎秒生産×15秒」の安い量産価格(旧costSecの重税は廃止)。
-const MS_FIRST_COST_TABLE = { ms_taps_p1: 2500000000, ms_stage_s1: 19000000000, ms_kills_k1: 1100000000000, ms_golden_g1: 8400000000000, ms_eqmastery_t1: 64000000000000, ms_taps_p2: 3.75e+15, ms_kills_k2: 1.75e+18, ms_stage_s2: 1.05e+20, ms_golden_g2: 6.60e+21, ms_eqmastery_t2: 4.15e+23, ms_taps_p3: 2.65e+25, ms_kills_k3: 1.40e+28, ms_stage_s3: 9.85e+29, ms_golden_g3: 6.85e+31, ms_eqmastery_t3: 4.90e+33, ms_kills_k4: 3.10e+36, ms_taps_p4: 5.35e+41, ms_stage_s4: 1.40e+45, ms_kills_k5: 1.20e+47, ms_eqmastery_t4: 1.10e+48, ms_golden_g4: 1.05e+49, ms_kills_k6: 2.65e+53, ms_golden_g5: 2.60e+55, ms_prestige_r1: 2.55e+56, ms_kills_k7: 3.80e+60, ms_golden_g6: 4.15e+62, ms_prestige_r2: 4.35e+63, ms_eqmastery_t5: 9.75e+66, ms_kills_k8: 1.05e+68, ms_prestige_r3: 8.50e+70, ms_prestige_r4: 1.10e+75 };
+const MS_FIRST_COST_TABLE = { ms_taps_p1: 2500000000, ms_stage_s1: 19000000000, ms_kills_k1: 1100000000000, ms_golden_g1: 8400000000000, ms_eqmastery_t1: 64000000000000, ms_taps_p2: 3.75e+15, ms_stage_s2: 1.05e+20, ms_golden_g2: 6.60e+21, ms_eqmastery_t2: 4.15e+23, ms_taps_p3: 2.65e+25, ms_stage_s3: 9.85e+29, ms_golden_g3: 6.85e+31, ms_eqmastery_t3: 4.90e+33, ms_kills_k4: 3.10e+36, ms_taps_p4: 5.35e+41, ms_stage_s4: 1.40e+45, ms_eqmastery_t4: 1.10e+48, ms_golden_g4: 1.05e+49, ms_kills_k6: 2.65e+53, ms_golden_g5: 2.60e+55, ms_prestige_r1: 2.55e+56, ms_kills_k7: 3.80e+60, ms_golden_g6: 4.15e+62, ms_prestige_r2: 4.35e+63, ms_eqmastery_t5: 9.75e+66, ms_prestige_r3: 8.50e+70, ms_prestige_r4: 1.10e+75 };
+// 一覧#18(2026-07-28): 設備熟練は「ms_<設備ID>_t<段>」で16設備×4段=64件が生成されるのに、はしごの段は
+// ms_eqmastery_t1〜t5 という**実在しないID**で置かれていたため、64件すべてが表を素通りして
+// 「毎秒生産×15秒」の量産価格で買えていた(=固定コストのペーシングが効かない)。
+// 段番号でその段のはしごを引く。同じ段の16件は同額=同時に解放される(㉚の同額束ねと同じ扱い)。
+function msFirstCostOf(id) {
+  if (MS_FIRST_COST_TABLE[id] != null) return MS_FIRST_COST_TABLE[id];
+
+  const m = /^ms_[A-Za-z]+_t(\d+)$/.exec(id); // 設備熟練
+  if (m) {
+    const v = MS_FIRST_COST_TABLE["ms_eqmastery_t" + m[1]];
+    if (v != null) return v;
+  }
+
+  return null;
+}
+
 function msResearchCost(ms) {
   // 生涯初の取得=固定コスト表(コストのはしご)。everMs は転生を跨いで持ち越し(セーブ対象)。
-  if (MS_FIRST_COST_TABLE[ms.id] != null && !((state.everMs || {})[ms.id])) return MS_FIRST_COST_TABLE[ms.id];
+  const first = msFirstCostOf(ms.id);
+  if (first != null && !((state.everMs || {})[ms.id])) return first;
   // 再購入・表に無い研究=毎秒生産×15秒の量産価格(sim msCostOf rebuySec=15 と同式)
   return Decimal.max(D(100), currentCps().mul(15).floor()); // 生産がDecimalなのでコストもDecimalで返す
 }
@@ -8185,7 +8425,11 @@ function stageExpGrowth(count, rate) {
 
 // ㉚コストのはしご(2026-07-25 sim resStageCostAbs同期): 段階カード(段2/段3)の**生涯初**の開発だけ
 // 絶対額の固定コスト(はしごの段)。再購入(2周目以降)は段1コスト×倍率=各周回の序盤で安く再取得。
-const RES_STAGE_COST_ABS = { "cpsStrike:2": 140000000000, "ovenBatch:2": 490000000000000, "fingerTechnique:2": 2.90e+16, "spiceBlend:2": 2.25e+17, "grandmaCrowd:2": 1.35e+19, "bankClickDividend:2": 8.35e+20, "factoryNetwork:2": 5.20e+22, "portalNetwork:2": 3.30e+24, "cpsStrike:3": 2.15e+26, "ovenBatch:3": 1.75e+27, "spiceBlend:3": 1.15e+29, "fingerTechnique:3": 8.20e+30, "grandmaCrowd:3": 5.75e+32, "bankClickDividend:3": 4.20e+34, "factoryNetwork:3": 3.60e+35, "portalNetwork:3": 2.70e+37, "moonGlobalYeast:2": 9.60e+42, "moonGlobalYeast:3": 8.00e+40, "galaxyAssembly:2": 2.60e+54, "blackHoleCompression:2": 3.95e+61, "galaxyAssembly:3": 8.95e+65, "blackHoleCompression:3": 9.85e+73, "quantumProofing:2": 1.00e+90, "antimatterRecipe:2": 1.00e+90, "portalGlobalFold:2": 1.00e+90, "quantumProofing:3": 1.00e+90, "antimatterRecipe:3": 1.00e+90, "portalGlobalFold:3": 1.00e+90 };
+// 一覧#14(2026-07-28): moonGlobalYeast だけ 段2(9.60e42) > 段3(8.00e40) と120倍逆転していた。
+// buyResearchStage は stageNo === cur+1 しか通さないので必ず高い段2を先に払うことになり、
+// 段2を買った時点で段3は所持クッキーの1/120=実質1枚のカードに融合していた。はしごの段位置
+// (e40.90 と e42.98)はそのままに2つの値を入れ替えて、段2<段3 の依存順と単調性を回復する。
+const RES_STAGE_COST_ABS = { "cpsStrike:2": 140000000000, "ovenBatch:2": 490000000000000, "fingerTechnique:2": 2.90e+16, "spiceBlend:2": 2.25e+17, "grandmaCrowd:2": 1.35e+19, "bankClickDividend:2": 8.35e+20, "factoryNetwork:2": 5.20e+22, "portalNetwork:2": 3.30e+24, "cpsStrike:3": 2.15e+26, "ovenBatch:3": 1.75e+27, "spiceBlend:3": 1.15e+29, "fingerTechnique:3": 8.20e+30, "grandmaCrowd:3": 5.75e+32, "bankClickDividend:3": 4.20e+34, "factoryNetwork:3": 3.60e+35, "portalNetwork:3": 2.70e+37, "moonGlobalYeast:2": 8.00e+40, "moonGlobalYeast:3": 9.60e+42, "galaxyAssembly:2": 2.60e+54, "blackHoleCompression:2": 3.95e+61, "galaxyAssembly:3": 8.95e+65, "blackHoleCompression:3": 9.85e+73, "quantumProofing:2": 1.00e+90, "antimatterRecipe:2": 1.00e+90, "portalGlobalFold:2": 1.00e+90, "quantumProofing:3": 1.00e+90, "antimatterRecipe:3": 1.00e+90, "portalGlobalFold:3": 1.00e+90 };
 // 段階コストの研究別倍率(値段割りD'・sim weave_costs.json と同期)
 const RESEARCH_STAGE_MULT = {"fingerTechnique":{"s2":1500,"s3":2250000},"grandmaCrowd":{"s2":1500,"s3":2250000},"ovenBatch":{"s2":1000,"s3":2250000},"factoryNetwork":{"s2":1500,"s3":2250000},"spiceBlend":{"s2":1500,"s3":2250000},"portalNetwork":{"s2":1500,"s3":2250000},"bankClickDividend":{"s2":1500,"s3":2250000},"moonGlobalYeast":{"s2":1500,"s3":2250000},"portalGlobalFold":{"s2":1500,"s3":2250000},"galaxyAssembly":{"s2":1500,"s3":2250000},"blackHoleCompression":{"s2":1500,"s3":2250000},"quantumProofing":{"s2":1500,"s3":2250000},"antimatterRecipe":{"s2":1500,"s3":2250000},"cpsStrike":{"s2":1500,"s3":2250000}};
 
@@ -8527,8 +8771,16 @@ function orderScale() {
 // 転生コスト(2026-07-11 ユーザー仕様・確定形): 完成版の測定で「第n回が転生した時点の
 // 毎秒生産×500」を10のべき乗に切り捨てた固定テーブル(全プレイヤー共通)。sim/prestige_costs.json と同期。
 // ㉚2026-07-25: min-envelope焼き(全16方針の実走の下限包絡・116本)へ更新。初回は500万固定(ユーザー仕様2026-07-09)。
+// 一覧#7(2026-07-28): 焼いた値をそのまま入れたため idx54〜87 が「1e54〜1e57 に30周(うち idx62-77 は
+// 16周まるごと同値)→ idx84 で+5桁 → idx87 で+9桁」という平坦と絶壁の2状態になっていた。
+// ゲートが動かない帯では貯まった瞬間に転生できてしまい、22周かけてPTが+21.6%しか伸びず
+// (次ノードまで4.3〜10.8周待ち=健全域1〜2周に対して大幅に悪い)、19周はスキルが1つも増えない。
+// 10のべき乗という確定仕様は守ったまま、停滞帯 idx54〜83 だけを e54→e62 に等間隔(0.27桁/周)で
+// 配り直した。**idx84以降(1e62〜)は原型のまま**にしてある: この帯のゲートを動かすと、はしごの
+// 同額束ね(godFinger=cookieSingularity=1e70)の直後に転生が入って㉚が割れる(S2で実測 Δ17.0s)。
+// 元の表が idx86→87 で 1e64→1e73 と跳んでいるのは、その帯にゲートを置かないための構造。
 // テーブルを超えた周回は末尾の桁ステップで自動延長。
-const PRESTIGE_COST_TABLE = [5000000,5000000,10000000000,100000000000,100000000000,100000000000,1000000000000,10000000000000,10000000000000000,1000000000000000000,10000000000000000000,100000000000000000000,1e+21,1e+23,1e+24,1e+24,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,1e+30,1e+30,1e+30,1e+30,1e+30,1e+32,1e+35,1e+37,1e+38,1.0000000000000001e+39,1e+46,1e+50,1e+51,1e+51,1e+51,1e+51,1e+52,1e+52,1e+52,1e+54,1e+54,1e+55,1e+55,1e+55,1e+55,1e+55,1e+55,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+56,1e+57,1e+57,1e+57,1e+57,1e+57,1e+57,1e+62,1e+64,1e+64,1e+73,1e+74,1e+78,1e+81,1e+83,1e+85,1e+87,1e+89,1e+91,1e+93,9.999999999999999e+94,1e+97,1e+99,1e+101,1e+103,1e+105,1e+107,1e+109,1.0000000000000001e+111,1e+113,1e+115,1e+117,1e+119,1e+121,1e+123,1e+125,1e+127,1e+129,1e+131];
+const PRESTIGE_COST_TABLE = [5000000,5000000,10000000000,100000000000,100000000000,100000000000,1000000000000,10000000000000,10000000000000000,1000000000000000000,10000000000000000000,100000000000000000000,1e+21,1e+23,1e+24,1e+24,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,1e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,9.999999999999999e+25,1e+30,1e+30,1e+30,1e+30,1e+30,1e+32,1e+35,1e+37,1e+38,1.0000000000000001e+39,1e+46,1e+50,1e+51,1e+51,1e+51,1e+51,1e+52,1e+52,1e+52,1e+54,1e+54,1e+54,1e+54,1e+55,1e+55,1e+55,1e+55,1e+56,1e+56,1e+56,1e+56,1e+57,1e+57,1e+57,1.0000000000000001e+58,1.0000000000000001e+58,1.0000000000000001e+58,1.0000000000000001e+58,1e+59,1e+59,1e+59,1e+59,1e+60,1e+60,1e+60,1e+60,1.0000000000000001e+61,1.0000000000000001e+61,1.0000000000000001e+61,1e+62,1e+64,1e+64,1e+73,1e+74,1e+78,1e+81,1e+83,1e+85,1e+87,1e+89,1e+91,1e+93,9.999999999999999e+94,1e+97,1e+99,1e+101,1e+103,1e+105,1e+107,1e+109,1.0000000000000001e+111,1e+113,1e+115,1e+117,1e+119,1e+121,1e+123,1e+125,1e+127,1e+129,1e+131];
 function prestigeCookieCost() {
   const runs = Math.max(0, Math.floor(Number(state.prestigeRuns) || 0));
   if (PRESTIGE_COST_TABLE[runs] != null) return PRESTIGE_COST_TABLE[runs]; // 初回もテーブル(初回500万・調整対象)
@@ -8767,24 +9019,38 @@ function applyOrderReward(order) {
     if (workshopTabUnlocked()) {
       let granted = 0;
       const gifts = [];
-      for (const eq of EQUIPMENT) {
-        if (granted >= 4) break;
-        const lv = equipLv(eq.id);
-        if (lv >= equipMaxLv(eq.id)) continue;
-        const cost = equipmentCost(eq, lv);
-        let filledAny = false;
-        for (const matId in cost) {
+      // 一覧#17(2026-07-28): ここは廃止済みの旧装備(EQUIPMENT)のレシピを基準に配っていた。
+      // 旧装備は作成UIも呼び出し元も無く equipLv() が常に0なので、配る量が基本コスト(最大でも数個)に
+      // 固定され、現行装備(equip2)の必要量と無関係な序盤の端数配布に縮退していた。
+      // 現行の作成欄と同じ一覧(作成ティアが解放済みのequip2)から「あと少しで作れるもの」を選ぶ。
+      const candidates = equip2Items()
+        .filter(it => equip2CraftableNow(it) && !state.eq2Owned[it.id])
+        .filter(it => !it.prev || (state.eq2Owned[it.prev] || 0) >= 1) // 前ティア必須のレシピは所持済みのみ
+        .map(it => {
+          let kinds = 0, total = 0;
+          for (const k in it.cost) {
+            const d = Math.ceil(Number(it.cost[k]) || 0) - equip2HaveOf(k);
+            if (d > 0) { kinds++; total += d; }
+          }
+          return { it, kinds, total };
+        })
+        .filter(x => x.kinds > 0)
+        // 不足の種類が少ない=完成が近いものから。同数なら不足総量が少ない順
+        .sort((a, b) => (a.kinds - b.kinds) || (a.total - b.total) || (a.it.tier - b.it.tier));
+
+      const target = candidates[0];
+      if (target) {
+        for (const matId in target.it.cost) {
           if (granted >= 4) break;
-          if (matId === "bossCoreAny") continue; // 核は恒久シンク=注文では配らない
-          const deficit = Math.ceil(Number(cost[matId]) || 0) - materialCount(matId);
+          const deficit = Math.ceil(Number(target.it.cost[matId]) || 0) - equip2HaveOf(matId);
           if (deficit > 0) {
             const give = Math.ceil(deficit * 1.25);
             gainMaterial(matId, give);
             gifts.push(`${getMaterial(matId).name} +${give}`);
-            granted++; filledAny = true;
+            granted++;
           }
         }
-        if (filledAny) break; // 1装備ぶんを満たしたら終了
+        if (gifts.length) gifts.push(`(${target.it.name} 用)`);
       }
       if (gifts.length) {
         showMessage(`注文報酬：${gifts.join("、")}(作りたい装備の不足分)`);
@@ -9090,6 +9356,18 @@ function galaxyAssemblyMultiplier() {
 }
 
 // 銀河分業 段階2: 編成ボーナス(全生産)。バランス係数 = 所持数の幾何平均 / 算術平均
+// 銀河分業 段階2: 編成ボーナス(全生産)。バランス係数=所持数の幾何平均/算術平均。
+// 一覧#4(2026-07-28): ゲーム側だけ「銀河工場数を指数にする」式(stageExpGrowth(台数, 0.027×balance))
+// になっており、台数264〜479台で ×9.9e2〜×2.7e5(貪欲購入なら×4e6〜×6e10)と、価格の上にある研究
+// (1e58〜1e90 で ×1.8〜×6)を桁で追い越していた。台数が上限なく指数へ入るのが原因。
+// 経済のはしごを設計した sim(sim.js「銀河分業 段階2」)の式は台数で**飽和**する加算ボーナスなので、
+// そちらへ揃える(sim: galaxyBonusCoef 0.05 / galaxySat 120 / galaxyStageCoef 0.0008)。
+//   ボーナス = 0.05 × 所持種類数 × balance × (1 - e^(-銀河工場数/120))  → 上限 ×1.78 前後
+// これで 2.60e54 の1枚が上位研究を追い越さなくなり、価格順=強さ順が回復する。
+const GALAXY_BONUS_COEF = 0.05;   // sim P.res2.galaxyBonusCoef
+const GALAXY_SAT = 120;           // sim P.res2.galaxySat(飽和台数)
+const GALAXY_STAGE_COEF = 0.0008; // sim P.res2.galaxyStageCoef(段階3)
+
 function galaxyDivisionBonus() {
   if (!state.research.galaxyAssembly || !resStage2("galaxyAssembly")) return 1;
   const counts = [];
@@ -9099,10 +9377,11 @@ function galaxyDivisionBonus() {
   for (const c of counts) { logSum += Math.log(c); sum += c; }
   const balance = Math.exp(logSum / counts.length) / (sum / counts.length);
   const galaxy = state.upgrades.galaxyFactory || 0;
-  // 編成ボーナス: 銀河工場数が全生産の指数、バランス係数が実効レートに掛かる
-  let rate = 0.027 * balance;
-  if (resStage3("galaxyAssembly")) rate *= 1 + 0.0008 * maxQuotaStage();
-  return stageExpGrowth(galaxy, rate);
+
+  let bonus = GALAXY_BONUS_COEF * counts.length * balance * (1 - Math.exp(-galaxy / GALAXY_SAT));
+  if (resStage3("galaxyAssembly")) bonus *= 1 + GALAXY_STAGE_COEF * maxQuotaStage();
+
+  return 1 + bonus;
 }
 
 function blackHoleQuotaCompressionMultiplier() {
@@ -9698,11 +9977,15 @@ function grantMonsterDrops(typeId, level, overkill, colorTier) {
     // 制限時間なし・内容固定・周回を跨いで累積。進捗は注文ボードに常設表示。
     questProgressOnKill(stageNo, count);
     // 色素材(2026-07-13 新装備): ノルマ層の帯の色素材を討伐ごとにドロップ(工房スキル不要=最初から)
-    // 希少化(2026-07-15): 素の5% × 強さ × レア度。装備の色素材ボーナス(oreAdd)は投資ぶんとして上乗せ。ドロップは報酬後回収(addDrop)。
+    // 希少化(2026-07-15): 素の5% × 強さ × レア度。ドロップは報酬後回収(addDrop)。
+    // 一覧#2(2026-07-28): 装備の色素材ボーナス(oreAdd)は式の**外**への生加算だったため、レア度も強さも
+    // 通らず「+3個/体」が素(c帯0.25/r帯0.087個)を18〜376倍に膨らませ、しかも希少なr帯ほど恩恵倍率が
+    // 大きい逆転が起きていた(t1の靴1個でore_t6の34時間が41分に潰れる)。式の**中**の倍率へ移し、
+    // レア度・強さを通す=どの色でも同じ倍率(×(1+oreAdd))になり、上位色の希少性が保たれる。
     {
       const ct = Math.max(1, Math.min(EQUIP2_CFG.tiers || 6, colorTier || layerOreTier())); // そのモンスターの色の素材(2026-07-15)
       const oreId = "ore_t" + ct;
-      const oreExp = (MAT_DROP_BASE * monsterDropStrength(typeId) * matRarityDrop(oreId) + equip2Fx().oreAdd) * count;
+      const oreExp = MAT_DROP_BASE * monsterDropStrength(typeId) * matRarityDrop(oreId) * (1 + equip2Fx().oreAdd) * count;
       // ステージ署名色(2026-07-17 sim同期・ユーザー指示「色違いにもステージごとの特色を」):
       // ドロップの35%は今いるステージの署名色(S1=白銀〜S6=紅)。量はその色のレア度準拠=高色は署名でも希少。
       // 色の入手が「層を進める(帯色)」と「そのステージへ行く(署名色)」の二軸になる。
@@ -9711,7 +9994,7 @@ function grantMonsterDrops(typeId, level, overkill, colorTier) {
       if (sigT !== ct) {
         addDrop(oreId, rollDropQty(oreExp * (1 - sigFrac)));
         const sigId = "ore_t" + sigT;
-        const sigExp = (MAT_DROP_BASE * monsterDropStrength(typeId) * matRarityDrop(sigId) + equip2Fx().oreAdd) * count;
+        const sigExp = MAT_DROP_BASE * monsterDropStrength(typeId) * matRarityDrop(sigId) * (1 + equip2Fx().oreAdd) * count;
         addDrop(sigId, rollDropQty(sigExp * sigFrac));
       } else {
         addDrop(oreId, rollDropQty(oreExp)); // 新装備: 色素材系
@@ -10194,6 +10477,44 @@ function visibleUpgrades() {
   return UPGRADES.filter((u, i) => i <= limit && upgradeUnlocked(u) && revealOk("up:" + u.id));
 }
 
+// ==== 無限研鑽(一覧#3・2026-07-28) ====
+// 転生PTの sink はスキル71ノード(合計 1,555,826,482 PT)だけで、転生97回目でツリーが完成する。
+// 一方 PT の供給は 14×(総生産/1e4)^0.085 で、終盤はコスト表が1周2桁伸びるため 1周あたり×1.479 で
+// 増え続ける(116周目の累積は sink の1733倍)。完成後の転生は「クッキーを消費して使い道の無い数値を
+// 受け取るだけ」になり、周回リセットが純粋な損失になっていた。
+// 直し方: 供給が無限なら sink も無限にするのが原因側の修正。ツリー完成後に解放される反復購入枠を置く。
+//   費用 = ENDLESS_BASE_COST × ENDLESS_COST_GROWTH^Lv、効果 = 全生産 ×(1+ENDLESS_MUL_PER_LV)^Lv。
+// 費用の伸び(1.5)を PT 供給の伸び(1.479/周回)に合わせてあるので、完成後はおおむね「1周回=1段」で
+// 頭打ちにならない。効果は 1段 +25%(=0.097桁)で、経済の伸び(2.3桁/周回)に対して支配的にならない。
+const ENDLESS_BASE_COST = 5.00e+8;   // 1段目=ツリー完成直後の1周のPT(実測 5.14e8)相当
+const ENDLESS_COST_GROWTH = 1.5;     // PT供給の伸び(×1.479/周回)に追随
+const ENDLESS_MUL_PER_LV = 0.25;     // 1段ごとに全生産 +25%(恒久)
+
+function endlessLv() { return Math.max(0, Math.floor(Number(state.endlessLv) || 0)); }
+function endlessUnlocked() { return SKILLS.every(s => hasSkill(s.id)); } // スキルツリー完成が解放条件
+function endlessCost() { return Math.ceil(ENDLESS_BASE_COST * Math.pow(ENDLESS_COST_GROWTH, endlessLv())); }
+function endlessMultiplier() { return Math.pow(1 + ENDLESS_MUL_PER_LV, endlessLv()); }
+
+function buyEndlessMastery() {
+  if (!endlessUnlocked()) return;
+  const cost = endlessCost();
+  if (!(state.prestige >= cost)) return;
+
+  state.prestige -= cost;
+  state.endlessLv = endlessLv() + 1;
+
+  playSound("skill");
+  showMessage(`無限研鑽 Lv${state.endlessLv}：全生産 ×${endlessMultiplier().toFixed(2)}`);
+  saveGame();
+  renderActiveTab();
+  updateTopOnly();
+}
+
+// 全生産(all)スキルの合計。生産では clickSkillMultiplier/cpsSkillMultiplier の中にも all が入っており、
+// ここを再度掛けるので all は実質2乗になっている(一覧#5の指摘は事実)。
+// ただし㉚(解放間隔100%≥30秒)を含む経済のはしご(e9〜e90)はこの2乗の上で較正されており、
+// 外すと全16方針の実測で㉚が3本割れる(S8 Δ29.0s / S12・S15 Δ3.0s。二分法で#5単独が原因と確定)。
+// ユーザー指示「解放間隔は100%達成」を満たすため、はしごの再較正とセットになるまでは現状維持とする。
 function prestigeMultiplier() {
   return 1 + skillEffect("all");
 }
@@ -10822,14 +11143,28 @@ function q5cost(v) { return Math.max(1, Math.floor(q5round(v))); }
 const SURGE_PER_BUY = 0; // まとめ買い割増は廃止(2026-07-13 ユーザー指示) // 0.25→0.45(第12次R)→0.5(R3)→0.9(R5・sim同期): 研究200本経済の再ペーシング(周回時間をT1帯へ)
 const SURGE_HALF_SEC = 120; // 75→120(同上)
 
+// 一覧#16(2026-07-28): 端末の時計が進んだ状態で購入すると sg.t に未来の時刻が入り、その後 時計が
+// 直ると (now - sg.t) が大きな負になって Math.pow(0.5, -1074以下) = Infinity → surgeHeat が Infinity、
+// surgeMultiplier が Math.pow(1, Infinity) = NaN になっていた。costOf が NaN になると
+// cookies.gte(NaN)=true / D(NaN) が Decimal 0 に潰れて spend が0円で成立=全設備が無料になる。
+// 経過時間は負になり得ない(未来の記録は「まだ減衰していない」)ので 0 で下限を取り、
+// 熱量も有限値だけを通す。SURGE_PER_BUY=0(まとめ買い割増は廃止済み)のときは計算自体を行わない。
 function surgeHeat(id) {
   const sg = state.upSurge && state.upSurge[id];
-  if (!sg || !(sg.h > 0)) return 0;
-  return sg.h * Math.pow(0.5, ((Date.now() - sg.t) / 1000) / SURGE_HALF_SEC);
+  if (!sg || !Number.isFinite(sg.h) || !(sg.h > 0)) return 0;
+
+  const t = Number.isFinite(sg.t) ? sg.t : Date.now();
+  const elapsedSec = Math.max(0, (Date.now() - t) / 1000); // 未来の記録でも負にしない
+  const heat = sg.h * Math.pow(0.5, elapsedSec / SURGE_HALF_SEC);
+
+  return Number.isFinite(heat) ? Math.max(0, heat) : 0;
 }
 
 function surgeMultiplier(id, extraHeat) {
-  return Math.pow(1 + SURGE_PER_BUY, surgeHeat(id) + Math.max(0, extraHeat || 0));
+  if (!(SURGE_PER_BUY > 0)) return 1; // 割増は廃止済み=常に1(NaNを生む Math.pow(1, x) を通さない)
+  const heat = surgeHeat(id) + Math.max(0, Number(extraHeat) || 0);
+  const m = Math.pow(1 + SURGE_PER_BUY, heat);
+  return Number.isFinite(m) ? m : 1;
 }
 
 function bumpSurge(id) {
@@ -10935,7 +11270,8 @@ function baseClickPower() {
 
   v = v.mul(bankClickMultiplier());
   v = v.mul(clickSkillMultiplier());
-  v = v.mul(prestigeMultiplier());
+  v = v.mul(prestigeMultiplier()); // 一覧#5: allの2乗は既知(㉚100%のため現状維持。上のコメント参照)
+  v = v.mul(endlessMultiplier()); // 一覧#3: ツリー完成後のPT還元(恒久)
   v = v.mul(globalResearchMultiplier());
   v = v.mul(runRewardAllMultiplier());
   v = v.mul(dishProductionMultiplier());
@@ -10977,7 +11313,8 @@ function baseCps() {
   v = v.add(msCpsAdd()); // 効果多様化: 加算(+N/秒・研究解放で)
 
   v = v.mul(cpsSkillMultiplier());
-  v = v.mul(prestigeMultiplier());
+  v = v.mul(prestigeMultiplier()); // 一覧#5: allの2乗は既知(㉚100%のため現状維持。上のコメント参照)
+  v = v.mul(endlessMultiplier()); // 一覧#3: ツリー完成後のPT還元(恒久)
   v = v.mul(globalResearchMultiplier());
   v = v.mul(runRewardAllMultiplier());
   v = v.mul(runRewardCpsMultiplier());
@@ -11108,7 +11445,7 @@ function equip2CondOn(cond) {
     default: return true;
   }
 }
-const EQUIP2_FX_LABEL = { clickMul: "タップ生産", cpsMul: "毎秒生産", allMul: "全生産", dmgMul: "討伐ダメージ", killValMul: "討伐報酬", spawnMul: "モンスター出現短縮", stayMul: "モンスター滞在", goldenAmtMul: "金クッキー獲得", goldenRateMul: "金クッキー出現短縮", goldenBoostMul: "金ブースト", holdBonus: "ノルマ維持中 全生産", quotaSlow: "ノルマ進行減速", upDisc: "設備費割引", resDisc: "研究費割引", dropMul: "素材ドロップ", oreAdd: "色素材+n/体", rewardLvAdd: "報酬レベル+n", critAdd: "会心率+n", critValMul: "会心の威力", dropRateAdd: "素材ドロップ率+", dropLuck: "確率で素材+1個" };
+const EQUIP2_FX_LABEL = { clickMul: "タップ生産", cpsMul: "毎秒生産", allMul: "全生産", dmgMul: "討伐ダメージ", killValMul: "討伐報酬", spawnMul: "モンスター出現短縮", stayMul: "モンスター滞在", goldenAmtMul: "金クッキー獲得", goldenRateMul: "金クッキー出現短縮", goldenBoostMul: "金ブースト", holdBonus: "ノルマ維持中 全生産", quotaSlow: "ノルマ進行減速", upDisc: "設備費割引", resDisc: "研究費割引", dropMul: "素材ドロップ", oreAdd: "色素材ドロップ", rewardLvAdd: "報酬レベル+n", critAdd: "会心率+n", critValMul: "会心の威力", dropRateAdd: "素材ドロップ率+", dropLuck: "確率で素材+1個" };
 let EQUIP2_ITEMS_CACHE = null;
 function equip2Items() {
   if (EQUIP2_ITEMS_CACHE) return EQUIP2_ITEMS_CACHE;
@@ -11156,7 +11493,13 @@ function equip2Items() {
           cost[m1] = (cost[m1] || 0) + (1 + ((v * t) % 5)) * (v % 4 === 3 ? bulk : 1); // 大口素材は品による(上限なし)
           if (v >= 4 && t >= 3) { const m2 = PAL[(v + t + 2) % span]; if (m2 !== m1) cost[m2] = (cost[m2] || 0) + 1 + ((v + t) % 3); }
           if (v >= 7 && t >= 3) { const m3 = v % 2 === 0 ? smatA : smatB; cost[m3] = (cost[m3] || 0) + 2; }
-          if (v === 9 && t >= 5) cost[t === 6 ? "voidSugar" : "bossCore"] = 1 + (t === 6 ? 1 : 0);
+          // 一覧#8(2026-07-28): t5 は存在しない素材ID "bossCore" を要求しており、9カテゴリの最上位v9が
+          // 永久に作成不可だった(実在するのは bossCore1〜bossCore5 と deepCore)。その装備自身のステージの
+          // ボス核を要求するように直す(ステージ素材を要求する既存の作りと揃う。個数は従来どおり1個)。
+          if (v === 9 && t >= 5) {
+            if (t === 6) cost.voidSugar = 2;
+            else { const bc = "bossCore" + Math.min(5, Math.max(1, st1)); cost[bc] = (cost[bc] || 0) + 1; }
+          }
         }
         { // 強さ順コスト係数(sim同期): 弱×0.35 … 強×3.0
           const cm = 0.35 + 0.33 * costRank[cat][v];
@@ -11167,7 +11510,7 @@ function equip2Items() {
         const fmtF = x => x >= 100 ? fmt(x) : String(Math.round(x * 100) / 100); // 倍率表示は小数を保つ(fmtは0.9を0に丸める)
         const upText = k => {
           const val = (k[1]) * scale;
-          if (k[0] === "oreAdd" || k[0] === "rewardLvAdd") return EQUIP2_FX_LABEL[k[0]].replace("+n", "+" + fmtF(Math.floor(val) || val));
+          if (k[0] === "rewardLvAdd") return EQUIP2_FX_LABEL[k[0]].replace("+n", "+" + fmtF(Math.floor(val) || val)); // oreAdd は倍率化(一覧#2)で汎用の「×N」表記へ
           if (k[0] === "critAdd") return "会心率+" + Math.round(Math.min(EQUIP2_FLATCAP.critAdd, val) * 100) + "%";
           if (k[0] === "upDisc" || k[0] === "resDisc") return EQUIP2_FX_LABEL[k[0]] + " " + Math.round(Math.min(0.5, val) * 100) + "%";
           if (k[0] === "dropRateAdd") return "素材ドロップ率 +" + Math.round(val * 100) + "%";
@@ -12317,18 +12660,45 @@ function applyGameScale() {
     const vh = (vv ? vv.height : window.innerHeight);
     wide = (vw / Math.max(1, vh)) >= WIDE_ASPECT_THRESHOLD;
     document.body.classList.toggle("wideLayout", wide);
-    const availH = vh - 8;
+
+    // 黒の余白を出さないため、縦画面は「幅ぴったりの倍率」でスケールし、
+    // ゲームボックスの高さ(--gameBoxH)を画面の高さ÷倍率で可変にして画面を使い切る。
+    // (クッキー画面303pxとタブバーは固定のまま、タブ内容エリアが伸縮する)
+    // CSSのtransformはレイアウト上の枠を縮めないため、位置はtranslateで明示的に合わせる。
+    const gameEl = document.querySelector(".game");
+    // セーフエリアはbodyのpaddingと同じ値を:rootのCSS変数から読む
+    // (bodyのcomputed styleはタイトル画面中などpadding:0のモードがありクラス状態に依存するため)
+    const rootCs = getComputedStyle(document.documentElement);
+    const padT = parseFloat(rootCs.getPropertyValue("--safe-top")) || 0;
+    const padB = parseFloat(rootCs.getPropertyValue("--safe-bottom")) || 0;
+    const padL = 0, padR = 0;
+    const availW = Math.min(vw - padL - padR, wide ? 1400 : 900);
+    const availH = vh - padT - padB;
+    let k, boxW, boxH;
     if (wide) {
-      const availW = Math.min(vw - 12, 1400);
-      const k = Math.max(0.2, Math.min(availW / GAME_WIDE_W, availH / GAME_WIDE_H));
-      document.documentElement.style.setProperty("--gameScale", String(k));
+      // 横並びは固定グリッド(750×356)のまま、画面に必ず収まる倍率で中央寄せ
+      boxW = GAME_WIDE_W;
+      boxH = (gameEl && gameEl.offsetHeight) || 356;
+      k = Math.max(0.05, Math.min(availW / boxW, availH / boxH));
     } else {
-      // 縦画面: 固定基準(375×667=端末画面と同じ比率)を等倍スケールで可視領域に収める。
-      // 全端末で内容の比率は完全に同一。基準と同じ比率の端末なら黒帯はほぼ出ない。
-      const availW = Math.min(vw - 8, 900);
-      const k = Math.max(0.35, Math.min(availW / GAME_BASE_W, availH / GAME_BASE_H));
-      document.documentElement.style.setProperty("--gameScale", String(k));
+      // 縦画面: 幅を使い切る倍率(画面幅との比)にし、高さは画面ぶんに合わせて可変
+      boxW = GAME_BASE_W;
+      k = Math.max(0.05, availW / boxW);
+      // 最低限の高さ(クッキー240+マージン8+タブ内容140+タブ53)は確保し、
+      // 収まらないほど低い画面では倍率を下げて必ず全体を画面内に収める
+      const MIN_BOX_H = 441;
+      boxH = Math.round(availH / k);
+      if (boxH < MIN_BOX_H) {
+        boxH = MIN_BOX_H;
+        k = Math.max(0.05, availH / MIN_BOX_H);
+      }
+      document.documentElement.style.setProperty("--gameBoxH", boxH + "px");
     }
+    const shiftX = Math.max(0, (vw - boxW * k) / 2 - padL);
+    const shiftY = Math.max(0, (vh - boxH * k) / 2 - padT);
+    document.documentElement.style.setProperty("--gameScale", String(k));
+    document.documentElement.style.setProperty("--gameShiftX", shiftX + "px");
+    document.documentElement.style.setProperty("--gameShiftY", shiftY + "px");
   } catch (e) {}
   // 横並びに切り替わった時は全画面状態を解除しておく(全画面ボタンも無効化される)。
   // 変数がまだ宣言される前(初回呼び出し時)に触れても落ちないよう別のtryにする。
@@ -12361,10 +12731,14 @@ document.addEventListener("visibilitychange", () => {
   // タブ非表示(=ゲームを閉じている/ロック中)の切り替わりでノルマ時計を止める/戻す
   updateQuotaPauseState();
   if (document.hidden) {
+    hiddenSinceAt = Date.now(); // 一覧#11: 非表示の実時間を測る
+    hiddenTickMs = 0;
     saveGame();
   } else {
+    catchUpFromHidden(); // 一覧#11: 閉じずに放置したぶんの生産とバフ残り時間を清算する
     resumeAudioIfNeeded();
     updateTopOnly();
+    saveGame();
   }
 });
 window.addEventListener("pagehide", () => {
@@ -13456,37 +13830,62 @@ function renderSkillChoiceScreen() {
     }).join("");
   }).join("");
 
-  const nodes = visibleSkills.map(skill => {
+  // ノードの状態クラス。初回構築と差分更新の両方で使う
+  const nodeClass = skill => {
     const done = hasSkill(skill.id);
     const canBuy = skillCanBuy(skill);
     const locked = !done && !canBuy;
     const selectedClass = selectedSkillId === skill.id ? "selected" : "";
+    return `skillNode branch-${skill.branchId} ${selectedClass} ${done ? "done" : ""} ${canBuy ? "canBuy" : ""} ${locked ? "locked" : ""}`;
+  };
 
+  const mapEl = $("skillMap");
+  const sig = visibleSkills.map(s => s.id).join(",");
+
+  // 表示ノードの構成が同じ間はDOMを作り直さない。ノード選択のたびに全再構築すると、
+  // 全スキル解放時は約75枚の画像の作り直しとリスナーの再登録になり、タップや
+  // 画面遷移が目に見えて重くなる。状態クラスと線(SVGパスのみ)の更新で済ませ、
+  // 画像要素には一切触れない。
+  if (mapEl.dataset.builtSig === sig) {
+    mapEl.querySelector(".skillLines").innerHTML = lines;
+    visibleSkills.forEach(skill => {
+      const btn = mapEl.querySelector(`[data-skill-node="${skill.id}"]`);
+      if (btn) btn.className = nodeClass(skill);
+    });
+    return;
+  }
+
+  const nodes = visibleSkills.map(skill => {
+    // done / canBuy はこのスキルごとに出し直す。nodeClass() の中の同名変数はあちらのスコープ限りで、
+    // ここで参照すると ReferenceError になりスキルマップが丸ごと組み立てられなくなる
+    const done = hasSkill(skill.id);
+    const canBuy = skillCanBuy(skill);
     return `
       <button
-        class="skillNode branch-${skill.branchId} ${selectedClass} ${done ? "done" : ""} ${canBuy ? "canBuy" : ""} ${locked ? "locked" : ""}"
+        class="${nodeClass(skill)}"
         style="left:${skill.x}px; top:${skill.y}px;"
         data-skill-node="${skill.id}"
         aria-label="${skill.name}"
       >
         ${ASSETS.skills && ASSETS.skills[skill.id]
-          ? `<img class="nodeArt" src="${assetUrl(ASSETS.skills[skill.id])}" alt="" aria-hidden="true" decoding="async">`
+          ? `<img class="nodeArt" src="${assetUrl(ASSETS.skills[skill.id])}" alt="" aria-hidden="true" loading="lazy" decoding="async">`
           : `<span class="nodeMark">${skill.icon}</span>`}
         ${done ? `<span class="nodeCheck">✓</span>` : (canBuy ? `<span class="nodeCanBuy">＋</span>` : "")}
       </button>
     `;
   }).join("");
 
-  $("skillMap").innerHTML = `
+  mapEl.innerHTML = `
     <svg class="skillLines" viewBox="0 0 ${SKILL_MAP_WIDTH} ${SKILL_MAP_HEIGHT}" preserveAspectRatio="none">
       ${lines}
     </svg>
     ${nodes}
   `;
+  mapEl.dataset.builtSig = sig;
 
   syncSkillMapZoom();
 
-  document.querySelectorAll("[data-skill-node]").forEach(btn => {
+  mapEl.querySelectorAll("[data-skill-node]").forEach(btn => {
     addTap(btn, () => selectSkill(btn.dataset.skillNode));
   });
 }
@@ -13969,6 +14368,11 @@ addTap($("cloudSyncNowBtn"), () => {
   pushCloudSave();
 });
 
+addTap($("cloudDeleteAccountBtn"), () => {
+  playSound("tab");
+  deleteCloudAccount();
+});
+
 addTap($("policyChoiceBackBtn"), () => {
   playSound("tab");
   closePolicyChoiceScreen();
@@ -14054,6 +14458,10 @@ addTap($("cancelRebirthBtn"), () => {
 
 // スキル選択(→方針→ステージ選択)を終えてから実際に周回を開始する処理
 function beginRunAfterSkills() {
+  // スタート制限はここで消費する。ゲート通過の時点で消費すると、方針選択・ステージ選択から
+  // 「スキル選択に戻る」を押しただけで、1周も遊べないまま5時間ぶんの権利を失う
+  markRunStarted();
+  state.startGateBypass = false;
   // 周回を開始したら転生は確定。以後は「転生前に戻る」できないようスナップショットを破棄する。
   clearPreRebirthSnapshot();
   state.awaitingSkillChoice = false;
@@ -14082,6 +14490,438 @@ function beginRunAfterSkills() {
   showMessage("周回開始");
 }
 
+// ==== 周回スタート時のゲート ====
+// Web(ブラウザ)版: 「広告を見てスタート」。旧Web版で広告非表示を購入済みならゲート自体を出さない。
+// Google Play版: 広告を一切出さない代わりに「スタートは5時間に1回」(2026-07-28 ユーザー指示で24時間から変更)。
+//   タイマーは初回転生よりあとのスタートで動き出し、次に始められる時刻を state.nextStartAt に持つ。
+//   買い切りのアプリ内アイテムを購入するとこの制限が外れ、以後いつでもスタートできる。
+//
+// 不正対策の方針:
+//  ・購入状態の「正」は Google Play(Digital Goods API の listPurchases)。localStorage はオフライン起動用の
+//    キャッシュにすぎず、起動時にPlayへ照合して購入が確認できなければ破棄する(手書き改ざん・返金の両方に対応)
+//  ・キャッシュ値は "1" のような自明な値ではなく検証トークン。素の書き換えでは通らない
+//  ・購入直後も listPurchases で本当に付与されたか確認してから解放する(端末側応答の偽装対策)
+//  ・購入状態と付与関数はこのクロージャ内に閉じ、コンソールから直接呼べる形では公開しない
+//  (サーバーを持たないため完全ではない。厳密にやる場合はバックエンド+Play Developer APIでの検証が必要)
+const { adGateRequired, openAdGate, markRunStarted, serverNow, serverTimeVerified } = (() => {
+  const STORAGE_KEY = "cookie_game_unlimited_start";
+  const PRODUCT_ID = "unlimited_start"; // Google Play Consoleで作成するアプリ内アイテムのID
+  const BILLING_METHOD = "https://play.google.com/billing";
+  const START_COOLDOWN_MS = 5 * 60 * 60 * 1000; // 2026-07-28 ユーザー指示: 24時間 → 5時間
+
+  // キャッシュ検証トークン(FNV-1aハッシュ)。ソースを読めば再現できるが、
+  // 値を "1" にする類の安易な改ざんを弾き、最終的な正はPlay照合が担う
+  function cacheToken() {
+    const src = PRODUCT_ID + "|exist|unlimited-v1|" + STORAGE_KEY;
+    let h = 0x811c9dc5;
+    for (let i = 0; i < src.length; i++) {
+      h ^= src.charCodeAt(i);
+      h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return "t" + h.toString(36);
+  }
+
+  let purchased = (() => {
+    try { return localStorage.getItem(STORAGE_KEY) === cacheToken(); } catch (_) { return false; }
+  })();
+
+  function grant() {
+    purchased = true;
+    try { localStorage.setItem(STORAGE_KEY, cacheToken()); } catch (_) {}
+  }
+
+  function revoke() {
+    purchased = false;
+    try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+  }
+
+  // Google Play(TWA)から起動されたか。判定は <head> で済ませて window.isPlayStoreBuild に入れてある
+  // (AdSense のスクリプトを読み込むかどうかを、そこで決める必要があるため)。
+  // referrer は初回ナビゲーションでしか見られないので、判定結果は sessionStorage に残している。
+  function isPlayStoreVersion() {
+    if (window.isPlayStoreBuild) return true;
+    try {
+      return sessionStorage.getItem("cookie_game_twa_session") === "1";
+    } catch (_) { return false; }
+  }
+
+  // ==== 時刻の取得(端末の時計を進める改ざんへの対策) ====
+  // 端末の時計をそのまま信じると、時計をクールダウンぶん進めるだけで制限を飛ばせてしまう。
+  // そこで同一オリジンへのHEADリクエストのレスポンスヘッダ(Date)をサーバー時刻として使い、
+  // 端末時計とのズレ(オフセット)を覚えておく。判定は常にこのサーバー基準で行う。
+  // ・HEADなのでSW(GETのみ介入)を素通りし、キャッシュされた古い日時をつかまない
+  // ・取得できないうち(オフライン等)は「確認できていない」扱いにして通さない(フェイルクローズ)。
+  //   通してしまうと、機内モードにして時計を進めるだけで抜けられてしまうため
+  let serverOffsetMs = null;   // null = 未取得
+  let offsetFetching = null;   // 取得中のPromise(多重に走らせない)
+
+  function fetchServerOffset() {
+    if (offsetFetching) return offsetFetching;
+    offsetFetching = (async () => {
+      try {
+        const res = await fetch("manifest.json?t=" + Date.now(), { method: "HEAD", cache: "no-store" });
+        const header = res.headers.get("date");
+        const serverMs = header ? Date.parse(header) : NaN;
+        if (Number.isFinite(serverMs)) serverOffsetMs = serverMs - Date.now();
+      } catch (_) {
+        // オフライン・失敗。serverOffsetMs は null のまま
+      } finally {
+        offsetFetching = null;
+      }
+      return serverOffsetMs;
+    })();
+    return offsetFetching;
+  }
+
+  // サーバー基準の現在時刻。未取得のときは端末時計で代用する
+  // (代用値は表示にしか使わない。通す判断は timeVerified() を必ず見る)
+  function now() {
+    return serverOffsetMs === null ? Date.now() : Date.now() + serverOffsetMs;
+  }
+
+  function timeVerified() {
+    return serverOffsetMs !== null;
+  }
+
+  // 起動時に先に取っておく。スタートを押した時点で待たされないようにする
+  fetchServerOffset();
+
+  // 次にスタートできるまでの残り時間(ミリ秒)。0 なら今すぐスタートできる。
+  // 端末の時計を戻す改ざんに対しては、残りがクールダウン(5時間)を超えることはないので上限で丸める
+  function cooldownRemaining() {
+    const next = Math.max(0, Number(state.nextStartAt) || 0);
+    if (!next) return 0;
+    return Math.min(START_COOLDOWN_MS, Math.max(0, next - now()));
+  }
+
+  function formatRemaining(ms) {
+    const total = Math.ceil(ms / 1000);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const pad = n => String(n).padStart(2, "0");
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+
+  // スタート間隔の制限を受ける状態か。購入済み・Web版・初回転生前は制限なし
+  function cooldownApplies() {
+    return isPlayStoreVersion() && !purchased && (Number(state.prestigeRuns) || 0) >= 1;
+  }
+
+  // Google Play に購入状態を問い合わせる。true/false=確定、null=確認できず(API無し・オフライン等)
+  async function playOwnsItem() {
+    if (!("getDigitalGoodsService" in window)) return null;
+    try {
+      const service = await window.getDigitalGoodsService(BILLING_METHOD);
+      if (!service) return null;
+      const purchases = await service.listPurchases();
+      return purchases.some(p => p.itemId === PRODUCT_ID);
+    } catch (_) { return null; }
+  }
+
+  // 起動時照合: 購入済みなら復元(機種変更・再インストール対応)。
+  // Playが「購入なし」と確定回答したのにキャッシュがあれば破棄(改ざん・返金対応)。
+  // オフライン等で確認できないときはキャッシュを維持する(正規購入者を巻き込まない)
+  (async () => {
+    const owns = await playOwnsItem();
+    if (owns === true) grant();
+    else if (owns === false && purchased) revoke();
+  })();
+
+  // 旧Web版の広告非表示(買い切り販売は廃止済み)の引き継ぎ。
+  // 端末のlocalStorageフラグ、またはクラウドセーブ由来の state.adsRemoved のどちらかがtrueなら広告なし。
+  // stateでtrueを確認したらlocalStorageにも書き戻し、転生でstateが作り直されても消えないようにする
+  const LEGACY_AD_REMOVE_KEY = saveKey + "_ads_removed";
+  function legacyAdsRemoved() {
+    try {
+      if (localStorage.getItem(LEGACY_AD_REMOVE_KEY) === "1") return true;
+      if (typeof state !== "undefined" && state && state.adsRemoved) {
+        localStorage.setItem(LEGACY_AD_REMOVE_KEY, "1");
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function note(text) {
+    const el = $("adGateNote");
+    if (el) el.textContent = text || "";
+  }
+
+  let onPass = null;
+  let timerHandle = null;
+
+  // ボタンの表示を初期状態(押せる状態)に戻す
+  function resetButtons() {
+    const watch = $("adGateWatchBtn");
+    const buy = $("adGateBuyBtn");
+    watch.disabled = false;
+    watch.textContent = "▶ 広告を見てスタート";
+    buy.disabled = false;
+    buy.textContent = "制限を解除する(買い切り)";
+  }
+
+  // 残り時間の表示を1秒ごとに書き換える。0になったらその場でスタートできるようにする
+  function renderCountdown() {
+    const el = $("adGateTimer");
+
+    // サーバー時刻が取れていないと残り時間を確定できない。取れるまでは待たせる
+    if (!timeVerified()) {
+      el.innerHTML = `--:--:--<small>残り時間を確認しています…</small>`;
+      note("確認にはインターネット接続が必要です");
+      fetchServerOffset();
+      return;
+    }
+
+    const remaining = cooldownRemaining();
+    if (remaining <= 0) {
+      stopCountdown();
+      note("");
+      pass();
+      return;
+    }
+    note("");
+    el.innerHTML = `${formatRemaining(remaining)}<small>次に周回を始められるまで</small>`;
+  }
+
+  function stopCountdown() {
+    if (timerHandle) clearInterval(timerHandle);
+    timerHandle = null;
+  }
+
+  function open(fn) {
+    onPass = fn;
+    note("");
+    resetButtons();
+    stopCountdown();
+
+    // Google Play版は広告を出さない。代わりに5時間に1回のスタート制限を見せ、
+    // 買い切りで解除できるようにする。Web版はこれまで通り広告視聴で通す
+    const playVer = isPlayStoreVersion();
+    const timerEl = $("adGateTimer");
+
+    $("adGateWatchBtn").style.display = playVer ? "none" : "";
+    $("adGateBuyBtn").style.display = playVer ? "" : "none";
+    timerEl.style.display = playVer ? "" : "none";
+
+    $("adGateDesc").textContent = playVer
+      ? "周回のスタートは5時間に1回です。買い切りで制限を解除すると、いつでも始められるようになります。"
+      : "広告を見ると周回をスタートできます。";
+
+    // カウントダウンは表示状態にしてから始める。先に回すと、残り0のときに
+    // pass() → close() が走ったあとで active が付き、ゲートが開いたままになる
+    $("adGateOverlay").classList.add("active");
+
+    if (playVer) {
+      renderCountdown();
+      if (timerHandle === null && $("adGateOverlay").classList.contains("active")) {
+        timerHandle = setInterval(renderCountdown, 1000);
+      }
+    }
+  }
+
+  function close() {
+    stopCountdown();
+    $("adGateOverlay").classList.remove("active");
+    onPass = null;
+  }
+
+  function pass() {
+    const fn = onPass;
+    close();
+    if (fn) fn();
+  }
+
+  // ==== 広告の読み込み妨害(広告ブロッカー・機内モード等)への対策 ====
+  // 方針: 「広告が設定されていない(AdSense審査前)」ときだけ素通しし、設定済みなのに
+  // 読み込めないときは通さない(フェイルクローズ)。正規の「在庫なし」はSDKが
+  // adBreakDone で正しく通知してくるので、プレイヤーに責任のない場合は普通に通る。
+  //
+  // ・adsConfigured: head のスニペットが有効化されているか(inline の adBreak 関数が定義される)
+  // ・adsSdkLoaded: AdSense本体(リモートJS)が実際に届いたか。広告ブロッカーやオフラインだと
+  //   inline 部分だけ動いて本体が来ないため、adsbygoogle.loaded フラグで区別できる
+  function adsConfigured() {
+    return typeof adBreak === "function";
+  }
+
+  function adsSdkLoaded() {
+    return !!(window.adsbygoogle && window.adsbygoogle.loaded === true);
+  }
+
+  // SDK本体の到着を最大 timeoutMs 待つ(250ms間隔でポーリング)
+  function waitForAdsSdk(timeoutMs) {
+    return new Promise(resolve => {
+      const startedAt = performance.now();
+      (function check() {
+        if (adsSdkLoaded()) return resolve(true);
+        if (performance.now() - startedAt >= timeoutMs) return resolve(false);
+        setTimeout(check, 250);
+      })();
+    });
+  }
+
+  // 広告を1回見せてから通す。AdSense H5 Games Ads(Ad Placement API)の adBreak を使う。
+  // 未設定時のみ素通し。設定済みで読み込めない場合は通さず、理由を表示して選び直させる
+  // AdSense審査の通過フラグ。審査中はスニペットが有効でも広告が配信されず、
+  // フェイルクローズ対策が「ブロックされている」と誤判定してスタートできなくなるため、
+  // 通過するまでは広告なしで素通しさせる。
+  // ★AdSense承認されたらここを true にする(広告ブロッカー対策などが有効になる)
+  const ADS_APPROVED = false;
+
+  function showAdThenPass() {
+    const watch = $("adGateWatchBtn");
+    watch.disabled = true;
+    $("adGateBuyBtn").disabled = true;
+
+    // 広告未設定(スニペット無効)または審査通過前は従来どおり素通し
+    if (!adsConfigured() || !ADS_APPROVED) {
+      playSound("start");
+      pass();
+      return;
+    }
+
+    // 通さずにゲートへ戻す(広告視聴・購入・戻るを選び直せる)
+    const block = msg => {
+      resetButtons();
+      note(msg);
+    };
+
+    // 広告視聴はWeb版だけの導線(Play版は視聴ボタンを出さない)なので、案内も1つで足りる
+    if (!navigator.onLine) {
+      block("オフラインのため広告を表示できません。通信環境をご確認ください");
+      return;
+    }
+
+    // 待たされていることが分かるよう、ボタン自体をスピナー+文言に置き換える
+    watch.innerHTML = '<span class="adGateSpinner"></span>広告を読み込んでいます…';
+    note("最大10秒ほどお待ちください");
+
+    waitForAdsSdk(8000).then(ok => {
+      if (!ok) {
+        // inline は動いているのに本体が来ない=広告ブロッカー等で遮断されている可能性が高い
+        block("広告を読み込めませんでした。広告ブロック機能を無効にするか、通信環境をご確認のうえもう一度お試しください");
+        return;
+      }
+      let done = false;
+      let adShowing = false;
+      adBreak({
+        type: "start",
+        name: "run_start",
+        // 広告が実際に始まったらBGMを止め、下のタイムアウトの対象から外す(長い広告の視聴中に弾かない)
+        beforeAd: () => {
+          adShowing = true;
+          if (bgmGainNode) bgmGainNode.gain.value = 0;
+        },
+        // BGM音量を設定値に戻す
+        afterAd: () => { applySettings(); },
+        // 在庫なし・表示スキップ等もSDKが正しく通知してくるので、完了通知が来れば通す
+        adBreakDone: () => {
+          if (done) return;
+          done = true;
+          applySettings();
+          playSound("start");
+          pass();
+        }
+      });
+      // SDKが届いているのに完了通知が来ないのは異常(細工の疑い)。素通しせず再試行させる
+      setTimeout(() => {
+        if (done || adShowing) return;
+        done = true;
+        block("広告を再生できませんでした。もう一度お試しください");
+      }, 15000);
+    });
+  }
+
+  // スタート制限の解除(買い切り)を Google Play 課金で購入する。
+  // TWA + Digital Goods API + Payment Request API 構成(Bubblewrap で Play Billing の有効化が必要)。
+  // 購入の承認(acknowledge)はTWA側ライブラリ(android-browser-helper billing)が行う
+  async function purchaseUnlimitedStart() {
+    if (!("getDigitalGoodsService" in window) || !window.PaymentRequest) {
+      note("購入は Google Play 版アプリでのみ利用できます");
+      return;
+    }
+    const buy = $("adGateBuyBtn");
+    $("adGateWatchBtn").disabled = true;
+    buy.disabled = true;
+    buy.innerHTML = '<span class="adGateSpinner"></span>Google Play に接続しています…';
+    try {
+      note("");
+      const service = await window.getDigitalGoodsService(BILLING_METHOD);
+      const details = await service.getDetails([PRODUCT_ID]);
+      if (!details || !details.length) throw new Error("no product");
+      const item = details[0];
+      const request = new PaymentRequest(
+        [{ supportedMethods: BILLING_METHOD, data: { sku: PRODUCT_ID } }],
+        { total: { label: item.title || "スタート制限の解除", amount: item.price } }
+      );
+      const response = await request.show();
+      await response.complete("success");
+      // 支払い応答だけを信用せず、Playの購入一覧で本当に付与されたか照合してから解放する。
+      // 照合が「確認できず(null)」なら支払い成功を優先して解放する(正規購入者を巻き込まない)
+      if ((await playOwnsItem()) === false) throw new Error("not-owned");
+      grant();
+      note("");
+      showMessage("スタート制限を解除しました。ありがとうございます!");
+      playSound("start");
+      pass();
+    } catch (_) {
+      // キャンセル・通信失敗・照合不一致。ゲートは開いたまま選び直せるようにする
+      resetButtons();
+      note("購入は完了しませんでした");
+    }
+  }
+
+  addTap($("adGateWatchBtn"), showAdThenPass);
+  addTap($("adGateBuyBtn"), () => { purchaseUnlimitedStart(); });
+  addTap($("adGateBackBtn"), () => {
+    playSound("tab");
+    close();
+  });
+
+  return {
+    // 一覧#12: オフライン生産の経過時間もサーバー基準で測るため、時刻の取得口を公開する
+    serverNow: now,
+    serverTimeVerified: timeVerified,
+    adGateRequired: () => {
+      // Play版: 5時間のスタート制限にかかっている間だけゲートを出す
+      if (isPlayStoreVersion()) {
+        if (!cooldownApplies()) return false;
+        // まだ一度もスタートしていない(制限がかかっていない)なら、通信できなくても通す
+        if (!(Number(state.nextStartAt) || 0)) return false;
+        // 制限中にサーバー時刻を確認できないときは通さない。
+        // 通すと、機内モードにして時計を進めるだけで制限を抜けられてしまう
+        if (!timeVerified()) return true;
+        return cooldownRemaining() > 0;
+      }
+      // Web版はPlay課金が使えないため、旧Web版の広告非表示引き継ぎだけを購入扱いにする
+      return !purchased && !legacyAdsRemoved();
+    },
+    openAdGate: open,
+    // 周回スタートが通ったときに呼ぶ。次に始められる時刻をクールダウン(5時間)先へ進める
+    markRunStarted: () => {
+      if (!cooldownApplies()) return;
+      state.nextStartAt = now() + START_COOLDOWN_MS;
+      saveGame();
+    }
+  };
+})();
+
+// 周回方針が解禁されていて未選択なら、スタート後に方針選択画面→ステージ選択画面を表示する
+// (デバッグモードでは検証しやすいよう方針・ステージ選択を省略して即開始)
+function proceedRunStartFlow() {
+  if (!debugMode && runPolicyUnlocked() && !state.runPolicyChosen) {
+    openPolicyChoiceScreen();
+    return;
+  }
+
+  if (!debugMode) {
+    proceedToStageChoice();
+    return;
+  }
+
+  beginRunAfterSkills();
+}
+
 addTap($("skillStartBtn"), () => {
   // 確認モード(転生タブから開いた場合)は閉じるだけ
   if (skillViewMode) {
@@ -14101,19 +14941,17 @@ addTap($("skillStartBtn"), () => {
     return;
   }
 
-  // 周回方針が解禁されていて未選択なら、スタート後に方針選択画面→ステージ選択画面を表示する
-  // (デバッグモードでは検証しやすいよう方針・ステージ選択を省略して即開始)
-  if (!debugMode && runPolicyUnlocked() && !state.runPolicyChosen) {
-    openPolicyChoiceScreen();
+  // スタートの前にゲートを挟む。Web版は広告視聴、Google Play版は5時間の
+  // スタート制限(買い切りで解除可)。制限にかかっていなければそのまま通る。
+  // やり直し(redoCurrentRun)で戻ってきた場合はこの周回のスタート枠を消化済みなのでゲートを通さない
+  if (state.startGateBypass) { proceedRunStartFlow(); return; }
+
+  if (adGateRequired()) {
+    openAdGate(proceedRunStartFlow);
     return;
   }
 
-  if (!debugMode) {
-    proceedToStageChoice();
-    return;
-  }
-
-  beginRunAfterSkills();
+  proceedRunStartFlow();
 });
 
 function upgradeArt(u) {
@@ -14801,6 +15639,16 @@ function renderPrestige() {
 
     ${policyBox}
 
+    ${endlessUnlocked() ? `
+    <div class="infoBox">
+      <h3>無限研鑽</h3>
+      <div class="desc">スキルツリーは完成しました。以後の転生PTはここで恒久的な生産力に変えられます(転生でも消えません)。</div>
+      <div class="infoRow">現在：Lv${fmt(endlessLv())} ／ 全生産 ×${endlessMultiplier().toFixed(3)}</div>
+      <div class="infoRow">次の1段：PT ${fmt(endlessCost())}(所持PT ${fmt(Math.floor(state.prestige))})</div>
+      <button id="endlessBtn" class="item ${state.prestige >= endlessCost() ? "canBuy" : "locked"}">${state.prestige >= endlessCost() ? `PT ${fmt(endlessCost())} を使って1段のばす` : `PT ${fmt(endlessCost())} が必要`}</button>
+    </div>
+    ` : ""}
+
     <div class="infoBox">
       <h3>転生</h3>
       <div class="infoRow">今回の総クッキー：${fmt(state.runCookies)}</div>
@@ -14817,6 +15665,9 @@ function renderPrestige() {
 
   const redoRunBtn = $("redoRunBtn");
   if (redoRunBtn) addTap(redoRunBtn, redoCurrentRun);
+
+  const endlessBtn = $("endlessBtn");
+  if (endlessBtn) addTap(endlessBtn, buyEndlessMastery);
 
   const prestigeBtn = $("prestigeBtn");
   if (prestigeBtn) addTap(prestigeBtn, prestigeReset);
@@ -14843,7 +15694,8 @@ function upgradeEffectiveContributionAtCount(u, count, includeResearch = true) {
   }
 
   v = v.mul(u.type === "click" ? clickSkillMultiplier() : cpsSkillMultiplier());
-  v = v.mul(prestigeMultiplier());
+  v = v.mul(prestigeMultiplier()); // 一覧#5: allの2乗は既知(㉚100%のため現状維持)
+  v = v.mul(endlessMultiplier()); // 一覧#3: 一覧の寄与表示も本体と同じ倍率で揃える
   v = v.mul(includeResearch ? globalResearchMultiplier() : 1);
   v = v.mul(challengeMultiplier());
 
@@ -15373,8 +16225,46 @@ if ($("playFullscreenBtn")) addTap($("playFullscreenBtn"), togglePlayFullscreen)
 // (周回を開始した時点で確定=スナップショットを破棄する)
 const PREREBIRTH_KEY = saveKey + "_prerebirth";
 
+// ==== スナップショットの所有者検証(一覧#10・2026-07-28) ====
+// 転生前(PREREBIRTH_KEY)/周回開始(RUN_START_KEY)のスナップショットは「素の state」をそのまま
+// localStorage に置いており、誰のどの時点のものかを持っていなかった。そのため
+//   ・クラウド復元で state を丸ごと差し替えても、別セーブのスナップショットが残ったまま
+//   ・転生を取り消しても、転生直後に書いた周回開始スナップショットが残ったまま
+// になり、「この周回を最初からやり直す」で数周回ぶん巻き戻り、直後の saveGame と
+// 自動クラウド同期でその巻き戻りが確定していた。
+// 対策: セーブ固有のID(state.saveId)を刻んで保存し、読むときに現在のセーブと一致するものだけ使う。
+// さらに state を丸ごと差し替える経路では明示的に両方を破棄する。
+function writeSnapshot(key, snapState) {
+  try {
+    localStorage.setItem(key, JSON.stringify({
+      v: 1, saveId: state.saveId, savedAt: Date.now(),
+      prestigeRuns: Math.max(0, Math.floor(Number(state.prestigeRuns) || 0)),
+      state: snapState
+    }));
+  } catch (e) {}
+}
+
+function readSnapshot(key) {
+  let raw;
+  try { raw = localStorage.getItem(key); } catch (e) { return null; }
+  if (!raw) return null;
+
+  let o;
+  try { o = JSON.parse(raw); } catch (e) { return null; }
+  // 旧形式(素のstate)は所有者が分からないので使わない。新形式でもIDが今のセーブと違えば使わない。
+  if (!o || typeof o !== "object" || o.v !== 1 || !o.state) return null;
+  if (!o.saveId || o.saveId !== state.saveId) return null;
+
+  return o.state;
+}
+
+function clearRunSnapshots() {
+  try { localStorage.removeItem(RUN_START_KEY); } catch (e) {}
+  try { localStorage.removeItem(PREREBIRTH_KEY); } catch (e) {}
+}
+
 function preRebirthSnapshotAvailable() {
-  try { return !!localStorage.getItem(PREREBIRTH_KEY); } catch (e) { return false; }
+  return !!readSnapshot(PREREBIRTH_KEY);
 }
 
 function clearPreRebirthSnapshot() {
@@ -15383,14 +16273,13 @@ function clearPreRebirthSnapshot() {
 
 // スキル画面から転生を取り消して、転生前(周回途中)の状態に戻す
 function cancelRebirth() {
-  let snap;
-  try { snap = localStorage.getItem(PREREBIRTH_KEY); } catch (e) { snap = null; }
+  const snap = readSnapshot(PREREBIRTH_KEY);
   if (!snap) return;
-  try {
-    state = JSON.parse(snap);
-  } catch (e) { return; }
+  state = snap;
   ensureState();
-  clearPreRebirthSnapshot();
+  // 一覧#10: 取り消した転生の直後に書かれた周回開始スナップショットは、この state と対応しないので捨てる
+  // (残すと「この周回を最初からやり直す」で取り消したはずの転生が再適用される)
+  clearRunSnapshots();
 
   skillViewMode = false;
   state.awaitingSkillChoice = false;
@@ -15411,7 +16300,7 @@ function cancelRebirth() {
 const RUN_START_KEY = saveKey + "_runstart";
 
 function runStartSnapshotAvailable() {
-  try { return !!localStorage.getItem(RUN_START_KEY); } catch (e) { return false; }
+  return !!readSnapshot(RUN_START_KEY);
 }
 
 // この機能を追加する前に転生済み(周回途中)のプレイヤーには周回開始スナップショットが無い。
@@ -15429,6 +16318,8 @@ function buildRunStartFromCurrent() {
   s.prestige = cur.prestige;
   s.prestigeTotal = cur.prestigeTotal;
   s.prestigeBaseTotal = cur.prestigeBaseTotal;
+  s.endlessLv = Math.max(0, Math.floor(Number(cur.endlessLv) || 0)); // 一覧#3: 無限研鑽は生涯記録
+  s.saveId = cur.saveId; // 一覧#10: 同じセーブのスナップショットであることを示す
   s.quotaBonusTotal = 0;
   s.prestigeRuns = cur.prestigeRuns;
   s.quotaActive = true;
@@ -15440,6 +16331,7 @@ function buildRunStartFromCurrent() {
   s.skills = cur.skills;
   s.materials = { ...(cur.materials || {}) };
   s.materialsSeen = { ...(cur.materialsSeen || {}) };
+  s.codex = JSON.parse(JSON.stringify(cur.codex || {})); // 一覧#15: 図鑑は生涯記録
   s.equipment = { ...(cur.equipment || {}) };
   s.equipmentAscend = { ...(cur.equipmentAscend || {}) };
   s.killRecords = { ...(cur.killRecords || {}) };
@@ -15468,19 +16360,26 @@ function ensureRunStartSnapshot() {
     if (runStartSnapshotAvailable()) return;
     if (!(Number(state.prestigeRuns) >= 1)) return; // 初転生前は対象外
     if (pausedForSkillChoice()) return;             // スキル選択中は prestigeReset 側で保存済み
-    localStorage.setItem(RUN_START_KEY, JSON.stringify(buildRunStartFromCurrent()));
+    writeSnapshot(RUN_START_KEY, buildRunStartFromCurrent());
   } catch (e) {}
 }
 
 function redoCurrentRun() {
   if (pausedForSkillChoice()) return; // すでにスキル選択中(周回開始前)なら不要
-  let snap;
-  try { snap = localStorage.getItem(RUN_START_KEY); } catch (e) { snap = null; }
+  const snap = readSnapshot(RUN_START_KEY);
   if (!snap) return;
   if (!confirm("この周回を最初からやり直す？\n集めた素材・装備・クッキー・進行は周回開始時点に戻ります(転生PT・スキルは保持、選び直し可)。")) return;
 
-  try { state = JSON.parse(snap); } catch (e) { return; }
+  // スナップショットは prestigeReset の時点、つまりスタート制限を消費する前に保存されている。
+  // そのまま戻すと nextStartAt が消費前の値に巻き戻り、やり直しを繰り返すだけで制限を無限に回避できる
+  const keepNextStartAt = Math.max(0, Math.floor(Number(state.nextStartAt) || 0));
+
+  state = snap;
   ensureState();
+  state.nextStartAt = Math.max(keepNextStartAt, Math.floor(Number(state.nextStartAt) || 0));
+  // この周回のスタート枠は消化済み。やり直し直後のスタートでゲートに掛けると、
+  // スキル選択画面から出られないまま最大5時間待たされる
+  state.startGateBypass = true;
 
   // 実行中の一時オブジェクト・タイマーを片付ける(prestigeReset と同様)
   clearGoldenBoosts();
@@ -15515,7 +16414,7 @@ function prestigeReset() {
   if (state.cookies.lt(prestigeCookieCost())) return;
 
   // 転生前の状態を保存(スキル画面から取り消せるように)。周回開始で破棄する。
-  try { localStorage.setItem(PREREBIRTH_KEY, JSON.stringify(state)); } catch (e) {}
+  writeSnapshot(PREREBIRTH_KEY, state);
 
   state.cookies = state.cookies.sub(prestigeCookieCost());
   const keepLastPrestigeCps = currentCps().toNumberClamped(1e300); // 次回コストの基準=この瞬間の毎秒生産
@@ -15523,6 +16422,8 @@ function prestigeReset() {
   const keepTotal = state.totalCookies;
   const keepClicks = state.totalClicks;
   const baseGain = prestigeBaseGain();
+  const keepSaveId = state.saveId; // 一覧#10: 転生してもセーブは同じ(スナップショットの所有者判定用)
+  const keepEndlessLv = Math.max(0, Math.floor(Number(state.endlessLv) || 0)); // 一覧#3: 無限研鑽は転生で消えない
   const keepPrestige = state.prestige + gain;
   const keepPrestigeTotal = state.prestigeTotal + gain;
   const keepPrestigeBaseTotal = state.prestigeBaseTotal + baseGain;
@@ -15531,11 +16432,17 @@ function prestigeReset() {
   const keepEverFeatures = { ...(state.everFeatures || {}) };
   const keepPrestigeRuns = state.prestigeRuns + 1;
   const keepSkills = state.skills;
+  // スタート制限の残り時間は転生をまたいで持ち越す。
+  // ここで freshState の 0 に戻すと、転生するたびに制限が消えてしまう
+  const keepNextStartAt = Math.max(0, Math.floor(Number(state.nextStartAt) || 0));
 
   // 転生持ち越し: 素材・レシピ開示・装備・工房解放・ステージ解放・討伐数
   // (料理バフ・現在ステージ・段階購入(researchStages)は持ち越さない=freshStateの初期値に戻る)
   const keepMaterials = { ...(state.materials || {}) };
   const keepMaterialsSeen = { ...(state.materialsSeen || {}) };
+  // 一覧#15(2026-07-28): 図鑑(codex)は収集記録なので転生で消さない。materialsSeen / eq2Seen / killRecords /
+  // everFeatures / lifeRewardCat と同じ生涯記録の仲間だが、keep から漏れていて毎転生で「？？？」に戻っていた。
+  const keepCodex = JSON.parse(JSON.stringify(state.codex || {}));
   const keepPresenceBonus = { ...(state.presenceBonus || {}) };
   const keepEquipment = { ...(state.equipment || {}) };
   const keepEquipmentAscend = { ...(state.equipmentAscend || {}) };
@@ -15578,8 +16485,11 @@ function prestigeReset() {
   state.prestige = keepPrestige;
   state.prestigeTotal = keepPrestigeTotal;
   state.prestigeBaseTotal = keepPrestigeBaseTotal;
+  state.endlessLv = keepEndlessLv;
+  state.saveId = keepSaveId;
   state.quotaBonusTotal = keepQuotaBonusTotal;
   state.prestigeRuns = keepPrestigeRuns;
+  state.nextStartAt = keepNextStartAt;
   state.quotaActive = true;
   state.quotaFailed = false;
   state.quotaHoldSeconds = 0;
@@ -15589,6 +16499,7 @@ function prestigeReset() {
   state.skills = keepSkills;
   state.materials = keepMaterials;
   state.materialsSeen = keepMaterialsSeen;
+  state.codex = keepCodex;
   state.presenceBonus = keepPresenceBonus;
   state.equipment = keepEquipment;
   state.equipmentAscend = keepEquipmentAscend;
@@ -15650,7 +16561,7 @@ function prestigeReset() {
   showMessage(`転生ポイント +${fmt(gain)}`);
   saveGame();
   // 「この周回をやり直す」用に、周回開始(転生直後)時点のスナップショットを保存
-  try { localStorage.setItem(RUN_START_KEY, JSON.stringify(state)); } catch (e) {}
+  writeSnapshot(RUN_START_KEY, state);
   updateTopOnly();
   renderAllTabs();
   openSkillChoiceScreen();
@@ -15661,6 +16572,7 @@ function completeReset() {
 
   localStorage.removeItem(saveKey);
   oldSaveKeys.forEach(key => localStorage.removeItem(key));
+  clearRunSnapshots(); // 一覧#10: 完全リセットでスナップショットも消す(残すと消したはずの進行へ戻せてしまう)
 
   state = freshState();
   // freshStateに無いフィールド(eq2Seen/eq2Owned/eq2Equipped/msResearch/questKills等)も
@@ -15711,6 +16623,8 @@ function saveGame() {
     state.quotaPauseStartedAt = now;
   }
   state.lastSave = now;
+  // 一覧#12: 端末時計とは別に、サーバー基準の保存時刻も残す(取得できているときだけ更新)
+  if (serverTimeVerified()) state.lastSaveServer = serverNow();
   localStorage.setItem(saveKey, JSON.stringify(state));
 }
 
@@ -15808,6 +16722,17 @@ function restoreCloudSessionIfNeeded() {
   }
 }
 
+// ポップアップが使えない環境で出るエラー。この場合はリダイレクト方式に切り替える。
+// Google Play(TWA)ではポップアップが別タブで開いて opener に結果が戻らないことがあり、
+// ここに引っかかるとログインが永久に完了しないため、フォールバックは必須。
+const POPUP_UNAVAILABLE_CODES = [
+  "auth/popup-blocked",
+  "auth/popup-closed-by-user",
+  "auth/cancelled-popup-request",
+  "auth/operation-not-supported-in-this-environment",
+  "auth/web-storage-unsupported"
+];
+
 async function signInToCloud() {
   if (!cloudSaveConfigured()) {
     alert("クラウド保存は現在設定されていません。");
@@ -15816,7 +16741,15 @@ async function signInToCloud() {
   try {
     await ensureFirebaseReady();
     const provider = new firebase.auth.GoogleAuthProvider();
-    await firebaseAuth.signInWithPopup(provider);
+    try {
+      await firebaseAuth.signInWithPopup(provider);
+    } catch (popupError) {
+      if (!POPUP_UNAVAILABLE_CODES.includes(popupError && popupError.code)) throw popupError;
+      // リダイレクトすると play.html が読み直される。復帰時に Firebase の初期化を
+      // 待たせないようフラグを先に立てておくと、onAuthStateChanged がすぐログインを拾う
+      try { localStorage.setItem(CLOUD_SAVE_USED_KEY, "1"); } catch (_) {}
+      await firebaseAuth.signInWithRedirect(provider);
+    }
   } catch (e) {
     console.error(e);
     alert("ログインに失敗しました。時間をおいて再度お試しください。");
@@ -15825,6 +16758,50 @@ async function signInToCloud() {
 
 function signOutFromCloud() {
   if (firebaseAuth) firebaseAuth.signOut();
+}
+
+// アカウントとクラウドデータの削除。Google Play のポリシー(アカウント作成のあるアプリは
+// アプリ内に削除手段を用意する)への対応。端末内のセーブは消さず、クラウド側だけを消す。
+async function deleteCloudAccount() {
+  if (!cloudUser || !firebaseDb || !firebaseAuth) return;
+
+  const label = cloudUser.displayName || cloudUser.email || "このアカウント";
+  if (!confirm(
+    `${label} のクラウド上のセーブデータを削除し、このゲームからアカウントを削除します。\n\n`
+    + "・クラウドに保存されたセーブデータは元に戻せません\n"
+    + "・この端末に保存されているセーブデータは残ります\n\n"
+    + "削除しますか?"
+  )) return;
+
+  const btn = $("cloudDeleteAccountBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "削除しています…"; }
+
+  const uid = cloudUser.uid;
+  try {
+    stopCloudAutoSync();
+    // 先にセーブデータ本体を消す。アカウントを消すと権限を失って消せなくなる
+    await firebaseDb.collection("saves").doc(uid).delete();
+    try {
+      await firebaseAuth.currentUser.delete();
+    } catch (authError) {
+      // 最終ログインから時間が経つと再認証を要求される(auth/requires-recent-login)。
+      // データは既に消えているので、ログアウトさせて再ログイン後の再実行を案内する
+      if (authError && authError.code === "auth/requires-recent-login") {
+        await firebaseAuth.signOut();
+        alert("クラウド上のセーブデータは削除しました。\nアカウント自体の削除には再ログインが必要です。もう一度ログインしてから、この操作をやり直してください。");
+        return;
+      }
+      throw authError;
+    }
+    localStorage.removeItem(CLOUD_SAVE_USED_KEY);
+    alert("アカウントとクラウド上のセーブデータを削除しました。");
+  } catch (e) {
+    console.error(e);
+    alert("削除に失敗しました。通信状況を確認して、もう一度お試しください。");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "アカウントとクラウドデータを削除"; }
+    syncCloudSettingsUi();
+  }
 }
 
 async function pushCloudSave(silent) {
@@ -15934,6 +16911,8 @@ async function pullCloudSaveIfNewer() {
         try {
           state = cloudState;
           ensureState();
+          clearRunSnapshots(); // 一覧#10: この端末のスナップショットは別セーブのものなので捨てる
+          applyOfflineOnLoad(); // 一覧#9: ローカル読み込みと同じオフライン補正(ノルマ時計を止める+放置生産)
           saveGame();
           pushCloudSave(true); // 新形式(JSON文字列)でクラウドを更新し、時刻も揃える
           updateTopOnly();
@@ -15970,6 +16949,7 @@ function syncCloudSettingsUi() {
   const loginBtn = $("cloudLoginBtn");
   const logoutBtn = $("cloudLogoutBtn");
   const syncNowBtn = $("cloudSyncNowBtn");
+  const deleteBtn = $("cloudDeleteAccountBtn");
   if (!statusEl) return;
 
   if (!cloudSaveConfigured()) {
@@ -15977,6 +16957,7 @@ function syncCloudSettingsUi() {
     loginBtn.style.display = "";
     logoutBtn.style.display = "none";
     syncNowBtn.style.display = "none";
+    if (deleteBtn) deleteBtn.style.display = "none";
     return;
   }
 
@@ -15985,11 +16966,13 @@ function syncCloudSettingsUi() {
     loginBtn.style.display = "none";
     logoutBtn.style.display = "";
     syncNowBtn.style.display = "";
+    if (deleteBtn) deleteBtn.style.display = "";
   } else {
     statusEl.textContent = "Googleでログインすると、セーブデータが自動でクラウドに保存されます。";
     loginBtn.style.display = "";
     logoutBtn.style.display = "none";
     syncNowBtn.style.display = "none";
+    if (deleteBtn) deleteBtn.style.display = "none";
   }
 }
 
@@ -16009,6 +16992,45 @@ function findSavedData() {
   return null;
 }
 
+// セーブを読み込んだ直後の共通補正(一覧#9): 「保存時刻から今まで」の実時間を
+// (a) ノルマ時計から除外し(quotaPausedMs へ加算)、(b) 放置生産として与える。
+// ローカル読み込み(loadGame)とクラウド復元(pullCloudSaveIfNewer)の両方から必ずこれを通す。
+// 以前はクラウド復元だけこの補正が無く、復元した瞬間に quotaElapsedSeconds() へ
+// 「別端末を閉じてからの実時間」がそのまま入って必ず「ノルマ終了」になっていた。
+function applyOfflineOnLoad() {
+  const now = Date.now();
+  // 一覧#12: 端末時計そのままだと「時計を8時間進めて起動」を繰り返すだけで放置生産を取り直せる。
+  // スタート制限と同じサーバー基準の時刻(HEADのDateヘッダ)で測り、取れているときはそちらを使う。
+  // 取得できない(オフライン等)ときだけ従来どおり端末時計にフォールバックする=正直な放置は損しない。
+  const serverDeltaMs = (serverTimeVerified() && state.lastSaveServer > 0)
+    ? Math.max(0, serverNow() - state.lastSaveServer)
+    : null;
+  const offlineMs = serverDeltaMs !== null
+    ? Math.min(serverDeltaMs, Math.max(0, now - state.lastSave))
+    : Math.max(0, now - state.lastSave);
+
+  if (state.quotaPauseStartedAt) {
+    state.quotaPausedMs += Math.max(0, state.lastSave - state.quotaPauseStartedAt);
+    state.quotaPauseStartedAt = 0;
+  }
+  state.quotaPausedMs += offlineMs;
+
+  if (!pausedForSkillChoice()) {
+    const baseLimit = OFFLINE_LIMIT_SECONDS;
+    const extraLimit = skillEffect("offlineHours") * 60 * 60;
+    // 終わらぬ焼窯: オフライン生産の時間上限なし
+    const seconds = hasSkillEffect("unlockSystem", "offlineInfinite")
+      ? offlineMs / 1000
+      : Math.min(offlineMs / 1000, baseLimit + extraLimit);
+    // 放置生産は Decimal で計算(seconds が巨大でも double の Infinity 化で取り逃さない)
+    const gained = earn(D(baseCps()).mul(seconds));
+
+    if (gained.gt(0)) showMessage(`放置 +${fmt(gained)}`);
+  }
+
+  return offlineMs;
+}
+
 function loadGame() {
   const raw = findSavedData();
 
@@ -16017,28 +17039,7 @@ function loadGame() {
   try {
     state = JSON.parse(raw);
     ensureState();
-
-    const now = Date.now();
-    const offlineMs = Math.max(0, now - state.lastSave);
-    if (state.quotaPauseStartedAt) {
-      state.quotaPausedMs += Math.max(0, state.lastSave - state.quotaPauseStartedAt);
-      state.quotaPauseStartedAt = 0;
-    }
-    state.quotaPausedMs += offlineMs;
-
-    if (!pausedForSkillChoice()) {
-      const baseLimit = OFFLINE_LIMIT_SECONDS;
-      const extraLimit = skillEffect("offlineHours") * 60 * 60;
-      // 終わらぬ焼窯: オフライン生産の時間上限なし
-      const seconds = hasSkillEffect("unlockSystem", "offlineInfinite")
-        ? offlineMs / 1000
-        : Math.min(offlineMs / 1000, baseLimit + extraLimit);
-      // 放置生産は Decimal で計算(seconds が巨大でも double の Infinity 化で取り逃さない)
-      const gained = earn(D(baseCps()).mul(seconds));
-
-      if (gained.gt(0)) showMessage(`放置 +${fmt(gained)}`);
-    }
-
+    applyOfflineOnLoad();
     saveGame();
   } catch (e) {
     state = freshState();
@@ -16129,6 +17130,75 @@ function updateSpawnTimerPauseState() {
 
 // 報酬選択中・図鑑/設定中は「クッキー生産とプレイ時間以外の時間」を止める。
 // バフ/ブーストの残り時間・金クッキー/モンスターの滞在時間を凍結し、閉じたら残り時間から再開する。
+// バフ・ブースト・注文の「残り時間」をまとめて delta ぶん前へずらす(=その間は消化されない)。
+// 図鑑/報酬モーダル中の凍結(updateGameClockFreeze)と、アプリを閉じずに放置して戻ったとき
+// (一覧#11 の追いつき)の両方から使う。
+// validAfter: 「この時刻に生きていたものを対象にする」基準。既定は now(凍結中の毎tick前送り)。
+// 非表示からの復帰では「非表示になった時刻」を渡す=閉じている間に切れたはずのバフが残り時間ごと戻る。
+function shiftGameClocks(delta, nowMs, validAfter) {
+  const now = nowMs || Date.now();
+  const ref = validAfter || now;
+  if (!(delta > 0)) return;
+
+  // 終了時刻(未来)系: 基準時刻に有効だったものだけ前へずらす(それ以前に切れたものは復活させない)
+  const shiftUntil = (v) => (v && v > ref) ? v + delta : v;
+  state.spiceBoostUntil = shiftUntil(state.spiceBoostUntil);
+  state.spiceAromaUntil = shiftUntil(state.spiceAromaUntil);
+  state.bhBoostUntil = shiftUntil(state.bhBoostUntil);
+  state.portalHuntUntil = shiftUntil(state.portalHuntUntil);
+  state.bakeStateUntil = shiftUntil(state.bakeStateUntil);
+  state.orderTempCpsUntil = shiftUntil(state.orderTempCpsUntil);
+  state.orderTempResearchUntil = shiftUntil(state.orderTempResearchUntil);
+  state.orderTempSpiceUntil = shiftUntil(state.orderTempSpiceUntil);
+  state.nextOrderAt = shiftUntil(state.nextOrderAt);
+  // 基準時刻(過去)系: 経過を止めるため常に前へずらす
+  if (state.bhFullSince) state.bhFullSince += delta;
+  if (state.lastCritAt) state.lastCritAt += delta;
+  if (state.lastGoldenAt) state.lastGoldenAt += delta;
+  // 金ブースト・余熱(配列)
+  if (Array.isArray(activeGoldenBoosts)) activeGoldenBoosts.forEach(b => { if (b && b.until > ref) b.until += delta; });
+  if (Array.isArray(activeGoldenAfterheats)) activeGoldenAfterheats.forEach(b => { if (b && b.until > ref) b.until += delta; });
+  if (Array.isArray(activeGoldenBoosts)) boostUntil = activeGoldenBoosts.reduce((m, b) => Math.max(m, (b && b.until) || 0), 0);
+  // 料理バフ
+  if (Array.isArray(state.activeDishes)) state.activeDishes.forEach(d => { if (d && d.until > ref) d.until += delta; });
+  // 注文の期限(進捗が進まない間は締め切りも進めない)
+  if (state.activeOrder && state.activeOrder.expiresAt > ref) state.activeOrder.expiresAt += delta;
+}
+
+// ==== 非表示(バックグラウンド)の追いつき(一覧#11・2026-07-28) ====
+// アプリを終了せずホーム/画面ロックへ置くと loadGame が走らないため放置生産が一切入らず、
+// 一方でバフ・注文は Date.now 基準なので消化され続けていた(=数分離れるだけでブーストを捨て、
+// 注文は進捗ゼロで期限切れ)。非表示の実時間を測り、戻ったときに
+//   (a) バフ・注文の残り時間を非表示ぶん前へずらす
+//   (b) tick が計上できなかった時間ぶんの生産を、オフラインと同じ上限・スキルで与える
+// を行う。(b) は非表示中に throttle された tick が実際に計上した時間を差し引くので二重計上しない。
+let hiddenSinceAt = 0;
+let hiddenTickMs = 0;
+
+function catchUpFromHidden() {
+  if (!hiddenSinceAt) return;
+
+  const now = Date.now();
+  const hiddenSince = hiddenSinceAt;
+  const hiddenMs = Math.max(0, now - hiddenSinceAt);
+  const uncreditedMs = Math.max(0, hiddenMs - hiddenTickMs);
+  hiddenSinceAt = 0;
+  hiddenTickMs = 0;
+  if (hiddenMs <= 0) return;
+
+  shiftGameClocks(hiddenMs, now, hiddenSince); // 非表示になった時点で生きていたバフ・注文を残り時間ごと戻す
+
+  if (uncreditedMs > 0 && !pausedForSkillChoice()) {
+    const baseLimit = OFFLINE_LIMIT_SECONDS;
+    const extraLimit = skillEffect("offlineHours") * 60 * 60;
+    const seconds = hasSkillEffect("unlockSystem", "offlineInfinite")
+      ? uncreditedMs / 1000
+      : Math.min(uncreditedMs / 1000, baseLimit + extraLimit);
+    const gained = earn(D(baseCps()).mul(seconds));
+    if (gained.gt(0)) showMessage(`放置 +${fmt(gained)}`);
+  }
+}
+
 function updateGameClockFreeze() {
   const now = Date.now();
   const buffFrozen = rewardModalOpen() || overlayFreezesGame();
@@ -16137,30 +17207,7 @@ function updateGameClockFreeze() {
 
   // (A) バフ・ブースト等の残り時間: 停止が続く間は毎フレーム前方へずらして凍結する
   if (buffFrozen && lastGameFreezeAt) {
-    const delta = now - lastGameFreezeAt;
-    if (delta > 0) {
-      // 終了時刻(未来)系: まだ有効なものだけ前へずらす(期限切れを復活させない)
-      const shiftUntil = (v) => (v && v > now) ? v + delta : v;
-      state.spiceBoostUntil = shiftUntil(state.spiceBoostUntil);
-      state.spiceAromaUntil = shiftUntil(state.spiceAromaUntil);
-      state.bhBoostUntil = shiftUntil(state.bhBoostUntil);
-      state.portalHuntUntil = shiftUntil(state.portalHuntUntil);
-      state.bakeStateUntil = shiftUntil(state.bakeStateUntil);
-      state.orderTempCpsUntil = shiftUntil(state.orderTempCpsUntil);
-      state.orderTempResearchUntil = shiftUntil(state.orderTempResearchUntil);
-      state.orderTempSpiceUntil = shiftUntil(state.orderTempSpiceUntil);
-      state.nextOrderAt = shiftUntil(state.nextOrderAt);
-      // 基準時刻(過去)系: 経過を止めるため常に前へずらす
-      if (state.bhFullSince) state.bhFullSince += delta;
-      if (state.lastCritAt) state.lastCritAt += delta;
-      if (state.lastGoldenAt) state.lastGoldenAt += delta;
-      // 金ブースト・余熱(配列)
-      if (Array.isArray(activeGoldenBoosts)) activeGoldenBoosts.forEach(b => { if (b && b.until > now) b.until += delta; });
-      if (Array.isArray(activeGoldenAfterheats)) activeGoldenAfterheats.forEach(b => { if (b && b.until > now) b.until += delta; });
-      if (Array.isArray(activeGoldenBoosts)) boostUntil = activeGoldenBoosts.reduce((m, b) => Math.max(m, (b && b.until) || 0), 0);
-      // 料理バフ
-      if (Array.isArray(state.activeDishes)) state.activeDishes.forEach(d => { if (d && d.until > now) d.until += delta; });
-    }
+    shiftGameClocks(now - lastGameFreezeAt, now);
   }
   lastGameFreezeAt = buffFrozen ? now : 0;
 
@@ -17345,13 +18392,25 @@ function showRewardChoices(level, dropMaterials) {
 }
 
 // 「報酬を手に入れた」画面でOKを押すと、遅延なしで報酬選択に移る
+// 一覧#13(2026-07-28): OKを押した瞬間に選択肢が上へ詰まり、1枚目のカードが直前までOKボタンが
+// あった座標を覆うため、連打の勢いで2回目のタップがそのまま「1番目の報酬を確定」になっていた。
+// rewardLockUntil は 0 を代入されるだけで常に0=時間ガードが死んでいたのが原因。
+// 選択肢を出した直後だけ短くロックし、その間のタップは無視する(押し直せばすぐ選べる長さ)。
+const REWARD_REVEAL_LOCK_MS = 400;
+
 function revealRewardChoices() {
   const modal = $("rewardModal");
   const notice = $("rewardLockNotice");
   if (!modal || !modal.classList.contains("rewardLocked")) return;
   modal.classList.remove("rewardLocked");
-  document.querySelectorAll("#rewardChoices .rewardBtn").forEach(btn => { btn.disabled = false; });
-  if (notice) notice.textContent = "報酬を選択";
+  rewardLockUntil = Date.now() + REWARD_REVEAL_LOCK_MS;
+  clearTimeout(rewardLockTimer);
+  // ロックが明けた時点でボタンを有効化する(ロック中は disabled のまま=誤タップも押下扱いにしない)
+  rewardLockTimer = setTimeout(() => {
+    document.querySelectorAll("#rewardChoices .rewardBtn").forEach(btn => { btn.disabled = false; });
+    if (notice) notice.textContent = "報酬を選択";
+  }, REWARD_REVEAL_LOCK_MS);
+  if (notice) notice.textContent = "報酬を選択(まもなく選べます)";
 }
 
 function chooseReward(choice) {
@@ -17359,6 +18418,11 @@ function chooseReward(choice) {
     showMessage("報酬を確認中");
     return;
   }
+  // 一覧#13: 2本指で別々のカードを同時に叩くと1体の討伐から報酬が二重に入るため、
+  // 選択が成立したらこの周の選択肢を閉じる(pendingRewardChoices を空にする)。
+  if (!pendingRewardChoices || pendingRewardChoices.length === 0) return;
+  if (!pendingRewardChoices.includes(choice)) return;
+  pendingRewardChoices = [];
 
   const category = choice.category || (choice.kind === "perk" ? rewardCategoryOf(choice.id) : "equipment");
   // 相性(倒した種類×カテゴリ)を掛けた実際の増分
@@ -17374,7 +18438,13 @@ function chooseReward(choice) {
   }
 
   if (choice.kind === "perk" && choice.id === "huntFocus") {
-    state.huntFocusLv = (state.huntFocusLv || 0) + gained;
+    // 一覧#6(2026-07-28): 以前は「今回ぶん(gained)だけ」を装填していたため、撃破/時間切れで
+    // huntFocusLv が0に戻る仕様と合わさって、何回取っても効果は毎回 ×(1+gained) の一発ぶんだけだった
+    // (積み上げた state.perks.huntFocus は効果側からどこからも読まれていない)。カード表示は累積Lv基準の
+    // 「+100×Lv%」を出すため、表示と実効果が最大11倍(＋%表記では21倍)乖離していた。
+    // 装填量を累積Lvそのものにして、表示どおり「次のモンスターへのダメージ ×(1+Lv)」にする。
+    // 「次の1体に賭ける」構造(撃破/時間切れで装填を消費し、成功で報酬Lv+1・失敗で次HP低下と報酬Lv-1)は不変。
+    state.huntFocusLv = Math.max(0, Math.floor(Number(state.perks.huntFocus) || 0));
   }
 
   state.rewardCategoryCounts = state.rewardCategoryCounts || {};
@@ -17872,8 +18942,9 @@ setInterval(() => {
     // ノルマ・注文・出現・各種ボーナスなど、その他の進行は従来どおりオーバーレイ中は止める。
     const overlayOpen = overlayFreezesGame();
     state.totalPlaySec = (state.totalPlaySec || 0) + 0.05; // v4: 総プレイ秒(転生持ち越し)
+    if (hiddenSinceAt) hiddenTickMs += 50; // 一覧#11: 非表示中に tick が計上できた時間(戻ったとき二重計上しないため)
     earn(currentCps().add(directIncomeTotalCps()).div(20));
-    if (orderCookieActive()) earn((currentCps() + directIncomeTotalCps()) / 20 * ORDER_COOKIE_MUL); // 注文報酬cookie=時間窓の上乗せ(sim同期)
+    if (orderCookieActive()) earn(currentCps().add(directIncomeTotalCps()).div(20).mul(ORDER_COOKIE_MUL)); // 注文報酬cookie=時間窓の上乗せ(sim同期)
     // 直近稼ぎ率EMA(時定数90秒・sim同期2026-07-11): 毎秒1回、runCookiesの増分から更新
     earnEmaTick = (earnEmaTick + 1) % 20;
     if (earnEmaTick === 0) {
