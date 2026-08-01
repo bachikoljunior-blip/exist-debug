@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bachikoljunior-blip/kit/lib/plan/findings.schema.json",
+  "title": "Review findings",
+  "description": "The critic's output. Nothing validated this before, and four real review files had already drifted apart: review-r13.json is missing `round`, `category` and `hypothesis` that review-r15.json has. A dispatcher reading an undeclared shape routes on fields that may not be there.",
+  "type": "object",
+  "required": ["verdict", "score", "blindComparison", "findings"],
+  "properties": {
+    "round": { "type": "integer", "minimum": 1, "description": "Recommended. Without it the file's name is the only record of which round it is." },
+    "profile": { "type": "string", "description": "Device profile judged, e.g. `phone`. Recommended: a set judged at the wrong profile has passed review before." },
+    "tier": { "type": "string", "description": "Quality tier the artefacts were produced at. Five rounds were once reviewed at the wrong tier." },
+    "nativeResolution": { "type": "string", "pattern": "^[0-9]+x[0-9]+$", "description": "Resolution the reviewer judged at. A downscaled view has produced a false blocker." },
+    "verdict": { "enum": ["PASS", "FAIL"], "description": "Default FAIL. A verdict of PASS closes the review workstream only, never the product criteria." },
+    "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "blindComparison": {
+      "type": "string",
+      "minLength": 40,
+      "description": "Shown unlabelled beside the reference, which would a stranger pick, and the specific reason. 'Looks less detailed' is not a reason."
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["severity", "shot", "problem", "why", "owner", "fix"],
+      "properties": {
+        "severity": { "enum": ["blocker", "major", "minor"] },
+        "shot": { "type": "string", "minLength": 1, "description": "Which artefact(s). Prose lists such as 'hero, torii, wide (all three)' occur in real files and cannot be joined against a manifest key; an array would be better." },
+        "category": { "type": "string" },
+        "problem": {
+          "type": "string",
+          "minLength": 20,
+          "description": "The observed symptom, with the measurement. Symptom calls have held up 6/6 across measured rounds."
+        },
+        "why": { "type": "string", "minLength": 10, "description": "Why it matters at the bar being held." },
+        "owner": { "type": "string", "minLength": 1, "description": "Repo-relative path of the file that owns the fix. Must resolve in the ownership map or the finding lands in `unrouted`." },
+        "fix": { "type": "string", "minLength": 10, "description": "A verifiable target, stated as a number and the command that reads it." },
+        "hypothesis": {
+          "type": "string",
+          "description": "The proposed mechanism, kept separate from `problem` on purpose. Mechanism guesses were wrong 4/4 across measured rounds, so this must be disproved before it is acted on, and the disproof reported as a result."
+        }
+      }
+    }
+  }
+}
