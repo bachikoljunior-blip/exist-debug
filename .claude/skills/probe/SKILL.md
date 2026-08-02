@@ -42,7 +42,25 @@ import { acquireLock, releaseOnExit } from './.kit/lib/browser/lock.mjs';
 import { measureLuma, regionStats, region, compareRegion } from './.kit/lib/image/measure.mjs';
 ```
 
-Four things that are not optional:
+Six things that are not optional:
+
+- **Serving your own content on `127.0.0.1`? Pass `proxy: false`.** `launchHeadless` honours
+  `HTTPS_PROXY` by default, and Playwright then force-appends `<-loopback>` to
+  `--proxy-bypass-list`, which *un*-bypasses loopback. Measured against the harness's own
+  server: the default returns **HTTP 405 with zero page errors**, so the run proceeds and
+  times out waiting for ready — it reads as a failed boot, not a proxy fault. With
+  `proxy: false`, 200. The default exists for reaching **public** URLs; every harness that
+  serves its own build is the other case.
+
+  ```js
+  const browser = await launchHeadless({ noSandbox: true, angleSwiftshader: true, proxy: false });
+  ```
+
+- **`readyExpr` is an expression, not a function.** Playwright evaluates the string, so
+  `'() => window.READY === true'` yields a truthy function object and the wait resolves on the
+  first poll — measured at 21 ms against a page that never became ready. Write
+  `'window.READY === true'`. `waitForBoot` and `verifyLive` now throw on a function source
+  rather than reporting a dead page as booted.
 
 - **`waitForBoot` polls on a timer, not rAF.** rAF does not tick inside `renderer.compile()`,
   and under SwiftShader that window is long enough that a healthy page looks hung.

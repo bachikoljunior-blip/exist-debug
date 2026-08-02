@@ -44,7 +44,14 @@ import { serveStatic }           from './.kit/lib/browser/serve.mjs';
 import { launchHeadless }        from './.kit/lib/browser/launch.mjs';
 import { attachPageDiagnostics } from './.kit/lib/browser/diagnostics.mjs';
 import { waitForBoot }           from './.kit/lib/browser/boot.mjs';
+
+const browser = await launchHeadless({ noSandbox: true, proxy: false });
 ```
+
+**`proxy: false` is not optional here.** `launchHeadless` honours `HTTPS_PROXY` by default and
+Playwright un-bypasses loopback, so a page served by `serveStatic` on `127.0.0.1` comes back
+as **HTTP 405 with zero page errors** — every measurement below then runs against the proxy's
+error page and reports the layout as fine. See the `probe` skill for the measurement.
 
 Reach each screen through the **production path** — the real navigation, the real touch
 handlers — not by setting state directly. A screen posed by assignment can look fine while the

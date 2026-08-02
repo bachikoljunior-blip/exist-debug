@@ -9,12 +9,31 @@ Sessions here run in disposable containers: `~/.claude/` is rebuilt every time a
 outside git survives. So the tooling has to travel **in the repository**, and this is how it
 gets there.
 
+**These run from a clone of the `kit` repository, not from the repository being installed
+into.** The installer lives in the kit; a target repo only ever receives a *copy* of it under
+`.kit/`. Running `node tools/bootstrap.mjs` inside an installed repo fails with
+`Cannot find module`, which reads like a broken kit and is only a wrong working directory.
+
 ```bash
+# from a clone of the kit repository:
 node tools/bootstrap.mjs --target=/path/to/repo            # install or update
-node tools/bootstrap.mjs --target=/path/to/repo --check    # is it current?
+node tools/bootstrap.mjs --target=/path/to/repo --check    # is it current with the kit?
 node tools/bootstrap.mjs --target=/path/to/repo --skills=probe,publish   # a subset
 node tools/bootstrap.mjs --target=/path/to/repo --template # + protocol, state and CI
 ```
+
+From inside a repository that already has the kit, the vendored copy can check *itself*:
+
+```bash
+# from the repository that has the kit installed:
+node .kit/tools/bootstrap.mjs --target=. --check
+```
+
+The two `--check`s answer different questions and are not interchangeable. The vendored one
+verifies the copy against its own install ledger — it catches an in-place edit or a missing
+file, and says so in its own output. It **cannot** tell you the copy is an old version,
+because it has no kit to compare against. For "is this current with the kit?", run the first
+form from a kit clone.
 
 What lands:
 

@@ -13,6 +13,7 @@
 
 import { launchHeadless, proxyPageOptions } from '../browser/launch.mjs';
 import { attachPageDiagnostics } from '../browser/diagnostics.mjs';
+import { assertExpression } from '../browser/boot.mjs';
 
 /**
  * @param {object} options
@@ -62,6 +63,9 @@ export async function verifyLive({
       await page.waitForURL((current) => String(current).includes(expectPath), { timeout }).catch(() => {});
     }
     if (readyExpr) {
+      // Same trap as waitForBoot: a function-source string is always truthy, so this check
+      // would pass on a page that never became ready. Here it would sign off a publication.
+      assertExpression(readyExpr, 'verifyLive');
       await page.waitForFunction(readyExpr, undefined, { timeout, polling: 500 })
         .catch(() => failures.push(`never reached ready: ${readyExpr}`));
     }

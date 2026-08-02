@@ -18,6 +18,28 @@
  */
 
 /**
+ * Refuse a `readyExpr` that is a *function source* rather than an expression.
+ *
+ * Playwright evaluates a string as an expression, so `'() => window.READY === true'` produces
+ * a function **object** — which is truthy — and `waitForFunction` resolves on the first poll.
+ * Measured: 21 ms to `booted: true` against a page where `window.READY` is `undefined`, while
+ * the documented form `'window.READY === true'` correctly times out and returns `booted:
+ * false`. The mistake costs nothing to make and turns the boot gate into a constant `true`,
+ * which is the apparatus failure this whole harness exists to prevent — a page that died
+ * reports as healthy. Cheap to detect, so it is an error rather than a footnote.
+ */
+export function assertExpression(expr, caller) {
+  if (/^\s*(\(|async\s|function\b)[^]*=>|^\s*function\b/.test(String(expr))) {
+    throw new Error(
+      `${caller}: readyExpr must be an expression, not a function source. ` +
+      `Playwright evaluates the string as an expression, so a function literal is always ` +
+      `truthy and the wait would succeed immediately. ` +
+      `Use 'window.READY === true', not '() => window.READY === true'.`,
+    );
+  }
+}
+
+/**
  * @param {import('playwright').Page} page
  * @param {object} options
  * @param {string} options.readyExpr        Expression evaluated in the page, e.g.
@@ -34,6 +56,7 @@ export async function waitForBoot(page, {
   polling = 500,
 } = {}) {
   if (!readyExpr) throw new Error('waitForBoot: readyExpr is required');
+  assertExpression(readyExpr, 'waitForBoot');
   const started = Date.now();
 
   try {
